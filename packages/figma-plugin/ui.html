@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      font-size: 13px;
+      background: #1e1e1e;
+      color: #e0e0e0;
+      padding: 16px;
+    }
+    .header {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #18a0fb; flex-shrink: 0; }
+    .section { margin-bottom: 16px; }
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 5px;
+    }
+    .section-desc {
+      color: #777;
+      font-size: 11px;
+      line-height: 1.45;
+      margin-bottom: 8px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      background: #18a0fb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn:hover:not(:disabled) { background: #0c8ce9; }
+    .btn:disabled { opacity: 0.45; cursor: default; }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid #3a3a3a;
+      color: #ccc;
+    }
+    .btn-ghost:hover:not(:disabled) { background: #2a2a2a; }
+    .checkbox-row {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 8px;
+    }
+    .checkbox-row label {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      color: #ccc;
+      font-size: 12px;
+    }
+    .checkbox-row input[type="checkbox"] { accent-color: #18a0fb; }
+    .divider { border: none; border-top: 1px solid #2e2e2e; margin: 12px 0; }
+    .status {
+      background: #252525;
+      border: 1px solid #2e2e2e;
+      border-radius: 5px;
+      padding: 8px 10px;
+      font-size: 11px;
+      color: #888;
+      margin-top: 12px;
+      min-height: 30px;
+      line-height: 1.4;
+    }
+    .status.success { color: #4ade80; border-color: #1a3a2a; }
+    .status.error   { color: #f87171; border-color: #3a1a1a; }
+    .status.working { color: #60a5fa; }
+    .note { font-size: 10px; color: #555; margin-top: 5px; line-height: 1.4; }
+  </style>
+</head>
+<body>
+  <div class="header"><span class="dot"></span>vibe-projects Design System</div>
+
+  <div class="section">
+    <div class="section-title">Tokens</div>
+    <div class="section-desc">Palette · Semantic (Light/Dark) · Spacing · Radius · Typography → Figma Variables</div>
+    <button class="btn" id="importBtn">Import All Tokens</button>
+    <p class="note">※ Variables 생성은 Figma Professional 이상 필요</p>
+  </div>
+
+  <hr class="divider" />
+
+  <div class="section">
+    <div class="section-title">Token Showcase</div>
+    <div class="section-desc">컬러 팔레트, 시맨틱 컬러, 타이포그래피, 스페이싱, 라디우스를 캔버스에 시각화</div>
+    <button class="btn btn-ghost" id="showcaseBtn">Generate Token Showcase</button>
+  </div>
+
+  <hr class="divider" />
+
+  <div class="section">
+    <div class="section-title">Components</div>
+    <div class="section-desc">현재 페이지에 컴포넌트 세트 생성</div>
+    <div class="checkbox-row">
+      <label><input type="checkbox" id="cbButton" checked /> Button</label>
+      <label><input type="checkbox" id="cbBadge" checked /> Badge</label>
+      <label><input type="checkbox" id="cbCard" checked /> Card</label>
+    </div>
+    <button class="btn" id="generateBtn">Generate Components</button>
+  </div>
+
+  <div class="status" id="status">Ready</div>
+
+  <script>
+    const statusEl   = document.getElementById('status')
+    const importBtn  = document.getElementById('importBtn')
+    const showcaseBtn= document.getElementById('showcaseBtn')
+    const generateBtn= document.getElementById('generateBtn')
+    const allBtns    = [importBtn, showcaseBtn, generateBtn]
+
+    function setStatus(msg, cls = '') {
+      statusEl.textContent = msg
+      statusEl.className = 'status ' + cls
+    }
+    function setBusy(busy) { allBtns.forEach(b => b.disabled = busy) }
+
+    importBtn.addEventListener('click', () => {
+      setStatus('Importing tokens...', 'working')
+      setBusy(true)
+      parent.postMessage({ pluginMessage: { type: 'import-tokens' } }, '*')
+    })
+
+    showcaseBtn.addEventListener('click', () => {
+      setStatus('Generating token showcase...', 'working')
+      setBusy(true)
+      parent.postMessage({ pluginMessage: { type: 'generate-showcase' } }, '*')
+    })
+
+    generateBtn.addEventListener('click', () => {
+      const components = []
+      if (document.getElementById('cbButton').checked) components.push('Button')
+      if (document.getElementById('cbBadge').checked)  components.push('Badge')
+      if (document.getElementById('cbCard').checked)   components.push('Card')
+      if (!components.length) { setStatus('컴포넌트를 하나 이상 선택하세요', 'error'); return }
+      setStatus('Generating...', 'working')
+      setBusy(true)
+      parent.postMessage({ pluginMessage: { type: 'generate-components', components } }, '*')
+    })
+
+    window.addEventListener('message', (e) => {
+      const msg = e.data.pluginMessage
+      if (!msg) return
+      if (msg.type === 'progress') { setStatus(msg.message, 'working'); return }
+      setBusy(false)
+      if (msg.type === 'success') setStatus(msg.message, 'success')
+      if (msg.type === 'error')   setStatus(msg.message, 'error')
+    })
+  </script>
+</body>
+</html>
