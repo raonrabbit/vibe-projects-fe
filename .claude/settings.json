@@ -8,11 +8,28 @@
       "Bash(git log*)",
       "Bash(git add *)",
       "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(gh pr create*)",
+      "Bash(gh pr view*)",
       "Bash(git checkout *)",
       "Bash(git branch*)",
       "Bash(git stash*)",
       "Bash(ls *)",
       "Bash(cat *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -File .claude/hooks/md-check.ps1",
+            "statusMessage": "Checking .md doc consistency..."
+          }
+        ]
+      }
     ]
   }
 }
