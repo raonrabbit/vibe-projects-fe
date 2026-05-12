@@ -1,0 +1,7 @@
+node_modules
+.next
+dist
+.turbo
+.claude
+*.min.js
+pnpm-lock.yaml
