@@ -1,12 +1,12 @@
 {
-  "compilerOptions": {
-    "target": "ES2017",
-    "lib": ["es2017"],
-    "typeRoots": ["./node_modules/@figma/plugin-typings"],
-    "strict": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "resolveJsonModule": true
-  },
-  "include": ["src/**/*.ts"]
+    "compilerOptions": {
+        "target": "ES2017",
+        "lib": ["es2017"],
+        "typeRoots": ["./node_modules/@figma"],
+        "strict": true,
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "resolveJsonModule": true
+    },
+    "include": ["src/**/*.ts"]
 }

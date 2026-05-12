@@ -1,10 +1,7 @@
-export { Button } from './components/Button'
-export type { ButtonProps } from './components/Button'
-
-export { Card } from './components/Card'
-export type { CardProps } from './components/Card'
-
-export { Badge } from './components/Badge'
-export type { BadgeProps } from './components/Badge'
-
-export { cn } from './lib/cn'
+export type { BadgeProps } from "./components/Badge";
+export { Badge } from "./components/Badge";
+export type { ButtonProps } from "./components/Button";
+export { Button } from "./components/Button";
+export type { CardProps } from "./components/Card";
+export { Card } from "./components/Card";
+export { cn } from "./lib/cn";
