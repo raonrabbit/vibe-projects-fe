@@ -70,10 +70,12 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 **This is a Turborepo + pnpm workspaces monorepo.**
 
 Structure:
+
 - `apps/dev-news/` — Frontend/AI 뉴스 큐레이션 앱 (Next.js)
 - `packages/ui/` — 공유 디자인 시스템 (모든 앱이 참조)
 
 Rules:
+
 - Package manager: `pnpm` only. Never use `npm` or `yarn`.
 - Run tasks via `turbo` at root, or `pnpm` inside a specific package.
 - When adding a dependency: specify the workspace target (`pnpm add <pkg> --filter <workspace>`).
@@ -81,4 +83,5 @@ Rules:
 - App-specific logic never goes into `packages/ui`.
 
 References:
+
 - Project planning: `docs/기획.md`

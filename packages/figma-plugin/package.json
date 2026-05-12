@@ -1,14 +1,14 @@
 {
-  "name": "@vibe/figma-plugin",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "build": "node build.mjs",
-    "watch": "node build.mjs --watch"
-  },
-  "devDependencies": {
-    "@figma/plugin-typings": "^1.96.0",
-    "esbuild": "^0.21.0",
-    "typescript": "^5.4.0"
-  }
+    "name": "@vibe/figma-plugin",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "build": "node build.mjs",
+        "watch": "node build.mjs --watch"
+    },
+    "devDependencies": {
+        "@figma/plugin-typings": "^1.96.0",
+        "esbuild": "^0.21.0",
+        "typescript": "^5.4.0"
+    }
 }

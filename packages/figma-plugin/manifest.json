@@ -1,8 +1,8 @@
 {
-  "name": "vibe-projects Design System",
-  "id": "vibe-projects-design-system",
-  "api": "1.0.0",
-  "main": "dist/code.js",
-  "ui": "ui.html",
-  "editorType": ["figma"]
+    "name": "vibe-projects Design System",
+    "id": "vibe-projects-design-system",
+    "api": "1.0.0",
+    "main": "dist/code.js",
+    "ui": "ui.html",
+    "editorType": ["figma"]
 }
