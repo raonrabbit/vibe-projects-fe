@@ -22,9 +22,11 @@ export {
   ExternalLinkIcon,
   InfoIcon,
   MenuIcon,
+  MoonIcon,
   SearchIcon,
   ShareIcon,
   StarIcon,
+  SunIcon,
   UserIcon,
 } from "./components/Icon";
 export type { InputProps } from "./components/Input";
