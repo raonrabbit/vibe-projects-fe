@@ -910,67 +910,46 @@ async function createListComponent(): Promise<ComponentNode> {
 
 // ── ICON ──────────────────────────────────────────────────────────────────────
 
-// Each entry: icon name + array of SVG path `d` strings (shares stroke style)
-const ICON_DEFS: { name: string; paths: string[] }[] = [
-    { name: "ChevronRight",   paths: ["M 9 6 L 15 12 L 9 18"] },
-    { name: "ChevronLeft",    paths: ["M 15 6 L 9 12 L 15 18"] },
-    { name: "ChevronDown",    paths: ["M 6 9 L 12 15 L 18 9"] },
-    { name: "ChevronUp",      paths: ["M 18 15 L 12 9 L 6 15"] },
-    { name: "ArrowRight",     paths: ["M 5 12 L 19 12", "M 12 5 L 19 12 L 12 19"] },
-    {
-        name: "Search",
-        paths: [
-            "M 3 11 C 3 6.582 6.582 3 11 3 C 15.418 3 19 6.582 19 11 C 19 15.418 15.418 19 11 19 C 6.582 19 3 15.418 3 11 Z",
-            "M 21 21 L 16.65 16.65",
-        ],
-    },
-    { name: "Close",          paths: ["M 18 6 L 6 18", "M 6 6 L 18 18"] },
-    { name: "Check",          paths: ["M 20 6 L 9 17 L 4 12"] },
-    {
-        name: "Info",
-        paths: [
-            "M 2 12 C 2 6.477 6.477 2 12 2 C 17.523 2 22 6.477 22 12 C 22 17.523 17.523 22 12 22 C 6.477 22 2 17.523 2 12 Z",
-            "M 12 16 L 12 12",
-            "M 12 8 L 12.01 8",
-        ],
-    },
-    {
-        name: "AlertTriangle",
-        paths: [
-            "M 12 3 L 2 21 L 22 21 Z",
-            "M 12 9 L 12 13",
-            "M 12 17 L 12.01 17",
-        ],
-    },
-    {
-        name: "ExternalLink",
-        paths: [
-            "M 18 13 L 18 19 C 18 20.105 17.105 21 16 21 L 5 21 C 3.895 21 3 20.105 3 19 L 3 8 C 3 6.895 3.895 6 5 6 L 11 6",
-            "M 15 3 L 21 3 L 21 9",
-            "M 10 14 L 21 3",
-        ],
-    },
-    { name: "Bookmark",       paths: ["M 19 21 L 12 16 L 5 21 L 5 5 C 5 3.895 5.895 3 7 3 L 17 3 C 18.105 3 19 3.895 19 5 Z"] },
-    { name: "Star",           paths: ["M 12 2 L 15.09 8.26 L 22 9.27 L 17 14.14 L 18.18 21.02 L 12 17.77 L 5.82 21.02 L 7 14.14 L 2 9.27 L 8.91 8.26 Z"] },
-    {
-        name: "Share",
-        paths: [
-            "M 15 5 C 15 3.343 16.343 2 18 2 C 19.657 2 21 3.343 21 5 C 21 6.657 19.657 8 18 8 C 16.343 8 15 6.657 15 5 Z",
-            "M 3 12 C 3 10.343 4.343 9 6 9 C 7.657 9 9 10.343 9 12 C 9 13.657 7.657 15 6 15 C 4.343 15 3 13.657 3 12 Z",
-            "M 15 19 C 15 17.343 16.343 16 18 16 C 19.657 16 21 17.343 21 19 C 21 20.657 19.657 22 18 22 C 16.343 22 15 20.657 15 19 Z",
-            "M 8.59 13.51 L 15.42 17.49",
-            "M 15.41 6.51 L 8.59 10.49",
-        ],
-    },
-    { name: "Menu",           paths: ["M 3 6 L 21 6", "M 3 12 L 21 12", "M 3 18 L 21 18"] },
-    {
-        name: "User",
-        paths: [
-            "M 20 21 L 20 19 C 20 16.791 18.209 15 16 15 L 8 15 C 5.791 15 4 16.791 4 19 L 4 21",
-            "M 8 7 C 8 4.791 9.791 3 12 3 C 14.209 3 16 4.791 16 7 C 16 9.209 14.209 11 12 11 C 9.791 11 8 9.209 8 7 Z",
-        ],
-    },
-];
+import { lucideIconNodes } from "./icon-data";
+
+// Convert a single lucide iconNode element to an SVG path `d` string.
+function elemToPath(tag: string, attrs: Readonly<Record<string, string | number>>): string | null {
+    const n = (k: string) => Number(attrs[k] ?? 0);
+    switch (tag) {
+        case "path": return String(attrs.d ?? "");
+        case "line": return `M ${n("x1")} ${n("y1")} L ${n("x2")} ${n("y2")}`;
+        case "polyline":
+        case "polygon": {
+            const pts = String(attrs.points ?? "").trim().split(/[\s,]+/);
+            const segs = pts.reduce<string[]>((acc, v, i) => {
+                if (i % 2 === 0) acc.push(`${i === 0 ? "M" : "L"} ${v}`);
+                else acc[acc.length - 1] += ` ${v}`;
+                return acc;
+            }, []);
+            return segs.join(" ") + (tag === "polygon" ? " Z" : "");
+        }
+        case "circle": {
+            const cx = n("cx"), cy = n("cy"), r = n("r"), k = 0.5522847498 * r;
+            return `M ${cx} ${cy - r} C ${cx + k} ${cy - r} ${cx + r} ${cy - k} ${cx + r} ${cy} C ${cx + r} ${cy + k} ${cx + k} ${cy + r} ${cx} ${cy + r} C ${cx - k} ${cy + r} ${cx - r} ${cy + k} ${cx - r} ${cy} C ${cx - r} ${cy - k} ${cx - k} ${cy - r} ${cx} ${cy - r} Z`;
+        }
+        case "rect": {
+            const x = n("x"), y = n("y"), w = n("width"), h = n("height"), rx = n("rx");
+            if (!rx) return `M ${x} ${y} L ${x + w} ${y} L ${x + w} ${y + h} L ${x} ${y + h} Z`;
+            return `M ${x + rx} ${y} L ${x + w - rx} ${y} Q ${x + w} ${y} ${x + w} ${y + rx} L ${x + w} ${y + h - rx} Q ${x + w} ${y + h} ${x + w - rx} ${y + h} L ${x + rx} ${y + h} Q ${x} ${y + h} ${x} ${y + h - rx} L ${x} ${y + rx} Q ${x} ${y} ${x + rx} ${y} Z`;
+        }
+        default: return null;
+    }
+}
+
+// ICON_DEFS derived from lucide-react via scripts/gen-icon-data.mjs
+const ICON_DEFS: { name: string; paths: string[] }[] = Object.entries(lucideIconNodes).map(
+    ([name, node]) => ({
+        name,
+        paths: node
+            .map(([tag, attrs]) => elemToPath(tag, attrs))
+            .filter((p): p is string => p !== null && p.length > 0),
+    }),
+);
 
 async function createIconSet(): Promise<ComponentSetNode> {
     const ICON_SIZE = 24;
