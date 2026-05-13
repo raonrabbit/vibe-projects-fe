@@ -3,10 +3,27 @@ import { type HTMLAttributes } from "react";
 import { cn } from "../lib/cn";
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+    /**
+     * Visual style of the badge.
+     * - `default` — neutral, for secondary labels (카테고리, 태그)
+     * - `primary` — accent color, for brand-aligned highlights
+     * - `success` — green, for positive statuses (완료, 활성)
+     * - `warning` — yellow, for cautionary statuses (검토 중, 주의)
+     * - `error`   — red, for negative statuses (실패, 만료)
+     * @default "default"
+     */
     variant?: "default" | "primary" | "success" | "warning" | "error";
+    /** @default "md" */
     size?: "sm" | "md";
 }
 
+/**
+ * Badge renders a small inline label for statuses, categories, or counts.
+ *
+ * @example
+ * <Badge variant="success">완료</Badge>
+ * <Badge variant="warning" size="sm">검토 중</Badge>
+ */
 export function Badge({
     variant = "default",
     size = "md",
