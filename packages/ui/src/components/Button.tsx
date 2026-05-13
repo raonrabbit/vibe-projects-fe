@@ -5,11 +5,44 @@ import { type ButtonHTMLAttributes, forwardRef } from "react";
 import { cn } from "../lib/cn";
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+    /**
+     * Visual style of the button.
+     * - `primary`     — filled accent, 주요 CTA
+     * - `secondary`   — outlined, 보조 액션
+     * - `ghost`       — transparent, 저강도 액션 또는 아이콘 버튼
+     * - `destructive` — red filled, 삭제·취소 등 위험 액션
+     * @default "primary"
+     */
     variant?: "primary" | "secondary" | "ghost" | "destructive";
+    /** @default "md" */
     size?: "sm" | "md" | "lg";
+    /**
+     * Shows a spinner and disables the button while true.
+     * Use for async submit actions.
+     * @default false
+     */
     loading?: boolean;
 }
 
+/**
+ * Button is the primary interactive control for triggering actions.
+ *
+ * @example
+ * // Basic
+ * <Button>저장</Button>
+ * <Button variant="secondary" size="sm">취소</Button>
+ *
+ * // Async submit
+ * <Button loading={isPending} onClick={handleSubmit}>제출</Button>
+ *
+ * // With trailing icon (ghost icon button)
+ * <Button variant="ghost" size="sm">
+ *   다음 <ArrowRightIcon size={16} />
+ * </Button>
+ *
+ * // Destructive
+ * <Button variant="destructive">삭제</Button>
+ */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     (
         {
