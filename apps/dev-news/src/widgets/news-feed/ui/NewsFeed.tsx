@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Badge, Card } from "@vibe/ui";
+import { Badge, Card, ChevronRightIcon } from "@vibe/ui";
 
 type BadgeVariant = "default" | "primary" | "success" | "warning" | "error";
 
@@ -90,19 +90,7 @@ export function NewsFeed() {
                                         {item.title}
                                     </p>
                                 </div>
-                                <svg
-                                    width="16"
-                                    height="16"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    className="shrink-0 text-text-disabled"
-                                >
-                                    <path d="M9 18l6-6-6-6" />
-                                </svg>
+                                <ChevronRightIcon size={16} className="shrink-0 text-text-disabled" />
                             </a>
                         </li>
                     ))}
