@@ -2,7 +2,7 @@ import { importAllTokens } from "./import-tokens";
 import { generateComponents } from "./generate-components";
 import { generateTokenShowcase } from "./generate-showcase";
 
-figma.showUI(__html__, { width: 300, height: 430 });
+figma.showUI(__html__, { width: 300, height: 460 });
 
 figma.ui.onmessage = async (msg: { type: string; components?: string[] }) => {
     const progress = (message: string) =>
