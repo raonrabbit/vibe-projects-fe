@@ -9,57 +9,37 @@
                 padding: 0;
             }
             body {
-                font-family:
-                    "Inter",
-                    -apple-system,
-                    sans-serif;
-                font-size: 13px;
+                font-family: "Inter", -apple-system, sans-serif;
+                font-size: 12px;
                 background: #1e1e1e;
                 color: #e0e0e0;
-                padding: 16px;
+                padding: 14px;
             }
             .header {
-                font-size: 13px;
-                font-weight: 600;
-                color: #fff;
-                margin-bottom: 16px;
                 display: flex;
                 align-items: center;
-                gap: 8px;
+                gap: 6px;
+                font-size: 12px;
+                font-weight: 600;
+                color: #fff;
+                margin-bottom: 12px;
             }
             .dot {
-                width: 8px;
-                height: 8px;
+                width: 7px;
+                height: 7px;
                 border-radius: 50%;
                 background: #18a0fb;
                 flex-shrink: 0;
             }
-            .section {
-                margin-bottom: 16px;
-            }
-            .section-title {
-                font-size: 11px;
-                font-weight: 600;
-                color: #888;
-                text-transform: uppercase;
-                letter-spacing: 0.06em;
-                margin-bottom: 5px;
-            }
-            .section-desc {
-                color: #777;
-                font-size: 11px;
-                line-height: 1.45;
-                margin-bottom: 8px;
-            }
             .btn {
                 display: block;
                 width: 100%;
-                padding: 8px 12px;
+                padding: 7px 10px;
                 background: #18a0fb;
                 color: #fff;
                 border: none;
                 border-radius: 6px;
-                font-size: 12px;
+                font-size: 11px;
                 font-weight: 500;
                 cursor: pointer;
                 transition: background 0.15s;
@@ -79,36 +59,95 @@
             .btn-ghost:hover:not(:disabled) {
                 background: #2a2a2a;
             }
-            .checkbox-row {
-                display: flex;
-                gap: 14px;
-                margin-bottom: 8px;
+            .btn-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 6px;
+                margin-bottom: 6px;
             }
-            .checkbox-row label {
-                display: flex;
-                align-items: center;
-                gap: 5px;
-                cursor: pointer;
-                color: #ccc;
-                font-size: 12px;
-            }
-            .checkbox-row input[type="checkbox"] {
-                accent-color: #18a0fb;
+            .note {
+                font-size: 10px;
+                color: #555;
             }
             .divider {
                 border: none;
                 border-top: 1px solid #2e2e2e;
-                margin: 12px 0;
+                margin: 10px 0;
+            }
+            .section-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 7px;
+            }
+            .section-title {
+                font-size: 10px;
+                font-weight: 600;
+                color: #888;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+            }
+            .toggle-row {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .btn-text {
+                background: none;
+                border: none;
+                color: #18a0fb;
+                font-size: 10px;
+                cursor: pointer;
+                padding: 0;
+                line-height: 1;
+            }
+            .btn-text:hover {
+                text-decoration: underline;
+            }
+            .sep {
+                color: #444;
+                font-size: 10px;
+                line-height: 1;
+            }
+            .checkbox-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 2px 6px;
+                margin-bottom: 10px;
+            }
+            .checkbox-grid label {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                cursor: pointer;
+                color: #c8c8c8;
+                font-size: 11px;
+                padding: 3px 5px;
+                border-radius: 4px;
+                user-select: none;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .checkbox-grid label:hover {
+                background: #272727;
+            }
+            .checkbox-grid input[type="checkbox"] {
+                accent-color: #18a0fb;
+                width: 12px;
+                height: 12px;
+                flex-shrink: 0;
+                cursor: pointer;
             }
             .status {
                 background: #252525;
                 border: 1px solid #2e2e2e;
                 border-radius: 5px;
-                padding: 8px 10px;
+                padding: 7px 9px;
                 font-size: 11px;
                 color: #888;
-                margin-top: 12px;
-                min-height: 30px;
+                margin-top: 10px;
+                min-height: 28px;
                 line-height: 1.4;
             }
             .status.success {
@@ -122,12 +161,6 @@
             .status.working {
                 color: #60a5fa;
             }
-            .note {
-                font-size: 10px;
-                color: #555;
-                margin-top: 5px;
-                line-height: 1.4;
-            }
         </style>
     </head>
     <body>
@@ -135,48 +168,42 @@
             <span class="dot"></span>vibe-projects Design System
         </div>
 
-        <div class="section">
-            <div class="section-title">Tokens</div>
-            <div class="section-desc">
-                Palette · Semantic (Light/Dark) · Spacing · Radius · Typography
-                → Figma Variables
-            </div>
-            <button class="btn" id="importBtn">Import All Tokens</button>
-            <p class="note">※ Variables 생성은 Figma Professional 이상 필요</p>
+        <div class="btn-row">
+            <button class="btn" id="importBtn">Import Tokens</button>
+            <button class="btn btn-ghost" id="showcaseBtn">Token Showcase</button>
         </div>
+        <p class="note">※ Variables 생성은 Figma Professional 이상 필요</p>
 
         <hr class="divider" />
 
-        <div class="section">
-            <div class="section-title">Token Showcase</div>
-            <div class="section-desc">
-                컬러 팔레트, 시맨틱 컬러, 타이포그래피, 스페이싱, 라디우스를
-                캔버스에 시각화
-            </div>
-            <button class="btn btn-ghost" id="showcaseBtn">
-                Generate Token Showcase
-            </button>
+        <div class="section-header">
+            <span class="section-title">Components</span>
+            <span class="toggle-row">
+                <button class="btn-text" id="selectAllBtn">All</button>
+                <span class="sep">·</span>
+                <button class="btn-text" id="selectNoneBtn">None</button>
+            </span>
         </div>
 
-        <hr class="divider" />
-
-        <div class="section">
-            <div class="section-title">Components</div>
-            <div class="section-desc">현재 페이지에 컴포넌트 세트 생성</div>
-            <div class="checkbox-row">
-                <label
-                    ><input type="checkbox" id="cbButton" checked />
-                    Button</label
-                >
-                <label
-                    ><input type="checkbox" id="cbBadge" checked /> Badge</label
-                >
-                <label
-                    ><input type="checkbox" id="cbCard" checked /> Card</label
-                >
-            </div>
-            <button class="btn" id="generateBtn">Generate Components</button>
+        <div class="checkbox-grid">
+            <label><input type="checkbox" id="cbButton" checked /> Button</label>
+            <label><input type="checkbox" id="cbBadge" checked /> Badge</label>
+            <label><input type="checkbox" id="cbCard" checked /> Card</label>
+            <label><input type="checkbox" id="cbInput" checked /> Input</label>
+            <label><input type="checkbox" id="cbList" checked /> List</label>
+            <label><input type="checkbox" id="cbDivider" checked /> Divider</label>
+            <label><input type="checkbox" id="cbSpinner" checked /> Spinner</label>
+            <label><input type="checkbox" id="cbIcon" checked /> Icon</label>
+            <label><input type="checkbox" id="cbSkeleton" checked /> Skeleton</label>
+            <label><input type="checkbox" id="cbCheckbox" checked /> Checkbox</label>
+            <label><input type="checkbox" id="cbTab" checked /> Tab</label>
+            <label><input type="checkbox" id="cbSegmentedControl" checked /> SegmentedControl</label>
+            <label><input type="checkbox" id="cbTable" checked /> Table</label>
+            <label><input type="checkbox" id="cbModal" checked /> Modal</label>
+            <label><input type="checkbox" id="cbToast" checked /> Toast</label>
         </div>
+
+        <button class="btn" id="generateBtn">Generate Components</button>
 
         <div class="status" id="status">Ready</div>
 
@@ -186,6 +213,19 @@
             const showcaseBtn = document.getElementById("showcaseBtn");
             const generateBtn = document.getElementById("generateBtn");
             const allBtns = [importBtn, showcaseBtn, generateBtn];
+
+            const cbIds = [
+                "cbButton", "cbBadge", "cbCard", "cbInput", "cbList",
+                "cbDivider", "cbSpinner", "cbIcon", "cbSkeleton", "cbCheckbox",
+                "cbTab", "cbSegmentedControl", "cbTable", "cbModal", "cbToast",
+            ];
+
+            document.getElementById("selectAllBtn").addEventListener("click", () => {
+                cbIds.forEach((id) => (document.getElementById(id).checked = true));
+            });
+            document.getElementById("selectNoneBtn").addEventListener("click", () => {
+                cbIds.forEach((id) => (document.getElementById(id).checked = false));
+            });
 
             function setStatus(msg, cls = "") {
                 statusEl.textContent = msg;
@@ -198,29 +238,27 @@
             importBtn.addEventListener("click", () => {
                 setStatus("Importing tokens...", "working");
                 setBusy(true);
-                parent.postMessage(
-                    { pluginMessage: { type: "import-tokens" } },
-                    "*",
-                );
+                parent.postMessage({ pluginMessage: { type: "import-tokens" } }, "*");
             });
 
             showcaseBtn.addEventListener("click", () => {
                 setStatus("Generating token showcase...", "working");
                 setBusy(true);
-                parent.postMessage(
-                    { pluginMessage: { type: "generate-showcase" } },
-                    "*",
-                );
+                parent.postMessage({ pluginMessage: { type: "generate-showcase" } }, "*");
             });
 
             generateBtn.addEventListener("click", () => {
-                const components = [];
-                if (document.getElementById("cbButton").checked)
-                    components.push("Button");
-                if (document.getElementById("cbBadge").checked)
-                    components.push("Badge");
-                if (document.getElementById("cbCard").checked)
-                    components.push("Card");
+                const map = {
+                    cbButton: "Button", cbBadge: "Badge", cbCard: "Card",
+                    cbInput: "Input", cbList: "List", cbDivider: "Divider",
+                    cbSpinner: "Spinner", cbIcon: "Icon", cbSkeleton: "Skeleton",
+                    cbCheckbox: "Checkbox", cbTab: "Tab",
+                    cbSegmentedControl: "SegmentedControl", cbTable: "Table",
+                    cbModal: "Modal", cbToast: "Toast",
+                };
+                const components = cbIds
+                    .filter((id) => document.getElementById(id).checked)
+                    .map((id) => map[id]);
                 if (!components.length) {
                     setStatus("컴포넌트를 하나 이상 선택하세요", "error");
                     return;
@@ -228,12 +266,7 @@
                 setStatus("Generating...", "working");
                 setBusy(true);
                 parent.postMessage(
-                    {
-                        pluginMessage: {
-                            type: "generate-components",
-                            components,
-                        },
-                    },
+                    { pluginMessage: { type: "generate-components", components } },
                     "*",
                 );
             });
