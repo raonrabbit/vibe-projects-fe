@@ -2,9 +2,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import js from "@eslint/js";
-import tseslint from "typescript-eslint";
 import nextPlugin from "@next/eslint-plugin-next";
 import simpleImportSort from "eslint-plugin-simple-import-sort";
+import tseslint from "typescript-eslint";
 
 const tsconfigRootDir = path.dirname(fileURLToPath(import.meta.url));
 

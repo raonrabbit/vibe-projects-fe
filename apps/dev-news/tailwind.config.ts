@@ -1,5 +1,5 @@
-import type { Config } from "tailwindcss";
 import uiConfig from "@vibe/ui/tailwind";
+import type { Config } from "tailwindcss";
 
 const config: Config = {
     presets: [uiConfig],

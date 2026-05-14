@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { Badge, Card, ChevronRightIcon } from "@vibe/ui";
+import Link from "next/link";
 
 type BadgeVariant = "default" | "primary" | "success" | "warning" | "error";
 

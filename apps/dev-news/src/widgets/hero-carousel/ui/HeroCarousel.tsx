@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { ArrowRightIcon, Badge, ChevronLeftIcon, ChevronRightIcon, cn } from "@vibe/ui";
+import { useEffect, useRef, useState } from "react";
 
 type BadgeVariant = "default" | "primary" | "success" | "warning" | "error";
 
@@ -82,9 +82,11 @@ export function HeroCarousel() {
             }}
             onTouchEnd={(e) => {
                 if (touchStartX.current === null) return;
-                const diff =
-                    touchStartX.current - e.changedTouches[0].clientX;
-                if (Math.abs(diff) > 40) diff > 0 ? next() : prev();
+                const diff = touchStartX.current - e.changedTouches[0].clientX;
+                if (Math.abs(diff) > 40) {
+                    if (diff > 0) next();
+                    else prev();
+                }
                 touchStartX.current = null;
                 setPaused(false);
             }}

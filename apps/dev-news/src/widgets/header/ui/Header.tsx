@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { Badge, Button } from "@vibe/ui";
+import Link from "next/link";
+
 import { ThemeToggle } from "@/features/theme";
 
 export function Header() {
