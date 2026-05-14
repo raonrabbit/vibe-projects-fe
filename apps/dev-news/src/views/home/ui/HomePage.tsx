@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { Badge, Button } from "@vibe/ui";
+import Link from "next/link";
+
 import { Header } from "@/widgets/header";
 import { HeroCarousel } from "@/widgets/hero-carousel";
 import { NewsFeed } from "@/widgets/news-feed";
