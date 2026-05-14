@@ -46,12 +46,39 @@ chore(config): add md-check hook to settings        → branch: chore/md-check-h
 
 1. **Understand the changes:** run `git status` and `git diff`.
 
-2. **Group by scope.** Analyze all modified/untracked files and group them into logical commit units. Each group gets:
+2. **Lint check — run before anything else.**
+
+    2a. Identify which workspaces have changed files (e.g., `apps/dev-news`, `packages/ui`).
+
+    2b. For each affected workspace, run ESLint with autofix:
+    ```
+    pnpm eslint --fix <changed files in this workspace>
+    ```
+    Autofixable violations (import order, formatting) are fixed silently — no need to report them.
+
+    2c. After autofix, re-run lint to check for remaining errors:
+    ```
+    pnpm eslint <changed files in this workspace>
+    ```
+
+    2d. If errors remain, classify each one:
+    - **Related to the current changes** → diagnose root cause and fix. Do not patch over the symptom (e.g., do not add `// eslint-disable`).
+    - **Unrelated to the current changes** (pre-existing in untouched files) → report to the user:
+        ```
+        ESLint 오류가 발견됐습니다. 이번 변경과 무관한 파일에서 발생했습니다:
+        - src/widgets/foo/ui/Foo.tsx: no-unused-vars
+        어떻게 할까요? (수정 / 무시하고 진행 / 중단)
+        ```
+        Wait for the user's answer before proceeding.
+
+    2e. **Do not proceed to step 3 until lint is clean** (or the user has explicitly approved skipping).
+
+3. **Group by scope.** Analyze all modified/untracked files and group them into logical commit units. Each group gets:
     - A proposed type + scope (e.g., `chore(config)`)
     - A proposed commit message
     - The list of files it contains
 
-3. **Present the groups and ask the user to select.**
+4. **Present the groups and ask the user to select.**
    Show a numbered list like:
 
     ```
@@ -71,7 +98,7 @@ chore(config): add md-check hook to settings        → branch: chore/md-check-h
 
     Wait for the user's answer before proceeding.
 
-4. **Determine PR grouping.** For the selected groups, decide how many PRs to create:
+5. **Determine PR grouping.** For the selected groups, decide how many PRs to create:
     - Groups with the **same type + scope** → can share one branch and one PR (multiple commits).
     - Groups with **different type or scope** → each gets its own branch and PR.
     - State the plan explicitly before proceeding, e.g.:
@@ -81,19 +108,19 @@ chore(config): add md-check hook to settings        → branch: chore/md-check-h
         PR B — feat/design-system: [2] [3]  ← (같은 feat, 관련 범위)
         ```
 
-5. **For each PR group (repeat steps 5a–5d):**
+6. **For each PR group (repeat steps 6a–6d):**
 
-    5a. **Branch handling:** - Check out `main` first, then `git checkout -b <branch-name>`. - Exception: if already on a non-main branch that matches this PR group's work, stay on it.
+    6a. **Branch handling:** - Check out `main` first, then `git checkout -b <branch-name>`. - Exception: if already on a non-main branch that matches this PR group's work, stay on it.
 
-    5b. **Stage and commit each file group (in order):** - `git add <specific files>` — never `git add .` or `git add -A` - Commit with the convention format + footer:
+    6b. **Stage and commit each file group (in order):** - `git add <specific files>` — never `git add .` or `git add -A` - Commit with the convention format + footer:
     `       Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
   `
 
-    5c. **Push the branch:** `git push -u origin <branch-name>`
+    6c. **Push the branch:** `git push -u origin <branch-name>`
 
-    5d. **Open a PR** with `gh pr create`: - Title: commit message of the primary (or only) commit in this PR - Body: bullet-point summary of what changed and why - Base branch: `main`
+    6d. **Open a PR** with `gh pr create`: - Title: commit message of the primary (or only) commit in this PR - Body: bullet-point summary of what changed and why - Base branch: `main`
 
-6. **Return all PR URLs** at the end so the user can review and merge each one.
+7. **Return all PR URLs** at the end so the user can review and merge each one.
 
 ## Safety Rules
 
