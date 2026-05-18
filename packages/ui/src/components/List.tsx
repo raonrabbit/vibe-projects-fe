@@ -6,171 +6,198 @@ import { cn } from "../lib/cn";
 
 // ── List Root ─────────────────────────────────────────────────────────────────
 
-export interface ListProps extends HTMLAttributes<HTMLDivElement> {}
+export type ListProps = HTMLAttributes<HTMLDivElement>;
 
-const ListRoot = forwardRef<HTMLDivElement, ListProps>(({ className, children, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("w-full overflow-hidden rounded-xl border border-border bg-surface", className)}
-    {...props}
-  >
-    {children}
-  </div>
-));
+const ListRoot = forwardRef<HTMLDivElement, ListProps>(
+    ({ className, children, ...props }, ref) => (
+        <div
+            ref={ref}
+            className={cn(
+                "w-full overflow-hidden rounded-xl border border-border bg-surface",
+                className,
+            )}
+            {...props}
+        >
+            {children}
+        </div>
+    ),
+);
 ListRoot.displayName = "List";
 
 // ── List.Item ─────────────────────────────────────────────────────────────────
 
 export interface ListItemProps extends HTMLAttributes<HTMLDivElement> {
-  /** When provided, the row becomes interactive with hover/active feedback and keyboard support. */
-  onClick?: React.MouseEventHandler<HTMLDivElement>;
-  /** Dims the row and prevents interaction. */
-  disabled?: boolean;
+    /** When provided, the row becomes interactive with hover/active feedback and keyboard support. */
+    onClick?: React.MouseEventHandler<HTMLDivElement>;
+    /** Dims the row and prevents interaction. */
+    disabled?: boolean;
 }
 
 const ListItemRoot = forwardRef<HTMLDivElement, ListItemProps>(
-  ({ className, children, onClick, disabled, ...props }, ref) => {
-    const isInteractive = Boolean(onClick) && !disabled;
+    ({ className, children, onClick, disabled, ...props }, ref) => {
+        const isInteractive = Boolean(onClick) && !disabled;
 
-    return (
-      <div
-        ref={ref}
-        role={onClick ? "button" : undefined}
-        tabIndex={isInteractive ? 0 : undefined}
-        aria-disabled={disabled || undefined}
-        onClick={isInteractive ? onClick : undefined}
-        onKeyDown={
-          isInteractive
-            ? (e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  e.currentTarget.click();
+        return (
+            <div
+                ref={ref}
+                role={onClick ? "button" : undefined}
+                tabIndex={isInteractive ? 0 : undefined}
+                aria-disabled={disabled || undefined}
+                onClick={isInteractive ? onClick : undefined}
+                onKeyDown={
+                    isInteractive
+                        ? (e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  e.currentTarget.click();
+                              }
+                          }
+                        : undefined
                 }
-              }
-            : undefined
-        }
-        className={cn(
-          "flex items-center gap-3 px-4 py-3 transition-colors",
-          isInteractive && "cursor-pointer hover:bg-surface-raised active:bg-surface-overlay",
-          disabled && "cursor-not-allowed opacity-40",
-          className,
-        )}
-        {...props}
-      >
-        {children}
-      </div>
-    );
-  },
+                className={cn(
+                    "flex items-center gap-3 px-4 py-3 transition-colors",
+                    isInteractive &&
+                        "cursor-pointer hover:bg-surface-raised active:bg-surface-overlay",
+                    disabled && "cursor-not-allowed opacity-40",
+                    className,
+                )}
+                {...props}
+            >
+                {children}
+            </div>
+        );
+    },
 );
 ListItemRoot.displayName = "List.Item";
 
 // ── List.Item.Leading ─────────────────────────────────────────────────────────
 
 interface ListItemLeadingProps {
-  children: React.ReactNode;
-  className?: string;
+    children: React.ReactNode;
+    className?: string;
 }
 
 function ListItemLeading({ children, className }: ListItemLeadingProps) {
-  return <span className={cn("shrink-0 text-text-secondary", className)}>{children}</span>;
+    return (
+        <span className={cn("shrink-0 text-text-secondary", className)}>
+            {children}
+        </span>
+    );
 }
 ListItemLeading.displayName = "List.Item.Leading";
 
 // ── List.Item.Content ─────────────────────────────────────────────────────────
 
 interface ListItemContentProps {
-  /** Primary text for the row. */
-  title: string;
-  /** Secondary descriptive text shown below the title. */
-  description?: string;
-  className?: string;
+    /** Primary text for the row. */
+    title: string;
+    /** Secondary descriptive text shown below the title. */
+    description?: string;
+    className?: string;
 }
 
-function ListItemContent({ title, description, className }: ListItemContentProps) {
-  return (
-    <div className={cn("min-w-0 flex-1", className)}>
-      <p className="type-headline-2 truncate text-text-primary">{title}</p>
-      {description && (
-        <p className="type-caption-1 mt-0.5 truncate text-text-secondary">{description}</p>
-      )}
-    </div>
-  );
+function ListItemContent({
+    title,
+    description,
+    className,
+}: ListItemContentProps) {
+    return (
+        <div className={cn("min-w-0 flex-1", className)}>
+            <p className="type-headline-2 truncate text-text-primary">
+                {title}
+            </p>
+            {description && (
+                <p className="type-caption-1 mt-0.5 truncate text-text-secondary">
+                    {description}
+                </p>
+            )}
+        </div>
+    );
 }
 ListItemContent.displayName = "List.Item.Content";
 
 // ── List.Item.Trailing ────────────────────────────────────────────────────────
 
 interface ListItemTrailingProps {
-  children: React.ReactNode;
-  className?: string;
+    children: React.ReactNode;
+    className?: string;
 }
 
 function ListItemTrailing({ children, className }: ListItemTrailingProps) {
-  return <span className={cn("shrink-0 text-text-secondary", className)}>{children}</span>;
+    return (
+        <span className={cn("shrink-0 text-text-secondary", className)}>
+            {children}
+        </span>
+    );
 }
 ListItemTrailing.displayName = "List.Item.Trailing";
 
 // ── List.Item compound ────────────────────────────────────────────────────────
 
 const ListItem = Object.assign(ListItemRoot, {
-  Leading: ListItemLeading,
-  Content: ListItemContent,
-  Trailing: ListItemTrailing,
+    Leading: ListItemLeading,
+    Content: ListItemContent,
+    Trailing: ListItemTrailing,
 });
 
 // ── List.Divider ──────────────────────────────────────────────────────────────
 
 interface ListDividerProps {
-  className?: string;
+    className?: string;
 }
 
 function ListDivider({ className }: ListDividerProps) {
-  return <div role="separator" className={cn("mx-4 h-px bg-border", className)} />;
+    return (
+        <div
+            role="separator"
+            className={cn("mx-4 h-px bg-border", className)}
+        />
+    );
 }
 ListDivider.displayName = "List.Divider";
 
 // ── List.Footer ───────────────────────────────────────────────────────────────
 
 interface ListFooterProps {
-  children: React.ReactNode;
-  className?: string;
+    children: React.ReactNode;
+    className?: string;
 }
 
 function ListFooterRoot({ children, className }: ListFooterProps) {
-  return (
-    <div
-      className={cn(
-        "flex items-center gap-2 border-t border-border bg-surface-raised px-4 py-3",
-        "type-caption-1 text-text-secondary",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
+    return (
+        <div
+            className={cn(
+                "flex items-center gap-2 border-t border-border bg-surface-raised px-4 py-3",
+                "type-caption-1 text-text-secondary",
+                className,
+            )}
+        >
+            {children}
+        </div>
+    );
 }
 ListFooterRoot.displayName = "List.Footer";
 
 // ── List.Footer.Icon ──────────────────────────────────────────────────────────
 
 interface ListFooterIconProps {
-  children: React.ReactNode;
-  className?: string;
+    children: React.ReactNode;
+    className?: string;
 }
 
 function ListFooterIcon({ children, className }: ListFooterIconProps) {
-  return (
-    <span aria-hidden="true" className={cn("shrink-0", className)}>
-      {children}
-    </span>
-  );
+    return (
+        <span aria-hidden="true" className={cn("shrink-0", className)}>
+            {children}
+        </span>
+    );
 }
 ListFooterIcon.displayName = "List.Footer.Icon";
 
 // ── List.Footer compound ──────────────────────────────────────────────────────
 
 const ListFooter = Object.assign(ListFooterRoot, {
-  Icon: ListFooterIcon,
+    Icon: ListFooterIcon,
 });
 
 // ── List compound export ──────────────────────────────────────────────────────
@@ -205,7 +232,7 @@ const ListFooter = Object.assign(ListFooterRoot, {
  * </List>
  */
 export const List = Object.assign(ListRoot, {
-  Item: ListItem,
-  Footer: ListFooter,
-  Divider: ListDivider,
+    Item: ListItem,
+    Footer: ListFooter,
+    Divider: ListDivider,
 });

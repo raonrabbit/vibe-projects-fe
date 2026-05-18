@@ -287,7 +287,10 @@ async function createButtonSet(): Promise<ComponentSetNode> {
             comp.name = `Variant=${def.variant}, Size=${def.size}`;
             figma.currentPage.appendChild(comp);
 
-            applyAutoLayout(comp, { paddingH: def.paddingH, paddingV: def.paddingV });
+            applyAutoLayout(comp, {
+                paddingH: def.paddingH,
+                paddingV: def.paddingV,
+            });
             comp.cornerRadius = 8;
             comp.fills = def.bg ? colorFill(def.bg, def.bgVar) : [];
             if (def.border) {
@@ -296,7 +299,14 @@ async function createButtonSet(): Promise<ComponentSetNode> {
                 comp.strokeAlign = "INSIDE";
             }
             comp.appendChild(
-                makeText(def.variant, def.fontSize, "Medium", def.fg, def.fgVar, def.fontSizeVar),
+                makeText(
+                    def.variant,
+                    def.fontSize,
+                    "Medium",
+                    def.fg,
+                    def.fgVar,
+                    def.fontSizeVar,
+                ),
             );
             grid[col].push(comp);
         }
@@ -329,7 +339,11 @@ async function createButtonSet(): Promise<ComponentSetNode> {
     const set = figma.combineAsVariants(components, figma.currentPage);
     set.name = "Button";
     set.fills = [{ type: "SOLID", color: { r: 0.973, g: 0.976, b: 0.984 } }];
-    set.paddingTop = set.paddingBottom = set.paddingLeft = set.paddingRight = 20;
+    set.paddingTop =
+        set.paddingBottom =
+        set.paddingLeft =
+        set.paddingRight =
+            20;
     set.itemSpacing = ROW_GAP;
     return set;
 }
@@ -612,7 +626,14 @@ async function createDividerSet(): Promise<ComponentSetNode> {
         leftLine.layoutSizingHorizontal = "FILL";
 
         comp.appendChild(
-            makeText("또는", 12, "Regular", "#6b7280", "text-secondary", "fontSize/xs"),
+            makeText(
+                "또는",
+                12,
+                "Regular",
+                "#6b7280",
+                "text-secondary",
+                "fontSize/xs",
+            ),
         );
 
         const rightLine = figma.createFrame();
@@ -653,7 +674,7 @@ async function createDividerSet(): Promise<ComponentSetNode> {
 
 async function createSpinnerSet(): Promise<ComponentSetNode> {
     const defs = [
-        { size: "SM", dim: 16, r: 6, cx: 8,  cy: 8,  sw: 2 },
+        { size: "SM", dim: 16, r: 6, cx: 8, cy: 8, sw: 2 },
         { size: "MD", dim: 24, r: 9, cx: 12, cy: 12, sw: 2 },
         { size: "LG", dim: 32, r: 12, cx: 16, cy: 16, sw: 3 },
     ];
@@ -672,10 +693,12 @@ async function createSpinnerSet(): Promise<ComponentSetNode> {
 
         // full-circle background ring (4 cubic bezier arcs)
         const bgVec = figma.createVector();
-        bgVec.vectorPaths = [{
-            windingRule: "NONZERO",
-            data: `M ${cx} ${cy - r} C ${cx + kr} ${cy - r} ${cx + r} ${cy - kr} ${cx + r} ${cy} C ${cx + r} ${cy + kr} ${cx + kr} ${cy + r} ${cx} ${cy + r} C ${cx - kr} ${cy + r} ${cx - r} ${cy + kr} ${cx - r} ${cy} C ${cx - r} ${cy - kr} ${cx - kr} ${cy - r} ${cx} ${cy - r} Z`,
-        }];
+        bgVec.vectorPaths = [
+            {
+                windingRule: "NONZERO",
+                data: `M ${cx} ${cy - r} C ${cx + kr} ${cy - r} ${cx + r} ${cy - kr} ${cx + r} ${cy} C ${cx + r} ${cy + kr} ${cx + kr} ${cy + r} ${cx} ${cy + r} C ${cx - kr} ${cy + r} ${cx - r} ${cy + kr} ${cx - r} ${cy} C ${cx - r} ${cy - kr} ${cx - kr} ${cy - r} ${cx} ${cy - r} Z`,
+            },
+        ];
         bgVec.fills = [];
         bgVec.strokes = colorFill("#d1d5db", "border-strong");
         bgVec.strokeWeight = d.sw;
@@ -685,10 +708,12 @@ async function createSpinnerSet(): Promise<ComponentSetNode> {
 
         // 3/4-circle accent arc (CW: top → right → bottom → left)
         const accentVec = figma.createVector();
-        accentVec.vectorPaths = [{
-            windingRule: "NONZERO",
-            data: `M ${cx} ${cy - r} C ${cx + kr} ${cy - r} ${cx + r} ${cy - kr} ${cx + r} ${cy} C ${cx + r} ${cy + kr} ${cx + kr} ${cy + r} ${cx} ${cy + r} C ${cx - kr} ${cy + r} ${cx - r} ${cy + kr} ${cx - r} ${cy}`,
-        }];
+        accentVec.vectorPaths = [
+            {
+                windingRule: "NONZERO",
+                data: `M ${cx} ${cy - r} C ${cx + kr} ${cy - r} ${cx + r} ${cy - kr} ${cx + r} ${cy} C ${cx + r} ${cy + kr} ${cx + kr} ${cy + r} ${cx} ${cy + r} C ${cx - kr} ${cy + r} ${cx - r} ${cy + kr} ${cx - r} ${cy}`,
+            },
+        ];
         accentVec.fills = [];
         accentVec.strokes = colorFill("#059669", "accent");
         accentVec.strokeWeight = d.sw;
@@ -752,12 +777,24 @@ async function createInputSet(): Promise<ComponentSetNode> {
         const comp = figma.createComponent();
         comp.name = def.variant;
         figma.currentPage.appendChild(comp);
-        applyAutoLayout(comp, { direction: "VERTICAL", gap: 6, align: "MIN", counterAlign: "MIN" });
+        applyAutoLayout(comp, {
+            direction: "VERTICAL",
+            gap: 6,
+            align: "MIN",
+            counterAlign: "MIN",
+        });
         comp.opacity = def.opacity;
 
         // label
         comp.appendChild(
-            makeText("레이블", 14, "Medium", "#111827", "text-primary", "fontSize/sm"),
+            makeText(
+                "레이블",
+                14,
+                "Medium",
+                "#111827",
+                "text-primary",
+                "fontSize/sm",
+            ),
         );
 
         // input field
@@ -777,13 +814,27 @@ async function createInputSet(): Promise<ComponentSetNode> {
         field.strokeAlign = "INSIDE";
         field.cornerRadius = 8;
         field.appendChild(
-            makeText("입력값을 작성해 주세요", 14, "Regular", "#9ca3af", "text-disabled", "fontSize/sm"),
+            makeText(
+                "입력값을 작성해 주세요",
+                14,
+                "Regular",
+                "#9ca3af",
+                "text-disabled",
+                "fontSize/sm",
+            ),
         );
         comp.appendChild(field);
 
         // hint / error text
         comp.appendChild(
-            makeText(def.hintText, 12, "Regular", def.hintHex, def.hintVar, "fontSize/xs"),
+            makeText(
+                def.hintText,
+                12,
+                "Regular",
+                def.hintHex,
+                def.hintVar,
+                "fontSize/xs",
+            ),
         );
 
         comp.x = colX;
@@ -804,7 +855,11 @@ async function createInputSet(): Promise<ComponentSetNode> {
 
 // ── LIST ──────────────────────────────────────────────────────────────────────
 
-function makeListItem(title: string, description?: string, width = 0): FrameNode {
+function makeListItem(
+    title: string,
+    description?: string,
+    width = 0,
+): FrameNode {
     const row = figma.createFrame();
     applyAutoLayout(row, {
         direction: "HORIZONTAL",
@@ -825,13 +880,32 @@ function makeListItem(title: string, description?: string, width = 0): FrameNode
 
     // content
     const content = figma.createFrame();
-    applyAutoLayout(content, { direction: "VERTICAL", gap: 2, align: "MIN", counterAlign: "MIN" });
+    applyAutoLayout(content, {
+        direction: "VERTICAL",
+        gap: 2,
+        align: "MIN",
+        counterAlign: "MIN",
+    });
     content.fills = [];
-    const titleNode = makeText(title, 14, "Medium", "#111827", "text-primary", "fontSize/sm");
+    const titleNode = makeText(
+        title,
+        14,
+        "Medium",
+        "#111827",
+        "text-primary",
+        "fontSize/sm",
+    );
     content.appendChild(titleNode);
     if (description) {
         content.appendChild(
-            makeText(description, 12, "Regular", "#6b7280", "text-secondary", "fontSize/xs"),
+            makeText(
+                description,
+                12,
+                "Regular",
+                "#6b7280",
+                "text-secondary",
+                "fontSize/xs",
+            ),
         );
     }
     row.appendChild(content);
@@ -858,7 +932,12 @@ async function createListComponent(): Promise<ComponentNode> {
     const comp = figma.createComponent();
     comp.name = "List";
     figma.currentPage.appendChild(comp);
-    applyAutoLayout(comp, { direction: "VERTICAL", gap: 0, align: "MIN", counterAlign: "MIN" });
+    applyAutoLayout(comp, {
+        direction: "VERTICAL",
+        gap: 0,
+        align: "MIN",
+        counterAlign: "MIN",
+    });
     comp.counterAxisSizingMode = "FIXED";
     comp.resize(W, comp.height);
     comp.fills = colorFill("#ffffff", "surface");
@@ -900,7 +979,14 @@ async function createListComponent(): Promise<ComponentNode> {
     footer.strokeWeight = 1;
     footer.strokeAlign = "INSIDE";
     footer.appendChild(
-        makeText("마지막 업데이트: 5분 전", 12, "Regular", "#6b7280", "text-secondary", "fontSize/xs"),
+        makeText(
+            "마지막 업데이트: 5분 전",
+            12,
+            "Regular",
+            "#6b7280",
+            "text-secondary",
+            "fontSize/xs",
+        ),
     );
     comp.appendChild(footer);
     footer.layoutSizingHorizontal = "FILL";
@@ -913,14 +999,21 @@ async function createListComponent(): Promise<ComponentNode> {
 import { lucideIconNodes } from "./icon-data";
 
 // Convert a single lucide iconNode element to an SVG path `d` string.
-function elemToPath(tag: string, attrs: Readonly<Record<string, string | number>>): string | null {
+function elemToPath(
+    tag: string,
+    attrs: Readonly<Record<string, string | number>>,
+): string | null {
     const n = (k: string) => Number(attrs[k] ?? 0);
     switch (tag) {
-        case "path": return String(attrs.d ?? "");
-        case "line": return `M ${n("x1")} ${n("y1")} L ${n("x2")} ${n("y2")}`;
+        case "path":
+            return String(attrs.d ?? "");
+        case "line":
+            return `M ${n("x1")} ${n("y1")} L ${n("x2")} ${n("y2")}`;
         case "polyline":
         case "polygon": {
-            const pts = String(attrs.points ?? "").trim().split(/[\s,]+/);
+            const pts = String(attrs.points ?? "")
+                .trim()
+                .split(/[\s,]+/);
             const segs = pts.reduce<string[]>((acc, v, i) => {
                 if (i % 2 === 0) acc.push(`${i === 0 ? "M" : "L"} ${v}`);
                 else acc[acc.length - 1] += ` ${v}`;
@@ -929,27 +1022,36 @@ function elemToPath(tag: string, attrs: Readonly<Record<string, string | number>
             return segs.join(" ") + (tag === "polygon" ? " Z" : "");
         }
         case "circle": {
-            const cx = n("cx"), cy = n("cy"), r = n("r"), k = 0.5522847498 * r;
+            const cx = n("cx"),
+                cy = n("cy"),
+                r = n("r"),
+                k = 0.5522847498 * r;
             return `M ${cx} ${cy - r} C ${cx + k} ${cy - r} ${cx + r} ${cy - k} ${cx + r} ${cy} C ${cx + r} ${cy + k} ${cx + k} ${cy + r} ${cx} ${cy + r} C ${cx - k} ${cy + r} ${cx - r} ${cy + k} ${cx - r} ${cy} C ${cx - r} ${cy - k} ${cx - k} ${cy - r} ${cx} ${cy - r} Z`;
         }
         case "rect": {
-            const x = n("x"), y = n("y"), w = n("width"), h = n("height"), rx = n("rx");
-            if (!rx) return `M ${x} ${y} L ${x + w} ${y} L ${x + w} ${y + h} L ${x} ${y + h} Z`;
+            const x = n("x"),
+                y = n("y"),
+                w = n("width"),
+                h = n("height"),
+                rx = n("rx");
+            if (!rx)
+                return `M ${x} ${y} L ${x + w} ${y} L ${x + w} ${y + h} L ${x} ${y + h} Z`;
             return `M ${x + rx} ${y} L ${x + w - rx} ${y} Q ${x + w} ${y} ${x + w} ${y + rx} L ${x + w} ${y + h - rx} Q ${x + w} ${y + h} ${x + w - rx} ${y + h} L ${x + rx} ${y + h} Q ${x} ${y + h} ${x} ${y + h - rx} L ${x} ${y + rx} Q ${x} ${y} ${x + rx} ${y} Z`;
         }
-        default: return null;
+        default:
+            return null;
     }
 }
 
 // ICON_DEFS derived from lucide-react via scripts/gen-icon-data.mjs
-const ICON_DEFS: { name: string; paths: string[] }[] = Object.entries(lucideIconNodes).map(
-    ([name, node]) => ({
-        name,
-        paths: node
-            .map(([tag, attrs]) => elemToPath(tag, attrs))
-            .filter((p): p is string => p !== null && p.length > 0),
-    }),
-);
+const ICON_DEFS: { name: string; paths: string[] }[] = Object.entries(
+    lucideIconNodes,
+).map(([name, node]) => ({
+    name,
+    paths: node
+        .map(([tag, attrs]) => elemToPath(tag, attrs))
+        .filter((p): p is string => p !== null && p.length > 0),
+}));
 
 async function createIconSet(): Promise<ComponentSetNode> {
     const ICON_SIZE = 24;
@@ -1013,8 +1115,8 @@ async function createSkeletonComponent(): Promise<ComponentNode> {
 async function createCheckboxSet(): Promise<ComponentSetNode> {
     const defs = [
         { state: "Unchecked", checked: false, opacity: 1 },
-        { state: "Checked",   checked: true,  opacity: 1 },
-        { state: "Disabled",  checked: false, opacity: 0.4 },
+        { state: "Checked", checked: true, opacity: 1 },
+        { state: "Disabled", checked: false, opacity: 0.4 },
     ];
     const components: ComponentNode[] = [];
     let colX = 0;
@@ -1023,14 +1125,20 @@ async function createCheckboxSet(): Promise<ComponentSetNode> {
         const comp = figma.createComponent();
         comp.name = `State=${def.state}`;
         figma.currentPage.appendChild(comp);
-        applyAutoLayout(comp, { gap: 8, align: "CENTER", counterAlign: "CENTER" });
+        applyAutoLayout(comp, {
+            gap: 8,
+            align: "CENTER",
+            counterAlign: "CENTER",
+        });
         comp.fills = [];
         comp.opacity = def.opacity;
 
         const box = figma.createFrame();
         box.resize(16, 16);
         box.cornerRadius = 3;
-        box.fills = def.checked ? colorFill("#059669", "accent") : colorFill("#ffffff", "surface");
+        box.fills = def.checked
+            ? colorFill("#059669", "accent")
+            : colorFill("#ffffff", "surface");
         box.strokes = def.checked
             ? colorFill("#059669", "accent")
             : colorFill("#e5e7eb", "border");
@@ -1040,7 +1148,9 @@ async function createCheckboxSet(): Promise<ComponentSetNode> {
 
         if (def.checked) {
             const check = figma.createVector();
-            check.vectorPaths = [{ windingRule: "NONZERO", data: "M 2.5 8 L 6.5 12 L 13.5 4" }];
+            check.vectorPaths = [
+                { windingRule: "NONZERO", data: "M 2.5 8 L 6.5 12 L 13.5 4" },
+            ];
             check.fills = [];
             check.strokes = colorFill("#ffffff", "accent-foreground");
             check.strokeWeight = 1.5;
@@ -1050,7 +1160,14 @@ async function createCheckboxSet(): Promise<ComponentSetNode> {
         }
 
         comp.appendChild(
-            makeText("레이블", 14, "Regular", "#111827", "text-primary", "fontSize/sm"),
+            makeText(
+                "레이블",
+                14,
+                "Regular",
+                "#111827",
+                "text-primary",
+                "fontSize/sm",
+            ),
         );
 
         comp.x = colX;
@@ -1061,7 +1178,11 @@ async function createCheckboxSet(): Promise<ComponentSetNode> {
     const set = figma.combineAsVariants(components, figma.currentPage);
     set.name = "Checkbox";
     set.fills = [{ type: "SOLID", color: { r: 0.973, g: 0.976, b: 0.984 } }];
-    set.paddingTop = set.paddingBottom = set.paddingLeft = set.paddingRight = 20;
+    set.paddingTop =
+        set.paddingBottom =
+        set.paddingLeft =
+        set.paddingRight =
+            20;
     return set;
 }
 
@@ -1072,14 +1193,24 @@ async function createTabComponent(): Promise<ComponentNode> {
     const comp = figma.createComponent();
     comp.name = "Tab";
     figma.currentPage.appendChild(comp);
-    applyAutoLayout(comp, { direction: "VERTICAL", gap: 0, align: "MIN", counterAlign: "MIN" });
+    applyAutoLayout(comp, {
+        direction: "VERTICAL",
+        gap: 0,
+        align: "MIN",
+        counterAlign: "MIN",
+    });
     comp.counterAxisSizingMode = "FIXED";
     comp.resize(W, comp.height);
     comp.fills = colorFill("#ffffff", "surface");
 
     // Tab list row
     const tabList = figma.createFrame();
-    applyAutoLayout(tabList, { direction: "HORIZONTAL", gap: 0, align: "MIN", counterAlign: "CENTER" });
+    applyAutoLayout(tabList, {
+        direction: "HORIZONTAL",
+        gap: 0,
+        align: "MIN",
+        counterAlign: "CENTER",
+    });
     tabList.fills = [];
     comp.appendChild(tabList);
     tabList.layoutSizingHorizontal = "FILL";
@@ -1091,7 +1222,12 @@ async function createTabComponent(): Promise<ComponentNode> {
     ];
     for (const tab of tabs) {
         const trigger = figma.createFrame();
-        applyAutoLayout(trigger, { paddingH: 16, paddingV: 10, align: "CENTER", counterAlign: "CENTER" });
+        applyAutoLayout(trigger, {
+            paddingH: 16,
+            paddingV: 10,
+            align: "CENTER",
+            counterAlign: "CENTER",
+        });
         trigger.fills = [];
         if (tab.active) {
             trigger.strokes = colorFill("#059669", "accent");
@@ -1129,7 +1265,14 @@ async function createTabComponent(): Promise<ComponentNode> {
     });
     panel.fills = [];
     panel.appendChild(
-        makeText("탭 패널 콘텐츠", 14, "Regular", "#6b7280", "text-secondary", "fontSize/sm"),
+        makeText(
+            "탭 패널 콘텐츠",
+            14,
+            "Regular",
+            "#6b7280",
+            "text-secondary",
+            "fontSize/sm",
+        ),
     );
     comp.appendChild(panel);
     panel.layoutSizingHorizontal = "FILL";
@@ -1150,7 +1293,12 @@ async function createSegmentedControlComponent(): Promise<ComponentNode> {
     const options = ["첫 번째", "두 번째", "세 번째"];
     for (let i = 0; i < options.length; i++) {
         const segment = figma.createFrame();
-        applyAutoLayout(segment, { paddingH: 16, paddingV: 6, align: "CENTER", counterAlign: "CENTER" });
+        applyAutoLayout(segment, {
+            paddingH: 16,
+            paddingV: 6,
+            align: "CENTER",
+            counterAlign: "CENTER",
+        });
         segment.cornerRadius = 8;
         segment.fills = i === 0 ? colorFill("#ffffff", "surface") : [];
         if (i === 0) {
@@ -1191,7 +1339,12 @@ async function createTableComponent(): Promise<ComponentNode> {
     const comp = figma.createComponent();
     comp.name = "Table";
     figma.currentPage.appendChild(comp);
-    applyAutoLayout(comp, { direction: "VERTICAL", gap: 0, align: "MIN", counterAlign: "MIN" });
+    applyAutoLayout(comp, {
+        direction: "VERTICAL",
+        gap: 0,
+        align: "MIN",
+        counterAlign: "MIN",
+    });
     comp.counterAxisSizingMode = "FIXED";
     comp.resize(W, comp.height);
     comp.fills = colorFill("#ffffff", "surface");
@@ -1203,14 +1356,24 @@ async function createTableComponent(): Promise<ComponentNode> {
 
     function makeRow(cells: string[], isHeader: boolean): FrameNode {
         const row = figma.createFrame();
-        applyAutoLayout(row, { direction: "HORIZONTAL", gap: 0, align: "MIN", counterAlign: "CENTER" });
+        applyAutoLayout(row, {
+            direction: "HORIZONTAL",
+            gap: 0,
+            align: "MIN",
+            counterAlign: "CENTER",
+        });
         row.fills = isHeader ? colorFill("#f9fafb", "surface-raised") : [];
         row.strokes = colorFill("#e5e7eb", "border");
         row.strokeWeight = 1;
         row.strokeAlign = "INSIDE";
         for (let i = 0; i < cells.length; i++) {
             const cell = figma.createFrame();
-            applyAutoLayout(cell, { paddingH: 16, paddingV: 12, align: "MIN", counterAlign: "CENTER" });
+            applyAutoLayout(cell, {
+                paddingH: 16,
+                paddingV: 12,
+                align: "MIN",
+                counterAlign: "CENTER",
+            });
             cell.primaryAxisSizingMode = "FIXED";
             cell.fills = [];
             cell.resize(colWidths[i], cell.height);
@@ -1268,7 +1431,14 @@ async function createModalComponent(): Promise<ComponentNode> {
     comp.cornerRadius = 24;
 
     comp.appendChild(
-        makeText("모달 제목", 24, "Semi Bold", "#111827", "text-primary", "fontSize/2xl"),
+        makeText(
+            "모달 제목",
+            24,
+            "Semi Bold",
+            "#111827",
+            "text-primary",
+            "fontSize/2xl",
+        ),
     );
 
     const desc = makeText(
@@ -1302,7 +1472,14 @@ async function createModalComponent(): Promise<ComponentNode> {
     cancelBtn.strokeAlign = "INSIDE";
     cancelBtn.cornerRadius = 8;
     cancelBtn.appendChild(
-        makeText("취소", 14, "Medium", "#111827", "text-primary", "fontSize/sm"),
+        makeText(
+            "취소",
+            14,
+            "Medium",
+            "#111827",
+            "text-primary",
+            "fontSize/sm",
+        ),
     );
     actions.appendChild(cancelBtn);
 
@@ -1311,7 +1488,14 @@ async function createModalComponent(): Promise<ComponentNode> {
     confirmBtn.fills = colorFill("#059669", "accent");
     confirmBtn.cornerRadius = 8;
     confirmBtn.appendChild(
-        makeText("확인", 14, "Medium", "#ffffff", "accent-foreground", "fontSize/sm"),
+        makeText(
+            "확인",
+            14,
+            "Medium",
+            "#ffffff",
+            "accent-foreground",
+            "fontSize/sm",
+        ),
     );
     actions.appendChild(confirmBtn);
 
@@ -1353,13 +1537,32 @@ async function createToastComponent(): Promise<ComponentNode> {
     ];
 
     const content = figma.createFrame();
-    applyAutoLayout(content, { direction: "VERTICAL", gap: 2, align: "MIN", counterAlign: "MIN" });
+    applyAutoLayout(content, {
+        direction: "VERTICAL",
+        gap: 2,
+        align: "MIN",
+        counterAlign: "MIN",
+    });
     content.fills = [];
     content.appendChild(
-        makeText("알림 제목", 14, "Medium", "#111827", "text-primary", "fontSize/sm"),
+        makeText(
+            "알림 제목",
+            14,
+            "Medium",
+            "#111827",
+            "text-primary",
+            "fontSize/sm",
+        ),
     );
     content.appendChild(
-        makeText("알림 설명 텍스트입니다.", 14, "Regular", "#6b7280", "text-secondary", "fontSize/sm"),
+        makeText(
+            "알림 설명 텍스트입니다.",
+            14,
+            "Regular",
+            "#6b7280",
+            "text-secondary",
+            "fontSize/sm",
+        ),
     );
     comp.appendChild(content);
     content.layoutSizingHorizontal = "FILL";
@@ -1389,21 +1592,21 @@ export async function generateComponents(
     let pageY = 100;
 
     const usageHints: Record<string, string> = {
-        Button:           `<Button variant="primary" size="md">Label</Button>`,
-        Badge:            `<Badge variant="primary" size="sm">텍스트</Badge>`,
-        Card:             `<Card title="제목" description="설명" />`,
-        Divider:          `<Divider />  ·  <Divider variant="labeled" />  ·  <Divider variant="vertical" />`,
-        Spinner:          `<Spinner size="md" />`,
-        Input:            `<Input label="레이블" placeholder="입력값을 작성해 주세요" state="default" />`,
-        List:             `<List items={[{ title: "프로필", description: "계정 설정 관리" }]} />`,
-        Icon:             `<Icon name="Search" size={24} />`,
-        Skeleton:         `<Skeleton width={240} height={16} />`,
-        Checkbox:         `<Checkbox label="레이블" checked={false} onChange={fn} />`,
-        Tab:              `<Tab tabs={["개요", "상세", "설정"]} activeIndex={0} />`,
+        Button: `<Button variant="primary" size="md">Label</Button>`,
+        Badge: `<Badge variant="primary" size="sm">텍스트</Badge>`,
+        Card: `<Card title="제목" description="설명" />`,
+        Divider: `<Divider />  ·  <Divider variant="labeled" />  ·  <Divider variant="vertical" />`,
+        Spinner: `<Spinner size="md" />`,
+        Input: `<Input label="레이블" placeholder="입력값을 작성해 주세요" state="default" />`,
+        List: `<List items={[{ title: "프로필", description: "계정 설정 관리" }]} />`,
+        Icon: `<Icon name="Search" size={24} />`,
+        Skeleton: `<Skeleton width={240} height={16} />`,
+        Checkbox: `<Checkbox label="레이블" checked={false} onChange={fn} />`,
+        Tab: `<Tab tabs={["개요", "상세", "설정"]} activeIndex={0} />`,
         SegmentedControl: `<SegmentedControl options={["첫 번째", "두 번째", "세 번째"]} value={0} />`,
-        Table:            `<Table columns={cols} rows={rows} />`,
-        Modal:            `<Modal title="제목" onConfirm={fn} onCancel={fn} />`,
-        Toast:            `<Toast title="알림" description="설명" />`,
+        Table: `<Table columns={cols} rows={rows} />`,
+        Modal: `<Modal title="제목" onConfirm={fn} onCancel={fn} />`,
+        Toast: `<Toast title="알림" description="설명" />`,
     };
 
     const placeSection = async (
@@ -1421,7 +1624,7 @@ export async function generateComponents(
             t.fontName = { family: "Inter", style: "Regular" };
             t.fontSize = 11;
             t.characters = hint;
-            t.fills = [{ type: "SOLID", color: { r: 0.42, g: 0.45, b: 0.50 } }];
+            t.fills = [{ type: "SOLID", color: { r: 0.42, g: 0.45, b: 0.5 } }];
             figma.currentPage.appendChild(t);
             t.x = PAGE_X;
             t.y = pageY;
