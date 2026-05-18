@@ -5,8 +5,10 @@ import { type ButtonHTMLAttributes, forwardRef } from "react";
 import { cn } from "../lib/cn";
 import { Spinner } from "./Spinner";
 
-export interface IconButtonProps
-    extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "aria-label"> {
+export interface IconButtonProps extends Omit<
+    ButtonHTMLAttributes<HTMLButtonElement>,
+    "aria-label"
+> {
     /**
      * Visual style of the button.
      * - `ghost`     — transparent, 아이콘 버튼 기본값
