@@ -46,32 +46,13 @@ chore(config): add md-check hook to settings        → branch: chore/md-check-h
 
 1. **Understand the changes:** run `git status` and `git diff`.
 
-2. **Lint check — run before anything else.**
+2. **Fix — run before anything else.**
 
     2a. Identify which workspaces have changed files (e.g., `apps/dev-news`, `packages/ui`).
 
-    2b. For each affected workspace, run ESLint with autofix:
-    ```
-    pnpm eslint --fix <changed files in this workspace>
-    ```
-    Autofixable violations (import order, formatting) are fixed silently — no need to report them.
+    2b. For each affected workspace, run `/fix` from that workspace's root directory.
 
-    2c. After autofix, re-run lint to check for remaining errors:
-    ```
-    pnpm eslint <changed files in this workspace>
-    ```
-
-    2d. If errors remain, classify each one:
-    - **Related to the current changes** → diagnose root cause and fix. Do not patch over the symptom (e.g., do not add `// eslint-disable`).
-    - **Unrelated to the current changes** (pre-existing in untouched files) → report to the user:
-        ```
-        ESLint 오류가 발견됐습니다. 이번 변경과 무관한 파일에서 발생했습니다:
-        - src/widgets/foo/ui/Foo.tsx: no-unused-vars
-        어떻게 할까요? (수정 / 무시하고 진행 / 중단)
-        ```
-        Wait for the user's answer before proceeding.
-
-    2e. **Do not proceed to step 3 until lint is clean** (or the user has explicitly approved skipping).
+    2c. **Do not proceed to step 3 until `/fix` completes cleanly** (or the user has explicitly approved skipping).
 
 3. **Group by scope.** Analyze all modified/untracked files and group them into logical commit units. Each group gets:
     - A proposed type + scope (e.g., `chore(config)`)
@@ -121,6 +102,8 @@ chore(config): add md-check hook to settings        → branch: chore/md-check-h
     6d. **Open a PR** with `gh pr create`: - Title: commit message of the primary (or only) commit in this PR - Body: bullet-point summary of what changed and why - Base branch: `main`
 
 7. **Return all PR URLs** at the end so the user can review and merge each one.
+
+8. **Return to main:** Run `git checkout main` after all PRs are created.
 
 ## Safety Rules
 
