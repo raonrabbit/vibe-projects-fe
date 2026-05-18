@@ -49,8 +49,6 @@ export type { SkeletonProps } from "./components/Skeleton";
 export { Skeleton } from "./components/Skeleton";
 export type { SpinnerProps } from "./components/Spinner";
 export { Spinner } from "./components/Spinner";
-export type { TableProps } from "./components/Table";
-export { Table } from "./components/Table";
 export type {
   TabListProps,
   TabPanelProps,
@@ -58,6 +56,8 @@ export type {
   TabTriggerProps,
 } from "./components/Tab";
 export { Tab } from "./components/Tab";
+export type { TableProps } from "./components/Table";
+export { Table } from "./components/Table";
 export type {
   ToastActionProps,
   ToastDescriptionProps,
