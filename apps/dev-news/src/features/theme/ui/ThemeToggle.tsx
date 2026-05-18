@@ -30,11 +30,7 @@ export function ThemeToggle() {
 
     return (
         <IconButton aria-label="테마 전환" onClick={toggle}>
-            {theme === "light" ? (
-                <MoonIcon size={16} />
-            ) : (
-                <SunIcon size={16} />
-            )}
+            {theme === "light" ? <MoonIcon size={16} /> : <SunIcon size={16} />}
         </IconButton>
     );
 }
