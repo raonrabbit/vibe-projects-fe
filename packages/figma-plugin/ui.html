@@ -9,7 +9,10 @@
                 padding: 0;
             }
             body {
-                font-family: "Inter", -apple-system, sans-serif;
+                font-family:
+                    "Inter",
+                    -apple-system,
+                    sans-serif;
                 font-size: 12px;
                 background: #1e1e1e;
                 color: #e0e0e0;
@@ -170,7 +173,9 @@
 
         <div class="btn-row">
             <button class="btn" id="importBtn">Import Tokens</button>
-            <button class="btn btn-ghost" id="showcaseBtn">Token Showcase</button>
+            <button class="btn btn-ghost" id="showcaseBtn">
+                Token Showcase
+            </button>
         </div>
         <p class="note">※ Variables 생성은 Figma Professional 이상 필요</p>
 
@@ -186,18 +191,33 @@
         </div>
 
         <div class="checkbox-grid">
-            <label><input type="checkbox" id="cbButton" checked /> Button</label>
+            <label
+                ><input type="checkbox" id="cbButton" checked /> Button</label
+            >
             <label><input type="checkbox" id="cbBadge" checked /> Badge</label>
             <label><input type="checkbox" id="cbCard" checked /> Card</label>
             <label><input type="checkbox" id="cbInput" checked /> Input</label>
             <label><input type="checkbox" id="cbList" checked /> List</label>
-            <label><input type="checkbox" id="cbDivider" checked /> Divider</label>
-            <label><input type="checkbox" id="cbSpinner" checked /> Spinner</label>
+            <label
+                ><input type="checkbox" id="cbDivider" checked /> Divider</label
+            >
+            <label
+                ><input type="checkbox" id="cbSpinner" checked /> Spinner</label
+            >
             <label><input type="checkbox" id="cbIcon" checked /> Icon</label>
-            <label><input type="checkbox" id="cbSkeleton" checked /> Skeleton</label>
-            <label><input type="checkbox" id="cbCheckbox" checked /> Checkbox</label>
+            <label
+                ><input type="checkbox" id="cbSkeleton" checked />
+                Skeleton</label
+            >
+            <label
+                ><input type="checkbox" id="cbCheckbox" checked />
+                Checkbox</label
+            >
             <label><input type="checkbox" id="cbTab" checked /> Tab</label>
-            <label><input type="checkbox" id="cbSegmentedControl" checked /> SegmentedControl</label>
+            <label
+                ><input type="checkbox" id="cbSegmentedControl" checked />
+                SegmentedControl</label
+            >
             <label><input type="checkbox" id="cbTable" checked /> Table</label>
             <label><input type="checkbox" id="cbModal" checked /> Modal</label>
             <label><input type="checkbox" id="cbToast" checked /> Toast</label>
@@ -215,17 +235,37 @@
             const allBtns = [importBtn, showcaseBtn, generateBtn];
 
             const cbIds = [
-                "cbButton", "cbBadge", "cbCard", "cbInput", "cbList",
-                "cbDivider", "cbSpinner", "cbIcon", "cbSkeleton", "cbCheckbox",
-                "cbTab", "cbSegmentedControl", "cbTable", "cbModal", "cbToast",
+                "cbButton",
+                "cbBadge",
+                "cbCard",
+                "cbInput",
+                "cbList",
+                "cbDivider",
+                "cbSpinner",
+                "cbIcon",
+                "cbSkeleton",
+                "cbCheckbox",
+                "cbTab",
+                "cbSegmentedControl",
+                "cbTable",
+                "cbModal",
+                "cbToast",
             ];
 
-            document.getElementById("selectAllBtn").addEventListener("click", () => {
-                cbIds.forEach((id) => (document.getElementById(id).checked = true));
-            });
-            document.getElementById("selectNoneBtn").addEventListener("click", () => {
-                cbIds.forEach((id) => (document.getElementById(id).checked = false));
-            });
+            document
+                .getElementById("selectAllBtn")
+                .addEventListener("click", () => {
+                    cbIds.forEach(
+                        (id) => (document.getElementById(id).checked = true),
+                    );
+                });
+            document
+                .getElementById("selectNoneBtn")
+                .addEventListener("click", () => {
+                    cbIds.forEach(
+                        (id) => (document.getElementById(id).checked = false),
+                    );
+                });
 
             function setStatus(msg, cls = "") {
                 statusEl.textContent = msg;
@@ -238,23 +278,38 @@
             importBtn.addEventListener("click", () => {
                 setStatus("Importing tokens...", "working");
                 setBusy(true);
-                parent.postMessage({ pluginMessage: { type: "import-tokens" } }, "*");
+                parent.postMessage(
+                    { pluginMessage: { type: "import-tokens" } },
+                    "*",
+                );
             });
 
             showcaseBtn.addEventListener("click", () => {
                 setStatus("Generating token showcase...", "working");
                 setBusy(true);
-                parent.postMessage({ pluginMessage: { type: "generate-showcase" } }, "*");
+                parent.postMessage(
+                    { pluginMessage: { type: "generate-showcase" } },
+                    "*",
+                );
             });
 
             generateBtn.addEventListener("click", () => {
                 const map = {
-                    cbButton: "Button", cbBadge: "Badge", cbCard: "Card",
-                    cbInput: "Input", cbList: "List", cbDivider: "Divider",
-                    cbSpinner: "Spinner", cbIcon: "Icon", cbSkeleton: "Skeleton",
-                    cbCheckbox: "Checkbox", cbTab: "Tab",
-                    cbSegmentedControl: "SegmentedControl", cbTable: "Table",
-                    cbModal: "Modal", cbToast: "Toast",
+                    cbButton: "Button",
+                    cbBadge: "Badge",
+                    cbCard: "Card",
+                    cbInput: "Input",
+                    cbList: "List",
+                    cbDivider: "Divider",
+                    cbSpinner: "Spinner",
+                    cbIcon: "Icon",
+                    cbSkeleton: "Skeleton",
+                    cbCheckbox: "Checkbox",
+                    cbTab: "Tab",
+                    cbSegmentedControl: "SegmentedControl",
+                    cbTable: "Table",
+                    cbModal: "Modal",
+                    cbToast: "Toast",
                 };
                 const components = cbIds
                     .filter((id) => document.getElementById(id).checked)
@@ -266,7 +321,12 @@
                 setStatus("Generating...", "working");
                 setBusy(true);
                 parent.postMessage(
-                    { pluginMessage: { type: "generate-components", components } },
+                    {
+                        pluginMessage: {
+                            type: "generate-components",
+                            components,
+                        },
+                    },
                     "*",
                 );
             });
