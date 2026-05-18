@@ -2,13 +2,16 @@ import { type HTMLAttributes } from "react";
 
 import { cn } from "../lib/cn";
 
-export interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {}
+export type SkeletonProps = HTMLAttributes<HTMLDivElement>;
 
 export function Skeleton({ className, ...props }: SkeletonProps) {
-  return (
-    <div
-      className={cn("animate-pulse rounded-md bg-surface-overlay", className)}
-      {...props}
-    />
-  );
+    return (
+        <div
+            className={cn(
+                "animate-pulse rounded-md bg-surface-overlay",
+                className,
+            )}
+            {...props}
+        />
+    );
 }
