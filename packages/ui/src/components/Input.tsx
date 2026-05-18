@@ -1,6 +1,6 @@
 "use client";
 
-import { type InputHTMLAttributes, forwardRef, useId } from "react";
+import { forwardRef, type InputHTMLAttributes, useId } from "react";
 
 import { cn } from "../lib/cn";
 
