@@ -1,6 +1,6 @@
 # apps/dev-news — Frontend Dev News App
 
-Frontend/AI 개발 뉴스 큐레이션 앱. 기획 상세: `docs/기획.md` (루트 기준).
+Frontend/AI 개발 뉴스 큐레이션 앱. 기획 상세: `docs/기획.md`.
 
 ## Stack
 
