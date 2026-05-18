@@ -29,6 +29,8 @@ export {
     SunIcon,
     UserIcon,
 } from "./components/Icon";
+export type { IconButtonProps } from "./components/IconButton";
+export { IconButton } from "./components/IconButton";
 export type { InputProps } from "./components/Input";
 export { Input } from "./components/Input";
 export type { ListItemProps, ListProps } from "./components/List";
