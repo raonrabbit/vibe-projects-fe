@@ -23,10 +23,10 @@
 
 ## 컴포넌트별 적용 기준
 
-| 위치                 | 클래스            |
-| -------------------- | ----------------- |
-| Input label          | `type-label-1`    |
-| Input hint/error     | `type-caption-1`  |
-| List.Item title      | `type-headline-2` |
-| List.Item description| `type-caption-1`  |
-| List.Footer          | `type-caption-1`  |
+| 위치                  | 클래스            |
+| --------------------- | ----------------- |
+| Input label           | `type-label-1`    |
+| Input hint/error      | `type-caption-1`  |
+| List.Item title       | `type-headline-2` |
+| List.Item description | `type-caption-1`  |
+| List.Footer           | `type-caption-1`  |
