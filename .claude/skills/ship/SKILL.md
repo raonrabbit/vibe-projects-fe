@@ -1,4 +1,4 @@
-# ship skill
+﻿# ship skill
 
 Create a branch, commit changes, push, and open a PR for review — never push directly to main.
 
@@ -20,12 +20,14 @@ Create a branch, commit changes, push, and open a PR for review — never push d
 | `test` | Add or update tests |
 | `ci` | CI/CD pipeline changes |
 
-**Scopes (monorepo-aware):**
+**Scopes (monorepo-aware):** *(패키지 행은 `.claude/workspace.yaml`에서 자동 생성 — 직접 수정 금지)*
 | Scope | Path |
 |-------|------|
+<!-- workspace-scopes:start -->
 | `ui` | `packages/ui/` |
-| `dev-news` | `apps/dev-news/` |
 | `figma-plugin` | `packages/figma-plugin/` |
+| `dev-news` | `apps/dev-news/` |
+<!-- workspace-scopes:end -->
 | `config` | root config files (`.claude/`, `turbo.json`, etc.) |
 | `deps` | dependency changes (`pnpm-lock.yaml`, `package.json`) |
 
