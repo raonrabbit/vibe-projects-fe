@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, MoonIcon, SunIcon } from "@vibe/ui";
+import { IconButton, MoonIcon, SunIcon } from "@vibe/ui";
 import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
@@ -29,19 +29,8 @@ export function ThemeToggle() {
     if (!mounted) return <div className="h-9 w-9" />;
 
     return (
-        <button
-            onClick={toggle}
-            aria-label="테마 전환"
-            className={cn(
-                "h-9 w-9 rounded-md flex items-center justify-center",
-                "text-text-secondary hover:text-text-primary hover:bg-surface-raised transition-colors",
-            )}
-        >
-            {theme === "light" ? (
-                <MoonIcon size={16} />
-            ) : (
-                <SunIcon size={16} />
-            )}
-        </button>
+        <IconButton aria-label="테마 전환" onClick={toggle}>
+            {theme === "light" ? <MoonIcon size={16} /> : <SunIcon size={16} />}
+        </IconButton>
     );
 }

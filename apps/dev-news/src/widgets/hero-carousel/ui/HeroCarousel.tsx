@@ -1,6 +1,12 @@
 "use client";
 
-import { ArrowRightIcon, Badge, ChevronLeftIcon, ChevronRightIcon, cn } from "@vibe/ui";
+import {
+    ArrowRightIcon,
+    Badge,
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    cn,
+} from "@vibe/ui";
 import { useEffect, useRef, useState } from "react";
 
 type BadgeVariant = "default" | "primary" | "success" | "warning" | "error";

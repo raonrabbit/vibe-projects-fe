@@ -1,83 +1,91 @@
 import {
-  forwardRef,
-  type HTMLAttributes,
-  type TdHTMLAttributes,
-  type ThHTMLAttributes,
+    forwardRef,
+    type HTMLAttributes,
+    type TdHTMLAttributes,
+    type ThHTMLAttributes,
 } from "react";
 
 import { cn } from "../lib/cn";
 
-export interface TableProps extends HTMLAttributes<HTMLTableElement> {}
+export type TableProps = HTMLAttributes<HTMLTableElement>;
 
 const TableRoot = forwardRef<HTMLTableElement, TableProps>(
-  ({ className, ...props }, ref) => (
-    <div className="w-full overflow-x-auto">
-      <table
-        ref={ref}
-        className={cn("w-full border-collapse", className)}
-        {...props}
-      />
-    </div>
-  ),
+    ({ className, ...props }, ref) => (
+        <div className="w-full overflow-x-auto">
+            <table
+                ref={ref}
+                className={cn("w-full border-collapse", className)}
+                {...props}
+            />
+        </div>
+    ),
 );
 TableRoot.displayName = "Table";
 
 const TableHead = forwardRef<
-  HTMLTableSectionElement,
-  HTMLAttributes<HTMLTableSectionElement>
+    HTMLTableSectionElement,
+    HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead
-    ref={ref}
-    className={cn("border-b border-border", className)}
-    {...props}
-  />
+    <thead
+        ref={ref}
+        className={cn("border-b border-border", className)}
+        {...props}
+    />
 ));
 TableHead.displayName = "Table.Head";
 
 const TableBody = forwardRef<
-  HTMLTableSectionElement,
-  HTMLAttributes<HTMLTableSectionElement>
+    HTMLTableSectionElement,
+    HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <tbody
-    ref={ref}
-    className={cn("[&>tr:not(:last-child)]:border-b [&>tr]:border-border", className)}
-    {...props}
-  />
+    <tbody
+        ref={ref}
+        className={cn(
+            "[&>tr:not(:last-child)]:border-b [&>tr]:border-border",
+            className,
+        )}
+        {...props}
+    />
 ));
 TableBody.displayName = "Table.Body";
 
-const TableRow = forwardRef<HTMLTableRowElement, HTMLAttributes<HTMLTableRowElement>>(
-  ({ className, ...props }, ref) => (
+const TableRow = forwardRef<
+    HTMLTableRowElement,
+    HTMLAttributes<HTMLTableRowElement>
+>(({ className, ...props }, ref) => (
     <tr
-      ref={ref}
-      className={cn("transition-colors hover:bg-surface-raised", className)}
-      {...props}
+        ref={ref}
+        className={cn("transition-colors hover:bg-surface-raised", className)}
+        {...props}
     />
-  ),
-);
+));
 TableRow.displayName = "Table.Row";
 
 const TableHeaderCell = forwardRef<
-  HTMLTableCellElement,
-  ThHTMLAttributes<HTMLTableCellElement>
+    HTMLTableCellElement,
+    ThHTMLAttributes<HTMLTableCellElement>
 >(({ className, ...props }, ref) => (
-  <th
-    ref={ref}
-    className={cn("type-label-1 px-4 py-3 text-left text-text-secondary", className)}
-    {...props}
-  />
+    <th
+        ref={ref}
+        className={cn(
+            "type-label-1 px-4 py-3 text-left text-text-secondary",
+            className,
+        )}
+        {...props}
+    />
 ));
 TableHeaderCell.displayName = "Table.HeaderCell";
 
-const TableCell = forwardRef<HTMLTableCellElement, TdHTMLAttributes<HTMLTableCellElement>>(
-  ({ className, ...props }, ref) => (
+const TableCell = forwardRef<
+    HTMLTableCellElement,
+    TdHTMLAttributes<HTMLTableCellElement>
+>(({ className, ...props }, ref) => (
     <td
-      ref={ref}
-      className={cn("type-body-2 px-4 py-3 text-text-primary", className)}
-      {...props}
+        ref={ref}
+        className={cn("type-body-2 px-4 py-3 text-text-primary", className)}
+        {...props}
     />
-  ),
-);
+));
 TableCell.displayName = "Table.Cell";
 
 /**
@@ -100,9 +108,9 @@ TableCell.displayName = "Table.Cell";
  * </Table>
  */
 export const Table = Object.assign(TableRoot, {
-  Head: TableHead,
-  Body: TableBody,
-  Row: TableRow,
-  HeaderCell: TableHeaderCell,
-  Cell: TableCell,
+    Head: TableHead,
+    Body: TableBody,
+    Row: TableRow,
+    HeaderCell: TableHeaderCell,
+    Cell: TableCell,
 });
