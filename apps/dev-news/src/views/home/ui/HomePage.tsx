@@ -26,9 +26,9 @@ export function HomePage() {
                                     정보 홍수 없이 빠르게
                                 </h1>
                                 <p className="type-body-1 text-text-secondary max-w-sm">
-                                    매일 쏟아지는 개발 소식에서 진짜 중요한
-                                    것만 골라드립니다. 한국어 큐레이션으로
-                                    흐름을 놓치지 마세요.
+                                    매일 쏟아지는 개발 소식에서 진짜 중요한 것만
+                                    골라드립니다. 한국어 큐레이션으로 흐름을
+                                    놓치지 마세요.
                                 </p>
                             </div>
                             <div className="flex items-center gap-3">

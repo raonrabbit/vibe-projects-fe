@@ -90,7 +90,10 @@ export function NewsFeed() {
                                         {item.title}
                                     </p>
                                 </div>
-                                <ChevronRightIcon size={16} className="shrink-0 text-text-disabled" />
+                                <ChevronRightIcon
+                                    size={16}
+                                    className="shrink-0 text-text-disabled"
+                                />
                             </a>
                         </li>
                     ))}

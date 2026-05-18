@@ -37,11 +37,7 @@ export function ThemeToggle() {
                 "text-text-secondary hover:text-text-primary hover:bg-surface-raised transition-colors",
             )}
         >
-            {theme === "light" ? (
-                <MoonIcon size={16} />
-            ) : (
-                <SunIcon size={16} />
-            )}
+            {theme === "light" ? <MoonIcon size={16} /> : <SunIcon size={16} />}
         </button>
     );
 }

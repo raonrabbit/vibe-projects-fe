@@ -1,24 +1,24 @@
 import {
-  ArrowRight,
-  Bookmark,
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  ExternalLink,
-  Info,
-  type LucideIcon,
-  type LucideProps,
-  Menu,
-  Moon,
-  Search,
-  Share2,
-  Star,
-  Sun,
-  TriangleAlert,
-  User,
-  X,
+    ArrowRight,
+    Bookmark,
+    Check,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    ChevronUp,
+    ExternalLink,
+    Info,
+    type LucideIcon,
+    type LucideProps,
+    Menu,
+    Moon,
+    Search,
+    Share2,
+    Star,
+    Sun,
+    TriangleAlert,
+    User,
+    X,
 } from "lucide-react";
 
 import { cn } from "../lib/cn";
@@ -26,16 +26,16 @@ import { cn } from "../lib/cn";
 export type IconProps = LucideProps;
 
 function wrap(LucideIconComponent: LucideIcon) {
-  return function Icon({ size = 24, className, ...props }: IconProps) {
-    return (
-      <LucideIconComponent
-        size={size}
-        aria-hidden="true"
-        className={cn("shrink-0", className)}
-        {...props}
-      />
-    );
-  };
+    return function Icon({ size = 24, className, ...props }: IconProps) {
+        return (
+            <LucideIconComponent
+                size={size}
+                aria-hidden="true"
+                className={cn("shrink-0", className)}
+                {...props}
+            />
+        );
+    };
 }
 
 /** Use for: list-item disclosure arrows, next-page navigation. */
