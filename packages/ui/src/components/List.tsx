@@ -6,7 +6,7 @@ import { cn } from "../lib/cn";
 
 // ── List Root ─────────────────────────────────────────────────────────────────
 
-export interface ListProps extends HTMLAttributes<HTMLDivElement> {}
+export type ListProps = HTMLAttributes<HTMLDivElement>;
 
 const ListRoot = forwardRef<HTMLDivElement, ListProps>(({ className, children, ...props }, ref) => (
   <div

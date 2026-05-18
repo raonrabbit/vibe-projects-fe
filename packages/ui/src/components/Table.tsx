@@ -7,7 +7,7 @@ import {
 
 import { cn } from "../lib/cn";
 
-export interface TableProps extends HTMLAttributes<HTMLTableElement> {}
+export type TableProps = HTMLAttributes<HTMLTableElement>;
 
 const TableRoot = forwardRef<HTMLTableElement, TableProps>(
   ({ className, ...props }, ref) => (
