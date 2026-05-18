@@ -1,0 +1,25 @@
+# .claude/workspace.yaml
+# Single Source of Truth for monorepo package metadata.
+# Edit this file to update CODEOWNERS and ship skill scopes automatically.
+# DO NOT edit .github/CODEOWNERS or ship/SKILL.md scopes table directly — they are generated.
+
+meta:
+  repo: raonrabbit/vibe-projects-fe
+  default_owner: "@raonrabbit"
+
+packages:
+  - path: packages/ui
+    name: "@vibe/ui"
+    scope: ui
+    owner: "@raonrabbit"
+
+  - path: packages/figma-plugin
+    name: "@vibe/figma-plugin"
+    scope: figma-plugin
+    owner: "@raonrabbit"
+
+apps:
+  - path: apps/dev-news
+    name: "@vibe/dev-news"
+    scope: dev-news
+    owner: "@raonrabbit"

@@ -47,3 +47,7 @@ coverage/
 
 # Vercel
 .vercel/
+
+# Claude Code session state
+.claude/.boundary-state
+.claude/settings.local.json
