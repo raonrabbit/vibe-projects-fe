@@ -1,7 +1,5 @@
 # Frontend Developer Portfolio — 최준혁
 
-> PDF `포트폴리오.pdf`에서 텍스트를 추출해 정리한 마크다운입니다. 도표·다이어그램·스크린샷 등은 원본 PDF를 참고하세요.
-
 ## 연락처
 
 - **이메일:** raonrabbit@gmail.com
@@ -63,17 +61,17 @@
 
 - 컴포넌트 설계·재사용 및 상태 관리 가능
 - 커스텀 훅 설계로 로직 분리·재사용 경험
-- TanStack Query 등 다양한 라이브러리 활용 경험
+- Tanstack Query 등 다양한 라이브러리 활용 경험
 
 ### Next.js
 
 - Next.js 16(App Router) 기반의 상용 서비스 아키텍처 설계 및 배포 경험
-- Server/Client Component에 대한 이해 및 설계 경험
+- Sever/Client Component에 대한 이해 및 설계 경험
 
-### AI Agent 프로젝트
+### AI Agent
 
-- 구조, 컨벤션을 AI에 주입해 일관된 코드 생성 환경 구축 경험
-- AI를 설계 도구로 활용한 4주 내 실 서비스 배포 경험
+- 프로젝트 구조, 컨벤션을 AI에 주입해 일관된 코드 생성 환경 구축 경험
+- AI로 BoilerPlate를 제거하여 4주 내 실 서비스 배포 경험
 
 ### Git & JIRA
 
@@ -117,7 +115,7 @@
 - **성능 최적화**
   - 이미지 최적화 전략 적용 및 SVG 처리 정책 개선
   - 폰트 최적화 및 렌더링 성능 개선
-- **운영/배포 파이프라인**: GitHub Actions 기반 CD 파이프라인 개선(rolling CD 포함)
+- **운영/배포 파이프라인**: GitHub Actions 기반 CD 파이프라인 구축 (rolling CD 포함)
 
 **참고:** [http://kua.or.kr/](http://kua.or.kr/)
 
@@ -125,50 +123,69 @@
 
 **주제:** 22개 게시판 일관된 구조 유지 및 신규 추가 비용 최소화
 
-- **Why?** 디자인 미확정 · 요구사항 변경이 잦은 환경에서 마감 기한은 타이트하여 변경에 강한 구조 설계가 필수
+- **Why?** 디자인 미확정 · 요구사항 변경이 잦은 환경에서 마감 기한은 타이트하여 변경에 강한 구조 설계가 필수적인 상황
 - **How**
-  - Compound Component 패턴으로 PostForm 설계 — 10개 서브 컴포넌트 조합, 게시판마다 필요한 필드만 구성
-  - Generic 기반 DataTable — `DataTable<T>`로 도메인 데이터를 단일 컴포넌트로 렌더링, 컬럼 정의만 주입
-  - JSDoc 기반 문서화 — 서브 컴포넌트 조합 방식과 props 계약 명시
-- **Result** 신규 게시판은 서브 컴포넌트 조합과 컬럼 정의만으로 구현 가능. 22개 게시판 전반 UX 일관, 운영 변경에 빠르게 대응
+  - Compound Component 패턴으로 PostForm 설계 — 10개 서브 컴포넌트를 조합해 게시판마다 필요한 필드만 구성
+  - Generic 기반 DataTable — `DataTable<T>` 형태의 제네릭 타입으로 다양한 도메인 데이터를 단일 컴포넌트로 렌더링, 도메인마다 컬럼 정의만 주입하는 구조로 분리
+  - JSDoc 기반 문서화 — JSDoc 기반 인터페이스 문서화로 서브 컴포넌트 조합 방식과 props 계약을 명시, 팀 개발 시 불필요한 구현 문의 최소화
+- **Result** 신규 게시판 추가 시 서브 컴포넌트 조합과 컬럼 정의만으로 구현 가능. 22개 게시판 전반에 일관된 UX 유지, 운영 요구사항 변경에 빠르게 대응 가능한 구조 확보
 
-**관련 필드 예시:** PinField, ShowField, TitleField, ContentField, Attachment Field, Thumbnail ImageField
-
-### 운영 서비스 보안 (XSS · SSRF)
+### 주요 보안 취약점(XSS · SSRF) 탐지 및 방어 구현
 
 **주제:** 운영 중 확인된 취약점 자체 탐지 및 대응
 
-- **Why?** `dangerouslySetInnerHTML` 렌더링 구조와 URL 검증 없는 Route Handler fetch 구조에서 XSS·SSRF 이슈 확인
+- **Why?** 사용자 입력과 게시글을 다루는 구조에서 보안 취약점이 발생할 수 있다고 판단. 점검 과정에서 XSS · SSRF 취약점을 확인
 - **How**
-  - **XSS:** `isomorphic-dompurify` 도입, `sanitizeHtml()`로 렌더링 전 스크립트 제거
-  - **SSRF:** Route Handler URL을 http/https로 제한하고 허용 API 호스트만 fetch하도록 검증 로직 적용
-- **Result** XSS·SSRF 발생 원리와 방어 패턴을 실서비스 흐름 기준으로 정리
+  - **XSS**
+    - 탐지: 에디터 콘텐츠를 `dangerouslySetInnerHTML`로 렌더링하는 구조에서 XSS 가능성을 확인
+    - 대응: `isomorphic-dompurify` 도입, `sanitizeHtml()`로 렌더링 전 악성 스크립트 제거
+  - **SSRF**
+    - 탐지: 첨부파일 다운로드를 Next.js Route Handler 프록시로 직접 구현하는 과정에서 서버가 외부 URL을 fetch하는 구조가 생기며 SSRF 취약점을 식별
+    - 대응: 이미지 프록시 Route Handler에서 http/https 프로토콜만 허용 + API 서버 도메인 화이트리스트로 서버 사이드 fetch 대상 제한
+- **Result** XSS · SSRF 각 공격 벡터의 발생 원리와 방어 패턴을 이해하고 운영 코드에 적용
 
-### LCP 개선
+**XSS RISK FLOW**
 
-**주제:** 페이지 체감 로딩 속도 약 80% 단축 (3.0s → 0.6s)
+```
+input(raw) → <p>…</p><script>fetch("/steal")</script>
+rendered   → 동일 (script 실행 위험)
+```
 
-- **Why?** 운영 배포 후 Lighthouse Performance 83점, LCP 3초 초과
+**XSS SAFE FLOW**
+
+```
+input(raw) → <p>…</p><script>fetch("/steal")</script>
+sanitizeHtml() → script 제거
+rendered   → <p>…</p> (안전)
+```
+
+**SSRF RISK FLOW**
+
+```
+URL: http://xxx.xxx.xxx.xxx/latest/meta-data
+Route Handler: 임의 URL fetch
+fetch result: 메타데이터 유출 (SSRF)
+```
+
+**SSRF SAFE FLOW**
+
+```
+URL: http://xxx.xxx.xxx.xxx/latest/meta-data
+Route Handler: host 검증
+fetch result: 403 Forbidden (차단)
+→ http/https + 화이트리스트 검증 후 fetch
+```
+
+### LCP 80% 단축 (3.0s → 0.6s) 폰트 최적화
+
+**주제:** 페이지 체감 로딩 속도 약 80% 단축
+
+- **Why?** 운영 배포 후 Lighthouse 측정 결과 Performance 83점, LCP가 3초를 초과하는 이슈 확인. Next.js 이미지 최적화로 이미지가 WebP로 서빙되고 있었음에도 LCP 요소로 잡힘
 - **How**
-  - 폰트: 대용량 폰트 preload 구조를 woff2 기반 Dynamic Subsetting으로 전환
-  - 이미지: LCP 대상 이미지 포맷/요청 구조를 점검해 병목 제거
-- **Result** LCP 약 80% 단축(3.0s -> 0.6s), 렌더링 초기 리소스 최적화 경험 확보
-
-### SEO
-
-**주제:** 사용자 접근 가능 전 페이지 SEO 적용
-
-- **Why?** 공통 Metadata·OG만 있어 링크 공유 시 모든 페이지가 동일 썸네일·제목으로 노출
-- **How** `robots.ts` · `sitemap.ts` (43개 정적 라우트), 정적 페이지 메타, 동적 라우트는 API 기반 메타 생성
-- **Result** 관리자·인증·API 라우트 제외 사용자 페이지 SEO 완료, 공유 시 페이지별 제목·썸네일
-
-### 무중단 배포
-
-**주제:** GitHub Actions + PM2 cluster
-
-- **Why?** 잦은 배포 필요, 기존 방식은 재시작 시 요청 끊김
-- **How** PM2 클러스터 2인스턴스, `pm2 reload`로 순차 재시작
-- **Result** 추가 인프라 없이 단일 서버에서 체감 다운타임 최소화
+  - 개발자 도구 Performance 탭으로 분석한 결과, Font 파일 로딩이 압도적으로 많은 시간을 차지하고 있었음을 확인
+  - 기존에는 Font 전체 파일(2MB)을 단일 로드하는 방식으로, 브라우저가 해당 폰트를 최우선으로 preload 하면서 LCP 이미지 다운로드를 지연시키는 문제가 존재
+  - 폰트를 서브셋 woff2 파일로 분할하고, Dynamic Subsetting 방식을 적용해 브라우저가 실제 사용되는 문자 범위의 청크만 요청하도록 변경
+- **Result** LCP 점수 3.0초 → 0.6초 (약 80% 단축). 폰트 · 데이터 패칭 구조 개선을 통한 LCP 최적화 전략 이해
 
 ---
 
@@ -176,11 +193,11 @@
 
 **시니어를 위한 쉽고 편한 AI 기반 뱅킹 키오스크**
 
-사라져 가는 은행 점포의 대안을 위해 3D AI 은행원과 음성을 통해 은행 업무를 볼 수 있는 뱅킹 키오스크를 개발하는 프로젝트를 기획했습니다. **삼성 청년 SW·AI 아카데미 우수상(1등)**
+사라져 가는 은행 점포의 대안을 위해 3D AI 은행원과 음성을 통해 은행 업무를 볼 수 있는 뱅킹 키오스크를 개발하는 프로젝트를 기획했습니다.
 
 | 항목      | 내용                                                  |
 | --------- | ----------------------------------------------------- |
-| 성과      | 삼성 청년 SW·AI 아카데미 우수상(1등)                  |
+| 성과      | 삼성 청년 소프트웨어 AI 아카데미 우수상(1등)          |
 | 개발 기간 | 2025.03 ~ 2025.04                                     |
 | 사용 기술 | Electron, TypeScript, Tailwind CSS, Three.js, Blender |
 | 개발 인원 | Backend 2, Frontend 2, Infra 1, AI 1                  |
@@ -203,29 +220,40 @@
 - **AI 액션 / 대화 시스템**: 음성 및 자막 처리 시스템, 대화 등 전체적인 액션 시스템 구현
 - **시니어 레이아웃 & 페이지**: 시니어 전용 레이아웃 구현 및 시니어 페이지 전체 구현
 
-### 접근성 (시니어 UI)
+### useActionPlay 커스텀 훅 — 음성 · 자막 · 애니메이션 3시스템 통합 제어
 
-- **Why?** 시니어 대상 플랫폼으로 접근성 중요
-- **How** WCAG 2.1 AA 목표, 명암비 4.5:1 이상, 폰트 25% 확대, 터치 영역 최소 44×44px, 금융권 가이드라인 참고 용어(예: 이체 → 송금하기)
+**주제:** 음성 · 자막 · Three.js 애니메이션 통합 제어
 
-### 3D 모델링·애니메이션
+- **Why?** 27개 화면에서 음성, 자막, 3D 애니메이션이 함께 실행. 화면마다 재생 시점과 종료 처리 방식이 달라 같은 제어 로직이 반복. 화면이 늘어날수록 수정 범위가 커지고, 중복 실행이나 재생 누락 관리도 어려움
+- **How**
+  - 각 화면은 “지금 이 액션을 재생할지”와 “끝나면 무엇을 할지”만 전달
+  - 재생 조건은 하나로 통일하고, 이미 실행한 작업은 ref로 기억해 중복 실행 차단
+  - 음성 종료 후 분기는 `onComplete`로 연결해 화면마다 타이머와 후속 처리 로직이 흩어지지 않도록 정리
+  - 공통 재생 상태와 제어 함수는 Context로 묶어 여러 화면이 같은 방식으로 연결되도록 통일
+- **Result**
+  - 개선 전: 화면마다 오디오 실행, 애니메이션 제어, 종료 처리, 정리 로직을 직접 작성
+  - 개선 후: 화면에서 재생 조건과 완료 이후 동작만 넘기면 같은 패턴으로 연결 가능
+  - 비동기 충돌과 중복 실행을 줄이고, 새 화면 추가 시에도 훅 호출 규칙만 맞추면 바로 붙일 수 있는 구조 확보
 
-- Blender로 3D 은행원 수정·키프레임 애니메이션
-- Three.js로 모델·애니메이션 적용
+### Electron 듀얼 윈도우 멀티 화면 구현
 
-### 멀티 윈도우 (Electron)
+**주제:** 듀얼 Window 키오스크
 
-- **Why?** 실제 ATM은 메인 디스플레이와 숫자 패드 분리
-- **How** Main / Preload / Renderer, 듀얼 Window, IPC로 입력·메인 화면 동기화
-- **Result** 듀얼 윈도우 키오스크, Electron 구조 이해
+- **Why?** 실제 ATM은 메인 디스플레이와 숫자 패드가 물리적으로 분리된 구조. 이를 소프트웨어로 재현해 실제 ATM에 가까운 사용자 경험을 만들자는 방향
+- **How**
+  - `Screen.getAllDisplays()` API를 활용하여 연결된 디스플레이를 실시간으로 감지하고, 단일/듀얼 모니터 환경에 따라 자동으로 윈도우를 배치하는 시스템 구축
+  - Main / Renderer / Preload 프로세스를 분리하고 Context Bridge를 적용하여 보안 아키텍처를 설계
+  - IPC 통신 구조를 설계하여, 메인(뱅킹 서비스)과 서브(키패드) 윈도우 간의 안정적인 양방향 데이터 동기화를 구현
+- **Result** 메인 화면과 입력 화면이 실시간 동기화되는 듀얼 윈도우 키오스크 구현. Electron의 Main / Preload / Renderer 구조에 대한 이해
 
-### useActionPlay 커스텀 훅
+### 시니어 사용자를 위한 3D 은행원 모델링 · 애니메이션
 
-**주제:** 음성 · 자막 · 애니메이션 3시스템 통합 제어
+**주제:** 3D 아바타 몰입감
 
-- **Why?** 27개 화면 · 60여 상황에서 AI 은행원 음성·자막·Three.js 애니메이션 동시 관리
-- **How** `shouldActivate` 선언형 API, ref 기반 Idempotency Guard(`hasActivated.current`), `onComplete` 콜백 체이닝, Context와 조합
-- **Result** 동일 인터페이스로 아바타 행동 제어, 비동기 충돌·누수 방지 로직을 훅 한곳에서 관리
+- **Why?** 시니어 사용자에게 실제 은행원과 대화하는 듯한 친밀감 있는 경험 제공. 애니메이션 부재로 인한 몰입감 저하
+- **How**
+  - Blender를 활용하여 3D 은행원 모델링을 수정하고, 키프레임 애니메이션을 제작
+  - Three.js를 통해 제작한 3D 모델과 애니메이션을 프로젝트에 적용
 
 ---
 
@@ -233,11 +261,11 @@
 
 **유기견 보호소를 위한 보호소 관리 플랫폼**
 
-소규모 사설 유기견 보호소에서 네이버 카페로 수작업 관리하던 후원 · 봉사 · 유기견 정보를 통합 관리할 수 있는 플랫폼을 개발했습니다. **SSAFY 우수상(2등)**
+소규모 사설 유기견 보호소에서 네이버 카페로 수작업 관리하던 후원 · 봉사 · 유기견 정보를 통합 관리할 수 있는 플랫폼을 개발했습니다.
 
 | 항목      | 내용                                                              |
 | --------- | ----------------------------------------------------------------- |
-| 성과      | 삼성 청년 SW·AI 아카데미 우수상(2등)                              |
+| 성과      | 삼성 청년 소프트웨어 AI 아카데미 우수상(2등)                      |
 | 개발 기간 | 2025.04 ~ 2025.05                                                 |
 | 사용 기술 | React, TypeScript, Tailwind CSS, TanStack Query, Zustand, EasyOCR |
 | 개발 인원 | Backend3, Frontend3                                               |
@@ -255,8 +283,8 @@
 - **프론트엔드 라우팅 & 페이지 구조**: 전역 라우팅 구조(router) 설계 및 페이지 연결 구현
 - **공고/긴급공고 기능**: 긴급공고 리스트·아이템 UI 구현 및 상세 연동 처리
 - **강아지 도메인 기능**: 강아지 등록/조회/상세 화면 및 공통 카드 UI 구현
-- **상태 관리 (TanStack Query · Zustand)**: TanStack Query 기반 캐싱, 자동 갱신, 무한 스크롤, 뮤테이션 이후 invalidate 처리 적용 / Zustand 기반 전역 상태 분리 및 `sessionStorage` 연동 영속화 구조 적용
-- **AI 연계 기능 (OCR · 유사도)**: OCR 기반 강아지 정보 추출 API 연동 및 파싱 로직 구현
+- **상태 관리 (TanStack Query · Zustand)**: TanStack Query 기반 캐싱, 자동 갱신, 무한 스크롤, 뮤테이션 이후 invalidate 처리 / Zustand 기반 전역 상태 분리 및 `sessionStorage` 연동 영속화 구조 적용
+- **AI 연계 기능 (OCR)**: OCR 기반 강아지 정보 추출 API 연동 및 파싱 로직 구현
 
 ### TanStack Query · Zustand를 활용한 상태 관리
 
@@ -264,23 +292,30 @@
   - **TanStack Query**: 강아지 목록/봉사 일정 등 API 데이터를 여러 컴포넌트에서 공유하면서 중복 요청, 뮤테이션 후 갱신 타이밍, 무한 스크롤·페이징 관리가 필요
   - **Zustand**: 로그인 토큰/선택 보호소가 앱 전반에 필요하고, 새로고침 시 상태 유실 문제를 해결하며 prop drilling 없이 전역 접근이 필요
 - **How**
-  - **Zustand**: `authStore` / `centerStore` / `notificationStore`로 역할별 스토어 분리, `authStore`·`centerStore`는 `sessionStorage` 연동으로 새로고침 후 자동 복원, 로그아웃 시 연쇄 초기화로 상태 불일치 방지
-  - **TanStack Query**: `useQuery`, `useInfiniteQuery`로 캐싱·자동 갱신·무한 스크롤 처리, `enabled: !!centerId`로 보호소 미선택 시 요청 차단, 낙관적 업데이트로 응답 전 UI 즉시 반영
+  - **Zustand**: `authStore` / `centerStore` / `notificationStore`로 역할별 스토어 분리. `authStore`, `centerStore`는 `sessionStorage` 연동으로 새로고침 후 자동 복원. 로그아웃 시 연쇄 초기화로 상태 불일치 방지
+  - **TanStack Query**: `useQuery`, `useInfiniteQuery`로 캐싱·자동 갱신·무한 스크롤 처리. `enabled: !!centerId`로 보호소 미선택 시 요청 차단. 낙관적 업데이트로 응답 전 UI 즉시 반영
 - **Result**
   - TanStack Query의 캐싱/자동 갱신/무한 스크롤/낙관적 업데이트 적용 경험
   - Zustand의 `sessionStorage` 기반 영속화와 역할별 스토어 분리를 구현
 
 ### 접종 관리 검색 — 클라이언트 필터링
 
-- **Why?** 검색마다 서버 요청이 과한지 의문
-- **How** 보호소당 최대 약 500마리, 전체 페이로드 ~72KB(비압축), gzip 시 ~15–20KB, 클라 필터링 `performance.now()` 기준 중앙값 ~0.1ms 실측 → 초기 1회 로드 후 클라 필터
-- **Result** 반복 검색 시 API 요청 제거, 수치 기반 아키텍처 결정 경험
+- **Why?** 접종 관리 화면은 강아지 이름을 하나씩 검색하며 체크하는 방식으로 운영. 검색 빈도가 높아 자연스럽게 매번 서버에 요청해야 하는지 의문 발생
+- **How**
+  - 보호소당 최대 약 500마리 규모임을 확인 후 트레이드오프를 수치로 검토
+  - 전체 500마리 페이로드는 약 72KB(비압축). gzip 전송 시 약 15~20KB 수준으로 실사용 영향은 제한적
+  - 클라이언트 필터링 비용은 `performance.now()` 기준 CPU 6x 쓰로틀 환경에서 중앙값 0.1ms로 무시 가능한 수준임을 실측으로 확인
+  - 위 근거를 바탕으로 전체 데이터를 한 번에 수신하여 클라이언트에서 직접 필터링하는 방식 채택 → API 호출 1번으로 여러 번의 검색 처리 가능
+- **Result** 반복 검색 시 API 요청 완전 제거. 데이터 규모와 요청 패턴을 실측 수치로 검토한 뒤 아키텍처 결정하는 경험
 
 ### EasyOCR 공고 자동 입력
 
-- **Why?** 공고 이미지 수기 입력 반복, 레이아웃 다양해 정규식 한계
-- **How** Python EasyOCR → 키워드 파싱 → 프론트 폼 자동 입력, 하이라이트로 자동 입력 구분
-- **Result** 업로드만으로 주요 필드 입력, Python 서버 AWS 배포 경험
+- **Why?** 보호소 관리자가 유기견 공고 이미지를 보며 유기견 정보를 직접 입력하는 반복 작업 발생. 공고 이미지마다 항목 위치가 달라 정규식 단순 파싱으로는 필드 추출 정확도에 한계 존재
+- **How**
+  - Python EasyOCR 라이브러리로 공고 이미지를 텍스트로 변환 후 성별, 품종 등 키워드를 파싱하여 구조화된 객체로 반환
+  - 프론트엔드에서 공고 이미지 업로드 시 파싱된 필드 값을 수신하여 해당 폼 필드에 자동 입력
+  - OCR로 자동 입력된 필드는 하이라이팅하여 자동 입력 여부를 시각적으로 구분. 사용자가 오입력 여부를 즉시 확인하고 수정 가능하도록 안내
+- **Result** 공고 이미지 업로드만으로 주요 필드 자동 입력 → 반복 수기 입력 작업 대폭 감소. EasyOCR 기반 이미지 텍스트 추출 파이프라인 구현 및 Python 서버 AWS 배포 경험 확보
 
 ---
 
@@ -288,11 +323,11 @@
 
 **AI를 활용한 부동산 추천 플랫폼**
 
-매물·시세를 AI로 쉽게 보고, Naver 뉴스·핫한 매물 등을 시각화. **SSAFY 최우수상(1등)**
+매물·시세를 AI로 쉽게 보고, Naver 뉴스·핫한 매물 등을 시각화한 부동산 추천 플랫폼입니다.
 
 | 항목      | 내용                                                      |
 | --------- | --------------------------------------------------------- |
-| 성과      | 삼성 청년 SW·AI 아카데미 최우수상(1등)                    |
+| 성과      | 삼성 청년 소프트웨어 AI 아카데미 최우수상(1등)            |
 | 개발 기간 | 2024.10 ~ 2024.11                                         |
 | 사용 기술 | React, TypeScript, Chakra UI, TanStack Query, Spring Boot |
 | 개발 인원 | Backend 1, Frontend 1, Infra 1                            |
@@ -301,26 +336,16 @@
 
 **주요 기능**
 
-- 지도·차트 기반 부동산 정보
-- OpenAI API 시세 예측·챗봇
-- 부동산 뉴스, 핫한 매물 시스템
+- 지도, 차트로 쉽게 볼 수 있는 부동산 정보
+- OpenAI API를 활용한 AI 기반 부동산 시세 예측 및 챗봇 상담
+- 부동산 뉴스, 핫한 매물 시스템 등 다양한 부동산 정보 제공
 
 **담당 역할**
 
-- Naver 뉴스 Open API 연동·화면, OpenAI API·챗봇
+- 네이버 뉴스 Open API 연동 및 화면 개발, OpenAI API 연동 및 챗봇 개발
 - 다크모드 구현
-- Spring Boot MVC, DB 설계
-
-### Naver 뉴스 · 챗봇
-
-- Naver 뉴스 API 수집, Chakra UI Grid로 반응형 카드·호버
-- OpenAI 사전 프롬프팅 챗봇, SessionStorage로 대화 상태 유지
-
-### 다크모드 · 반응형
-
-- `useColorMode` / `useColorModeValue`, `extendTheme`로 일관 다크모드
-- `useBreakpointValue`로 로고·텍스트·레이아웃 동적 전환
+- Spring Boot MVC 구현, DB 설계
 
 ---
 
-_원본 PDF 마지막 문구: 긴 문서 봐주셔서 감사합니다._
+긴 문서 봐주셔서 감사합니다.
