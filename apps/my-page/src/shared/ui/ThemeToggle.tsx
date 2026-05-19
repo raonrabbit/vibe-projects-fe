@@ -5,7 +5,7 @@ import { cn } from "@/shared/lib/cn";
 import { useTheme } from "@/shared/lib/useTheme";
 
 export function ThemeToggle() {
-  const { theme, toggle } = useTheme();
+  const { theme, toggle, mounted } = useTheme();
 
   return (
     <button
@@ -19,7 +19,8 @@ export function ThemeToggle() {
         "cursor-pointer",
       )}
     >
-      {theme === "dark" ? <SunIcon size={18} /> : <MoonIcon size={18} />}
+      {mounted &&
+        (theme === "dark" ? <SunIcon size={18} /> : <MoonIcon size={18} />)}
     </button>
   );
 }
