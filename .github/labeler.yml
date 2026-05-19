@@ -1,0 +1,18 @@
+pkg:ui:
+    - packages/ui/**
+
+pkg:figma-plugin:
+    - packages/figma-plugin/**
+
+app:dev-news:
+    - apps/dev-news/**
+
+app:my-page:
+    - apps/my-page/**
+
+infra:
+    - .github/**
+    - turbo.json
+    - pnpm-workspace.yaml
+    - package.json
+    - pnpm-lock.yaml
