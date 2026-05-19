@@ -5,20 +5,26 @@ import { useEffect, useState } from "react";
 type Theme = "light" | "dark";
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "light";
+  const [theme, setTheme] = useState<Theme>("light");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
     const stored = localStorage.getItem("theme") as Theme | null;
-    return (
+    const resolved =
       stored ??
       (window.matchMedia("(prefers-color-scheme: dark)").matches
         ? "dark"
-        : "light")
-    );
-  });
+        : "light");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTheme(resolved);
+    setMounted(true);
+    document.documentElement.classList.toggle("dark", resolved === "dark");
+  }, []);
 
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-  }, [theme]);
+    if (mounted)
+      document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [theme, mounted]);
 
   const toggle = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
@@ -27,5 +33,5 @@ export function useTheme() {
     document.documentElement.classList.toggle("dark", next === "dark");
   };
 
-  return { theme, toggle };
+  return { theme, toggle, mounted };
 }
