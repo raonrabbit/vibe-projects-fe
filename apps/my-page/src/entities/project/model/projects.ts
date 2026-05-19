@@ -66,12 +66,11 @@ export const PROJECTS: Project[] = [
     ],
     highlights: [
       {
-        title: "Compound Component · Generic 패턴 도입으로 반복 구현 제거",
-        metric: "코드량 ~70% 감소",
+        title: "운영형 게시판 공통화 설계",
         why: "디자인 미확정·요구사항 변경이 잦은 환경에서 마감 기한은 타이트하여, 변경에 강한 구조 설계가 필수적인 상황이었습니다.",
-        how: "Compound Component 패턴으로 PostForm을 설계해 게시판마다 필요한 필드만 조합해 사용하도록 했습니다. Generic 기반 DataTable<T>로 다양한 도메인 데이터를 단일 컴포넌트로 렌더링하고, 도메인마다 컬럼 정의만 주입하는 구조로 분리했습니다. JSDoc 기반 문서화로 AI 코드 어시스턴트가 타입 정보를 정확히 추론하도록 인터페이스를 설계했습니다.",
+        how: "Compound Component 패턴으로 PostForm을 설계해 게시판마다 필요한 필드만 조합해 사용하도록 했습니다. Generic 기반 DataTable<T>로 다양한 도메인 데이터를 단일 컴포넌트로 렌더링하고, 도메인마다 컬럼 정의만 주입하는 구조로 분리했습니다. JSDoc 기반 인터페이스 문서화로 서브 컴포넌트 조합 방식과 props 계약을 명시해 팀 내 불필요한 구현 문의를 최소화했습니다.",
         result:
-          "신규 게시판 추가 시 작성 코드량 약 70% 감소 — 독립 구현 시 약 300~400줄 필요하던 테이블·폼 코드를, 서브 컴포넌트 조합 + Column 정의 50~230줄로 대체했습니다.",
+          "신규 게시판 추가 시 서브 컴포넌트 조합과 컬럼 정의만으로 구현 가능. 22개 게시판 전반에 일관된 UX 유지, 운영 요구사항 변경에 빠르게 대응 가능한 구조를 확보했습니다.",
         codeDemos: [
           {
             title: "Compound Component — 게시판마다 필드 조합만 교체",
@@ -160,36 +159,128 @@ const columns: Column<ExecutiveItem>[] = [
       },
       {
         title: "주요 보안 취약점(XSS·SSRF) 탐지 및 방어 구현",
-        why: "dangerouslySetInnerHTML 렌더링 구조에서 XSS, URL 검증 없는 Route Handler fetch 구조에서 SSRF 이슈를 확인했습니다.",
+        why: "사용자 입력과 게시글을 다루는 구조에서 보안 취약점이 발생할 수 있다고 판단해 직접 점검했고, XSS · SSRF 취약점을 확인했습니다.",
         how: "XSS는 isomorphic-dompurify를 도입해 렌더링 전 sanitizeHtml()로 악성 스크립트를 제거했습니다. SSRF는 Route Handler URL을 http/https로 제한하고 허용 API 호스트만 fetch하도록 검증 로직을 적용했습니다.",
         result:
-          "XSS·SSRF 발생 원리와 방어 패턴을 실서비스 흐름 기준으로 정리했습니다.",
+          "XSS · SSRF 각 공격 벡터의 발생 원리와 방어 패턴을 이해하고 운영 코드에 적용했습니다.",
       },
       {
-        title: "LCP 최적화",
+        title: "LCP 80% 단축 (3.0s → 0.6s) 폰트 최적화",
         metric: "3.0s → 0.6s (80% 단축)",
-        why: "운영 배포 후 Lighthouse 측정 결과 Performance 83점, LCP가 3초를 초과하는 이슈를 확인했습니다.",
-        how: "폰트 서브셋 분할: pretendard-subset으로 woff2 분할 후 CSS unicode-range로 렌더링에 필요한 청크만 브라우저가 선택 요청하도록 변경했습니다. 이미지 최적화: <Image> sizes 속성 정비로 뷰포트 크기에 맞는 이미지만 요청하도록 제한했습니다.",
+        why: "운영 배포 후 Lighthouse 측정 결과 Performance 83점, LCP가 3초를 초과하는 이슈를 확인했습니다. Next.js 이미지 최적화로 이미지가 WebP로 서빙되고 있었음에도 LCP 요소로 잡혀 Font 파일 로딩이 병목임을 개발자 도구 Performance 탭으로 확인했습니다.",
+        how: "기존 Font 전체 파일(2MB)을 단일 로드하는 방식에서, 폰트를 서브셋 woff2 파일로 분할하고 Dynamic Subsetting 방식을 적용해 브라우저가 실제 사용되는 문자 범위의 청크만 요청하도록 변경했습니다.",
         result:
-          "LCP 점수 3.0초 → 0.6초 (약 80% 단축)으로 사용자 체감 로딩 속도를 크게 개선했습니다.",
-      },
-      {
-        title: "전체 사용자 페이지 SEO 적용",
-        why: "공통 Metadata·OG만 적용된 상태에서 링크 공유 시 모든 페이지가 동일한 이미지·제목으로 노출되어 어떤 콘텐츠인지 구분이 불가능했습니다.",
-        how: "robots.txt, sitemap 등 기초 SEO 인프라를 구축하고, 전체 페이지에 메타데이터(title, description, OG 이미지)를 적용했습니다. 동적 라우트(게시글 상세 등)는 API 데이터 기반으로 페이지별 메타데이터를 생성했습니다.",
-        result:
-          "관리자 페이지, Create/Edit 페이지를 제외한 모든 페이지에 SEO를 적용 완료했습니다.",
-      },
-      {
-        title: "GitHub Actions + PM2 cluster 무중단 배포 구현",
-        why: "MVP 이후 지속적인 추가 요구사항이 들어오면서 잦은 배포가 필요했고, 기존 배포 방식은 배포 시마다 프로세스 종료 후 재시작으로 인해 사용자 요청이 끊기는 문제가 있었습니다.",
-        how: "PM2 클러스터 모드로 인스턴스 2개를 띄워두고, 배포 시 pm2 reload로 인스턴스를 하나씩 순차 재시작해 나머지 인스턴스가 요청을 계속 처리하도록 구현했습니다.",
-        result:
-          "추가 인프라 없이 단일 서버에서 배포 중에도 사용자 요청이 끊기지 않는 안정적인 배포 환경을 구축했습니다.",
-        uiDemoId: "kua-rolling-deploy",
+          "LCP 점수 3.0초 → 0.6초 (약 80% 단축). 폰트 구조 개선을 통한 LCP 최적화 전략을 이해했습니다.",
       },
     ],
     url: "http://kua.or.kr",
+  },
+  {
+    id: "donghang",
+    title: "동행",
+    subtitle: "시니어를 위한 쉽고 편한 AI 기반 뱅킹 키오스크",
+    description:
+      "사라져 가는 은행 점포의 대안을 위해 3D AI 은행원과 음성을 통해 은행 업무를 볼 수 있는 뱅킹 키오스크를 개발하는 프로젝트를 기획했습니다.",
+    features: [
+      "영상 분석으로 연령대 자동 판별",
+      "3D AI 은행원과 음성 기반 대화",
+      "입금, 이체, 적금 등 다양한 뱅킹 기능 제공",
+      "음성으로 보이스 피싱 유추",
+    ],
+    images: [
+      "/project-imgs/donghang/donghang-thumbnail.png",
+      "/project-imgs/donghang/donghang01.png",
+      "/project-imgs/donghang/donghang02.png",
+      "/project-imgs/donghang/donghang03.png",
+    ],
+    period: "2025.03 – 2025.04",
+    tech: ["Electron", "TypeScript", "Tailwind CSS", "Three.js", "Blender"],
+    award: "SSAFY 2학기 프로젝트 우수상(1등)",
+    team: ["Backend 2", "Frontend 2", "Infra 1", "AI 1"],
+    role: [
+      "아바타 & 3D 렌더링: 3D 아바타 모델 및 애니메이션 시스템 구현 (idle, walk, bow 등)",
+      "음성 인식 (VAD): VAD(Voice Activity Detection) 시스템 구현",
+      "영상 분석 (Video Detection): 소켓 통신 훅 구현, 비디오 분석 기반 사용자 감지 및 연령대별 화면 분기",
+      "AI 액션 / 대화 시스템: 음성·자막 처리 시스템 및 전체 액션 흐름 구현",
+      "시니어 레이아웃 & 페이지: 시니어 전용 레이아웃 및 전체 페이지 구현",
+    ],
+    highlights: [
+      {
+        title:
+          "useActionPlay 커스텀 훅 — 음성·자막·애니메이션 3시스템 통합 제어",
+        why: "27개 화면에서 음성, 자막, 3D 애니메이션이 함께 실행됐습니다. 화면마다 재생 시점과 종료 처리 방식이 달라 같은 제어 로직이 반복됐고, 화면이 늘어날수록 수정 범위가 커지며 중복 실행이나 재생 누락 관리도 어려웠습니다.",
+        how: "각 화면은 '지금 이 액션을 재생할지'와 '끝나면 무엇을 할지'만 전달하도록 설계했습니다. 재생 조건은 하나로 통일하고, 이미 실행한 작업은 ref로 기억해 중복 실행을 차단했습니다. 음성 종료 후 분기는 onComplete로 연결해 화면마다 타이머와 후속 처리 로직이 흩어지지 않도록 정리하고, 공통 재생 상태와 제어 함수는 Context로 묶어 여러 화면이 같은 방식으로 연결되도록 통일했습니다.",
+        result:
+          "개선 전에는 화면마다 오디오 실행, 애니메이션 제어, 종료 처리, 정리 로직을 직접 작성했습니다. 개선 후에는 화면에서 재생 조건과 완료 이후 동작만 넘기면 같은 패턴으로 연결 가능. 비동기 충돌과 중복 실행을 줄이고, 새 화면 추가 시에도 훅 호출 규칙만 맞추면 바로 붙일 수 있는 구조를 확보했습니다.",
+        codeDemos: [
+          {
+            title: "선언형 API — shouldActivate 조건만 명시",
+            panels: [
+              {
+                label: "훅 인터페이스",
+                filename: "useActionPlay.tsx",
+                code: `interface UseActionPlayOptions {
+  audioFile?: string;      // 재생할 음성 파일
+  dialogue?: string;       // 화면에 표시할 자막
+  avatarState?: AvatarState; // Three.js 애니메이션 상태
+  shouldActivate?: boolean;  // 선언형: 외부에서 조건만 명시
+  animationDelay?: number;
+  onComplete?: () => void;   // 완료 후 체이닝
+}
+
+// ref 기반 Idempotency Guard — 중복 실행 방지
+const hasPlayed = useRef(false);
+
+useEffect(() => {
+  if (shouldActivate && !hasPlayed.current) {
+    playAudio();
+    setDialogue(dialogue);
+    setAvatarState(avatarState);
+    hasPlayed.current = true; // 동일 액션 재실행 차단
+  }
+}, [shouldActivate]);`,
+              },
+              {
+                label: "27개 화면 사용 예시",
+                filename: "TransferScreen.tsx",
+                code: `// 각 화면은 shouldActivate 조건만 선언 → 훅이 타이밍 관리
+useActionPlay({
+  audioFile: "/audio/transfer-greeting.mp3",
+  dialogue: "이체하실 계좌번호를 입력해 주세요.",
+  avatarState: "talking",
+  shouldActivate: step === "input-account",  // 조건만 명시
+  onComplete: () => setStep("input-amount"), // 음성 종료 후 다음 단계
+});
+
+useActionPlay({
+  audioFile: "/audio/transfer-amount.mp3",
+  dialogue: "이체하실 금액을 입력해 주세요.",
+  avatarState: "talking",
+  shouldActivate: step === "input-amount",
+  onComplete: () => setStep("confirm"),
+});`,
+              },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Electron 듀얼 윈도우 멀티 화면 구현",
+        why: "실제 ATM은 메인 디스플레이와 숫자 패드가 물리적으로 분리된 구조로, 이를 소프트웨어로 재현해 실제 ATM에 가까운 사용자 경험을 만들자는 방향으로 기획했습니다.",
+        how: "Screen.getAllDisplays() API를 활용하여 연결된 디스플레이를 실시간으로 감지하고, 단일/듀얼 모니터 환경에 따라 자동으로 윈도우를 배치하는 시스템을 구축했습니다. Main / Renderer / Preload 프로세스를 분리하고 Context Bridge를 적용하여 보안 아키텍처를 설계했습니다. IPC 통신 구조를 설계하여 메인(뱅킹 서비스)과 서브(키패드) 윈도우 간 안정적인 양방향 데이터 동기화를 구현했습니다.",
+        result:
+          "메인 화면과 입력 화면이 실시간 동기화되는 듀얼 윈도우 키오스크를 구현했습니다. Electron의 Main / Preload / Renderer 구조에 대한 이해를 얻었습니다.",
+        uiDemoId: "donghang-dual-window",
+      },
+      {
+        title: "시니어 사용자를 위한 3D 은행원 모델링 · 애니메이션",
+        why: "시니어 사용자에게 실제 은행원과 대화하는 듯한 친밀감 있는 경험을 제공하고자 했으며, 애니메이션 부재로 인한 몰입감 저하를 개선할 필요가 있었습니다.",
+        how: "Blender를 활용하여 3D 은행원 모델링을 수정하고, 키프레임 애니메이션(idle, walk, bow 등)을 제작했습니다. Three.js를 통해 제작한 3D 모델과 애니메이션을 프로젝트에 적용했습니다.",
+        result:
+          "시니어 사용자에게 실제 은행원과 대화하는 듯한 몰입감 있는 경험을 제공했습니다.",
+      },
+    ],
+    github: "https://github.com/raonrabbit",
   },
   {
     id: "hangbokdog",
@@ -247,114 +338,6 @@ const columns: Column<ExecutiveItem>[] = [
         result:
           "공고 이미지 업로드만으로 주요 필드 자동 입력 → 반복 수기 입력 작업 대폭 감소. EasyOCR 기반 이미지 텍스트 추출 파이프라인 구현 및 Python 서버 AWS 배포 경험을 확보했습니다.",
         uiDemoId: "hangbokdog-ocr",
-      },
-    ],
-    github: "https://github.com/raonrabbit",
-  },
-  {
-    id: "donghang",
-    title: "동행",
-    subtitle: "시니어를 위한 쉽고 편한 AI 기반 뱅킹 키오스크",
-    description:
-      "사라져 가는 은행 점포의 대안을 위해 3D AI 은행원과 음성을 통해 은행 업무를 볼 수 있는 뱅킹 키오스크를 개발하는 프로젝트를 기획했습니다.",
-    features: [
-      "영상 분석으로 연령대 자동 판별",
-      "3D AI 은행원과 음성 기반 대화",
-      "입금, 이체, 적금 등 다양한 뱅킹 기능 제공",
-      "음성으로 보이스 피싱 유추",
-    ],
-    images: [
-      "/project-imgs/donghang/donghang-thumbnail.png",
-      "/project-imgs/donghang/donghang01.png",
-      "/project-imgs/donghang/donghang02.png",
-      "/project-imgs/donghang/donghang03.png",
-    ],
-    period: "2025.03 – 2025.04",
-    tech: ["Electron", "TypeScript", "Tailwind CSS", "Three.js", "Blender"],
-    award: "SSAFY 2학기 프로젝트 우수상(1등)",
-    team: ["Backend 2", "Frontend 2", "Infra 1", "AI 1"],
-    role: [
-      "아바타 & 3D 렌더링: 3D 아바타 모델 및 애니메이션 시스템 구현 (idle, walk, bow 등)",
-      "음성 인식 (VAD): VAD(Voice Activity Detection) 시스템 구현",
-      "영상 분석 (Video Detection): 소켓 통신 훅 구현, 비디오 분석 기반 사용자 감지 및 연령대별 화면 분기",
-      "AI 액션 / 대화 시스템: 음성·자막 처리 시스템 및 전체 액션 흐름 구현",
-      "시니어 레이아웃 & 페이지: 시니어 전용 레이아웃 및 전체 페이지 구현",
-    ],
-    highlights: [
-      {
-        title: "접근성을 고려한 시니어 사용자 UI 설계",
-        why: "시니어를 위한 플랫폼인 만큼 시니어 사용자의 접근성이 매우 중요한 프로젝트였습니다.",
-        how: "WCAG 2.1 AA 레벨을 목표로 모든 UI 요소의 명암비를 4.5:1 이상으로 유지했습니다. 일반 모드 대비 폰트 크기를 25% 확대하고, 모든 버튼과 상호작용 요소의 터치 영역을 최소 44×44px 이상으로 확보했습니다. 고령자를 위한 금융권 가이드라인 문서를 참고해 '이체 → 송금하기' 등 이해가 쉬운 용어를 사용했습니다.",
-        result:
-          "시니어 사용자가 직관적으로 사용할 수 있는 접근성 높은 UI를 구현했습니다.",
-        uiDemoId: "donghang-senior-ui",
-      },
-      {
-        title: "Electron 듀얼 윈도우 멀티 화면 구현",
-        why: "실제 은행 ATM은 메인 디스플레이와 숫자 입력 패드가 물리적으로 분리된 구조로, 사용자 경험 향상을 위해 기존 ATM 구조를 모방하자는 의견이 나왔습니다.",
-        how: "단일 프로세스가 두 Window를 관리하므로 IPC 메시지가 로컬 메모리 내에서 처리됩니다. Electron의 Main/Preload/Renderer 구조를 활용해 메인 화면(은행 업무)과 숫자 패드 입력 화면 간 실시간 동기화를 구현했습니다.",
-        result:
-          "체감 지연 없이 실시간 동기화를 달성했으며, Electron 듀얼 윈도우 아키텍처에 대한 깊은 이해를 얻었습니다.",
-        uiDemoId: "donghang-dual-window",
-      },
-      {
-        title:
-          "useActionPlay 커스텀 훅 — 음성·자막·애니메이션 3시스템 통합 제어",
-        why: "27개 화면·60여 상황에서 AI 은행원의 음성·자막·Three.js 애니메이션을 동시에 관리해야 했습니다. 각 시스템을 별도로 호출하면 비동기 타이밍 충돌과 중복 실행 문제가 반복적으로 발생했습니다.",
-        how: "shouldActivate 선언형 API로 훅 외부에서 활성화 조건만 명시하도록 설계했습니다. ref 기반 Idempotency Guard(hasActivated.current)로 동일 액션의 중복 실행을 방지하고, onComplete 콜백 체이닝으로 음성 종료 후 다음 동작을 순차 연결했습니다. Context와 조합해 화면 어디서든 동일한 인터페이스로 아바타 행동을 제어할 수 있도록 구현했습니다.",
-        result:
-          "비동기 충돌·누수 방지 로직을 훅 한 곳에서 관리해, 27개 화면에서 일관된 인터페이스로 아바타 행동을 제어할 수 있게 됐습니다.",
-        codeDemos: [
-          {
-            title: "선언형 API — shouldActivate 조건만 명시",
-            panels: [
-              {
-                label: "훅 인터페이스",
-                filename: "useActionPlay.tsx",
-                code: `interface UseActionPlayOptions {
-  audioFile?: string;      // 재생할 음성 파일
-  dialogue?: string;       // 화면에 표시할 자막
-  avatarState?: AvatarState; // Three.js 애니메이션 상태
-  shouldActivate?: boolean;  // 선언형: 외부에서 조건만 명시
-  animationDelay?: number;
-  onComplete?: () => void;   // 완료 후 체이닝
-}
-
-// ref 기반 Idempotency Guard — 중복 실행 방지
-const hasPlayed = useRef(false);
-
-useEffect(() => {
-  if (shouldActivate && !hasPlayed.current) {
-    playAudio();
-    setDialogue(dialogue);
-    setAvatarState(avatarState);
-    hasPlayed.current = true; // 동일 액션 재실행 차단
-  }
-}, [shouldActivate]);`,
-              },
-              {
-                label: "27개 화면 사용 예시",
-                filename: "TransferScreen.tsx",
-                code: `// 각 화면은 shouldActivate 조건만 선언 → 훅이 타이밍 관리
-useActionPlay({
-  audioFile: "/audio/transfer-greeting.mp3",
-  dialogue: "이체하실 계좌번호를 입력해 주세요.",
-  avatarState: "talking",
-  shouldActivate: step === "input-account",  // 조건만 명시
-  onComplete: () => setStep("input-amount"), // 음성 종료 후 다음 단계
-});
-
-useActionPlay({
-  audioFile: "/audio/transfer-amount.mp3",
-  dialogue: "이체하실 금액을 입력해 주세요.",
-  avatarState: "talking",
-  shouldActivate: step === "input-amount",
-  onComplete: () => setStep("confirm"),
-});`,
-              },
-            ],
-          },
-        ],
       },
     ],
     github: "https://github.com/raonrabbit",
