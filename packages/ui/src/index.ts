@@ -47,6 +47,8 @@ export type {
     SegmentedControlProps,
 } from "./components/SegmentedControl";
 export { SegmentedControl } from "./components/SegmentedControl";
+export type { SimpleIconProps } from "./components/SimpleIcon";
+export { SimpleIcon } from "./components/SimpleIcon";
 export type { SkeletonProps } from "./components/Skeleton";
 export { Skeleton } from "./components/Skeleton";
 export type { SpinnerProps } from "./components/Spinner";

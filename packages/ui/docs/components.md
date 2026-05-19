@@ -20,6 +20,7 @@
 | `Divider`          | Divider.tsx          | 순수 표현               | `orientation` · `label`                             |
 | `Spinner`          | Spinner.tsx          | 순수 표현               | `size`                                              |
 | Icon 16종          | Icon.tsx             | 개별 named export       | `size` · SVGProps 전체                              |
+| `SimpleIcon`       | SimpleIcon.tsx       | 클라이언트              | `slug` · `alt` · `size` · `className`               |
 
 ---
 
@@ -85,6 +86,24 @@ List
 
 - `List.Item.Leading` · `List.Item.Trailing` 생략 가능
 - `onClick` 없으면 정적 행 (cursor-default, 호버 없음)
+
+---
+
+## SimpleIcon — Simple Icons CDN
+
+Simple Icons(https://simpleicons.org)에서 브랜드 아이콘을 CDN으로 렌더링.  
+`slug`는 simpleicons.org의 슬러그 값 (예: `"github"`, `"typescript"`).  
+이미지 로드 실패 시 자동으로 숨김 처리 (`display: none`).
+
+```tsx
+<SimpleIcon slug="github" alt="GitHub" size={24} />
+<SimpleIcon slug="typescript" alt="TypeScript" size={20} className="opacity-80" />
+```
+
+- `"use client"` 컴포넌트 (`onError` 핸들러 포함)
+- `size` default: `36`
+- `next/image` 미사용 — 프레임워크 독립적
+- CDN URL: `https://cdn.simpleicons.org/{slug}`
 
 ---
 
