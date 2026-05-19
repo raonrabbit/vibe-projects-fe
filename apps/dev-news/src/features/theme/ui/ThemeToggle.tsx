@@ -16,13 +16,13 @@ export function ThemeToggle() {
             : "light";
         const initial = saved ?? preferred;
         setTheme(initial);
-        document.documentElement.setAttribute("data-theme", initial);
+        document.documentElement.classList.toggle("dark", initial === "dark");
     }, []);
 
     const toggle = () => {
         const next = theme === "light" ? "dark" : "light";
         setTheme(next);
-        document.documentElement.setAttribute("data-theme", next);
+        document.documentElement.classList.toggle("dark", next === "dark");
         localStorage.setItem("theme", next);
     };
 

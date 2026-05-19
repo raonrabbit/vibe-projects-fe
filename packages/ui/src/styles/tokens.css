@@ -1,10 +1,17 @@
 /* =============================================================
    @vibe/ui — Design Tokens
-   Source of truth for CSS variables.
+   CSS-first configuration for Tailwind v4.
    Figma sync: packages/ui/tokens.json (W3C Design Token format)
+   Import in apps: @import "@vibe/ui/styles"
+   Per-project theming: re-declare --color-* variables after import
    ============================================================= */
 
-/* --- Base Palette --- */
+@import "tailwindcss";
+
+/* Dark mode: .dark class on <html> element */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* --- Palette (reference values, apps should not override) --- */
 :root {
     --palette-gray-0: #ffffff;
     --palette-gray-50: #f9fafb;
@@ -19,7 +26,6 @@
     --palette-gray-900: #111827;
     --palette-gray-950: #030712;
 
-    /* Brand — Emerald */
     --palette-emerald-50: #ecfdf5;
     --palette-emerald-100: #d1fae5;
     --palette-emerald-300: #6ee7b7;
@@ -38,73 +44,223 @@
     --palette-yellow-600: #d97706;
 }
 
-/* --- Light Theme (default) --- */
-:root,
-[data-theme="light"] {
-    --color-bg: var(--palette-gray-0);
-    --color-bg-subtle: var(--palette-gray-50);
+/* --- Theme tokens → Tailwind utilities + runtime-overrideable CSS vars --- */
+@theme {
+    /* Font family */
+    --font-sans:
+        "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+        system-ui, Roboto, "Helvetica Neue", Arial, "Noto Sans KR", sans-serif;
 
-    --color-surface: var(--palette-gray-0);
-    --color-surface-raised: var(--palette-gray-50);
-    --color-surface-overlay: var(--palette-gray-100);
+    /* Border radius */
+    --radius: 0.5rem;
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.25rem;
+    --radius-3xl: 1.5rem;
+    --radius-full: 9999px;
 
-    --color-border: var(--palette-gray-200);
-    --color-border-strong: var(--palette-gray-300);
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --shadow-md:
+        0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg:
+        0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+    --shadow-xl:
+        0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
 
-    --color-text-primary: var(--palette-gray-900);
-    --color-text-secondary: var(--palette-gray-500);
-    --color-text-disabled: var(--palette-gray-300);
-    --color-text-inverse: var(--palette-gray-0);
+    /* Animations */
+    --animate-fade-in: fadeIn 0.15s ease-in-out;
+    --animate-slide-up: slideUp 0.2s ease-out;
 
-    --color-accent: var(--palette-emerald-600);
-    --color-accent-hover: var(--palette-emerald-700);
-    --color-accent-subtle: var(--palette-emerald-50);
-    --color-accent-foreground: var(--palette-gray-0);
-
-    --color-success: var(--palette-emerald-600);
-    --color-success-subtle: var(--palette-emerald-50);
-    --color-success-foreground: var(--palette-gray-0);
-
-    --color-warning: var(--palette-yellow-600);
-    --color-warning-subtle: var(--palette-yellow-50);
-    --color-warning-foreground: var(--palette-gray-900);
-
-    --color-error: var(--palette-red-500);
-    --color-error-subtle: var(--palette-red-50);
-    --color-error-foreground: var(--palette-gray-0);
+    /* Semantic color tokens — light defaults (apps override per-project) */
+    --color-bg: #ffffff;
+    --color-bg-subtle: #f9fafb;
+    --color-surface: #ffffff;
+    --color-surface-raised: #f9fafb;
+    --color-surface-overlay: #f3f4f6;
+    --color-border: #e5e7eb;
+    --color-border-strong: #d1d5db;
+    --color-text-primary: #111827;
+    --color-text-secondary: #6b7280;
+    --color-text-disabled: #d1d5db;
+    --color-text-inverse: #ffffff;
+    --color-accent: #059669;
+    --color-accent-hover: #047857;
+    --color-accent-subtle: #ecfdf5;
+    --color-accent-foreground: #ffffff;
+    --color-success: #059669;
+    --color-success-subtle: #ecfdf5;
+    --color-success-foreground: #ffffff;
+    --color-warning: #d97706;
+    --color-warning-subtle: #fffbeb;
+    --color-warning-foreground: #111827;
+    --color-error: #ef4444;
+    --color-error-subtle: #fef2f2;
+    --color-error-foreground: #ffffff;
 }
 
-/* --- Dark Theme --- */
-[data-theme="dark"] {
-    --color-bg: var(--palette-gray-950);
-    --color-bg-subtle: var(--palette-gray-900);
+/* --- Dark theme: override semantic variables --- */
+.dark {
+    --color-bg: #030712;
+    --color-bg-subtle: #111827;
+    --color-surface: #111827;
+    --color-surface-raised: #1f2937;
+    --color-surface-overlay: #374151;
+    --color-border: #1f2937;
+    --color-border-strong: #374151;
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #9ca3af;
+    --color-text-disabled: #4b5563;
+    --color-text-inverse: #111827;
+    --color-accent: #10b981;
+    --color-accent-hover: #34d399;
+    --color-accent-subtle: #064e3b;
+    --color-accent-foreground: #030712;
+    --color-success: #10b981;
+    --color-success-subtle: rgb(16 185 129 / 0.12);
+    --color-success-foreground: #030712;
+    --color-warning: #f59e0b;
+    --color-warning-subtle: rgb(245 158 11 / 0.12);
+    --color-warning-foreground: #111827;
+    --color-error: #ef4444;
+    --color-error-subtle: rgb(239 68 68 / 0.12);
+    --color-error-foreground: #ffffff;
+}
 
-    --color-surface: var(--palette-gray-900);
-    --color-surface-raised: var(--palette-gray-800);
-    --color-surface-overlay: var(--palette-gray-700);
+/* --- Keyframes --- */
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
 
-    --color-border: var(--palette-gray-800);
-    --color-border-strong: var(--palette-gray-700);
+@keyframes slideUp {
+    0% {
+        transform: translateY(8px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
 
-    --color-text-primary: var(--palette-gray-50);
-    --color-text-secondary: var(--palette-gray-400);
-    --color-text-disabled: var(--palette-gray-600);
-    --color-text-inverse: var(--palette-gray-900);
+/* --- Typography utilities (replaces the v3 addComponents plugin) --- */
 
-    --color-accent: var(--palette-emerald-500);
-    --color-accent-hover: var(--palette-emerald-400);
-    --color-accent-subtle: var(--palette-emerald-900);
-    --color-accent-foreground: var(--palette-gray-950);
+@utility type-display-1 {
+    font-size: 3rem;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+}
 
-    --color-success: var(--palette-emerald-500);
-    --color-success-subtle: rgba(16, 185, 129, 0.12);
-    --color-success-foreground: var(--palette-gray-950);
+@utility type-display-2 {
+    font-size: 2.5rem;
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
 
-    --color-warning: var(--palette-yellow-500);
-    --color-warning-subtle: rgba(245, 158, 11, 0.12);
-    --color-warning-foreground: var(--palette-gray-900);
+@utility type-display-3 {
+    font-size: 2.25rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+}
 
-    --color-error: var(--palette-red-500);
-    --color-error-subtle: rgba(239, 68, 68, 0.12);
-    --color-error-foreground: var(--palette-gray-0);
+@utility type-title-1 {
+    font-size: 1.875rem;
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.021em;
+}
+
+@utility type-title-2 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: -0.019em;
+}
+
+@utility type-title-3 {
+    font-size: 1.25rem;
+    line-height: 1.35;
+    font-weight: 600;
+    letter-spacing: -0.017em;
+}
+
+@utility type-heading-1 {
+    font-size: 1.125rem;
+    line-height: 1.4;
+    font-weight: 600;
+    letter-spacing: -0.014em;
+}
+
+@utility type-heading-2 {
+    font-size: 1rem;
+    line-height: 1.45;
+    font-weight: 600;
+    letter-spacing: -0.011em;
+}
+
+@utility type-headline-1 {
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 500;
+    letter-spacing: -0.011em;
+}
+
+@utility type-headline-2 {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+@utility type-body-1 {
+    font-size: 1rem;
+    line-height: 1.625;
+    font-weight: 400;
+    letter-spacing: -0.011em;
+}
+
+@utility type-body-2 {
+    font-size: 0.875rem;
+    line-height: 1.625;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+}
+
+@utility type-label-1 {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+@utility type-label-2 {
+    font-size: 0.75rem;
+    line-height: 1.35;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+
+@utility type-caption-1 {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+}
+
+@utility type-caption-2 {
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    font-weight: 400;
+    letter-spacing: 0;
 }
