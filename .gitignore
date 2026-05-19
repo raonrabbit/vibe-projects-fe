@@ -32,11 +32,15 @@ Thumbs.db
 
 # Editor
 .vscode/
+.cursor/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# Next.js generated
+next-env.d.ts
 
 # TypeScript
 *.tsbuildinfo
