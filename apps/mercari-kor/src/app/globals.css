@@ -1,0 +1,51 @@
+@import "@vibe/ui/styles";
+
+/* Scan packages/ui source for utility class detection */
+@source "../../../../packages/ui/src";
+
+/* Mercari brand: deep orange overrides */
+:root {
+    --color-accent: #ff5722;
+    --color-accent-hover: #e64a19;
+    --color-accent-subtle: #fff3ef;
+    --color-accent-foreground: #ffffff;
+}
+
+.dark {
+    --color-accent: #ff7043;
+    --color-accent-hover: #ff5722;
+    --color-accent-subtle: rgb(255 87 34 / 0.12);
+    --color-accent-foreground: #ffffff;
+}
+
+@layer base {
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        background-color: var(--color-bg);
+        color: var(--color-text-primary);
+        font-family:
+            "Pretendard Variable",
+            Pretendard,
+            -apple-system,
+            BlinkMacSystemFont,
+            system-ui,
+            sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    input,
+    textarea {
+        color: var(--color-text-primary);
+        background: transparent;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--color-text-secondary);
+        opacity: 1;
+    }
+}

@@ -1,0 +1,53 @@
+"use client";
+
+import type { MercariItem } from "@/entities/item/model";
+import { ItemCard } from "@/entities/item/ui/ItemCard";
+
+interface ItemGridProps {
+    items: MercariItem[];
+    loading: boolean;
+    favoriteIds: Set<string>;
+    sentinelRef: React.RefObject<HTMLDivElement | null>;
+    onFavorite?: (item: MercariItem) => void;
+    onItemClick: (item: MercariItem) => void;
+}
+
+export function ItemGrid({
+    items,
+    loading,
+    favoriteIds,
+    sentinelRef,
+    onFavorite,
+    onItemClick,
+}: ItemGridProps) {
+    return (
+        <>
+            {items.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    {items.map((item) => (
+                        <ItemCard
+                            key={item.id}
+                            item={item}
+                            isFavorited={favoriteIds.has(item.id)}
+                            onFavorite={
+                                onFavorite ? () => onFavorite(item) : undefined
+                            }
+                            onVisit={() => onItemClick(item)}
+                        />
+                    ))}
+                </div>
+            )}
+
+            <div
+                ref={sentinelRef}
+                className="h-10 mt-4 flex items-center justify-center"
+            >
+                {loading && items.length > 0 && (
+                    <span className="text-sm text-text-secondary">
+                        불러오는 중...
+                    </span>
+                )}
+            </div>
+        </>
+    );
+}
