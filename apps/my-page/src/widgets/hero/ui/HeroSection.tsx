@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
 import { cn } from "@/shared/lib/cn";
@@ -54,6 +54,15 @@ const item: Variants = {
 };
 
 export function HeroSection() {
+  const [copied, setCopied] = useState(false);
+
+  const copyEmail = useCallback(() => {
+    navigator.clipboard.writeText(PROFILE.email).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, []);
+
   return (
     <section className="flex min-h-screen items-center justify-center px-6 py-24">
       <motion.div
@@ -112,12 +121,14 @@ export function HeroSection() {
             variants={item}
             className="mt-2 flex items-center justify-center gap-5 md:justify-start"
           >
-            <a
-              href={`mailto:${PROFILE.email}`}
+            <button
+              onClick={copyEmail}
               className={cn(
-                "flex items-center gap-2 text-sm font-medium",
-                "text-zinc-600 transition-colors hover:text-black",
-                "dark:text-zinc-400 dark:hover:text-white",
+                "flex cursor-pointer items-center gap-2 text-sm font-medium",
+                "transition-colors",
+                copied
+                  ? "text-emerald-500 dark:text-emerald-400"
+                  : "text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-white",
               )}
             >
               <svg
@@ -134,8 +145,8 @@ export function HeroSection() {
                 <rect width="20" height="16" x="2" y="4" rx="2" />
                 <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
               </svg>
-              {PROFILE.email}
-            </a>
+              {copied ? "복사됨!" : PROFILE.email}
+            </button>
 
             <a
               href={PROFILE.github}
@@ -160,7 +171,7 @@ export function HeroSection() {
             </a>
 
             <a
-              href="https://raonrabbit-porfolio.vercel.app/"
+              href="https://drive.google.com/file/d/1BuHfXwNXS_RQ0iHGsCH6H3u_mEPVtB76/view?usp=drive_link"
               target="_blank"
               rel="noopener noreferrer"
               className={cn(
