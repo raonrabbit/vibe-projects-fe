@@ -1,4 +1,5 @@
-import { Icon, Label } from "@/shared";
+import { SimpleIcon } from "@vibe/ui";
+import { Label } from "@/shared";
 
 import type { Skill } from "../model/skills";
 
@@ -13,7 +14,7 @@ function SkillItemRoot({ children }: { children: React.ReactNode }) {
 function SkillItemIcon({ slug, name }: Skill) {
   return (
     <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-black/5 dark:bg-white/5">
-      <Icon
+      <SimpleIcon
         slug={slug}
         alt={name}
         size={36}

@@ -33,7 +33,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-background text-foreground antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} bg-bg text-text-primary antialiased`}
       >
         <ThemeToggle />
         {children}
