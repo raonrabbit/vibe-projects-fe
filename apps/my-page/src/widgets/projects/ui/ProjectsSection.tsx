@@ -98,7 +98,11 @@ export function ProjectsSection() {
         className="flex flex-1"
         style={{ width: `${total * 100}vw` }}
         animate={{ x: `-${(current * 100) / total}%` }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        transition={{
+          type: "tween",
+          ease: [0.25, 0.46, 0.45, 0.94],
+          duration: 0.4,
+        }}
       >
         {PROJECTS.map((project) => (
           <div
