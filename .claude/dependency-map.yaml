@@ -1,0 +1,21 @@
+# .claude/dependency-map.yaml
+# Declares source → target dependency edges for the cascade-warn hook.
+# When a source file is edited, the hook warns about targets that may need updating.
+#
+# source:  glob pattern (repo-root-relative, forward slashes, * and ** supported)
+# targets: list of repo-root-relative paths that may need manual updating
+# message: optional advisory string (overrides the default)
+#
+# NOTE: workspace.yaml → CODEOWNERS/SKILL.md is intentionally absent — handled by sync-workspace.ps1
+
+edges:
+  - source: "packages/ui/tokens.json"
+    targets:
+      - "packages/ui/src/styles/tokens.css"
+      - "packages/ui/tailwind.config.ts"
+    message: "tokens.json changed - sync CSS variables in tokens.css AND Tailwind token mappings in tailwind.config.ts"
+
+  - source: "packages/ui/src/components/**"
+    targets:
+      - "packages/ui/docs/components.md"
+    message: "Component source changed - update API docs in packages/ui/docs/components.md"
