@@ -1,0 +1,4 @@
+{
+  "buildCommand": "cd ../.. && pnpm turbo build --filter @vibe/my-page",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile"
+}
