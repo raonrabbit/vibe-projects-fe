@@ -1,18 +1,28 @@
 pkg:ui:
-    - packages/ui/**
+    - changed-files:
+          - any-glob-to-any-file: "packages/ui/**"
 
 pkg:figma-plugin:
-    - packages/figma-plugin/**
+    - changed-files:
+          - any-glob-to-any-file: "packages/figma-plugin/**"
 
 app:dev-news:
-    - apps/dev-news/**
+    - changed-files:
+          - any-glob-to-any-file: "apps/dev-news/**"
+
+app:mercari-kor:
+    - changed-files:
+          - any-glob-to-any-file: "apps/mercari-kor/**"
 
 app:my-page:
-    - apps/my-page/**
+    - changed-files:
+          - any-glob-to-any-file: "apps/my-page/**"
 
 infra:
-    - .github/**
-    - turbo.json
-    - pnpm-workspace.yaml
-    - package.json
-    - pnpm-lock.yaml
+    - changed-files:
+          - any-glob-to-any-file:
+                - ".github/**"
+                - "turbo.json"
+                - "pnpm-workspace.yaml"
+                - "package.json"
+                - "pnpm-lock.yaml"
