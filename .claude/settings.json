@@ -19,6 +19,18 @@
         ]
     },
     "hooks": {
+        "PreToolUse": [
+            {
+                "matcher": "Edit|Write",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "powershell -File .claude/hooks/boundary-check.ps1",
+                        "statusMessage": "Checking package boundary..."
+                    }
+                ]
+            }
+        ],
         "PostToolUse": [
             {
                 "matcher": "Edit|Write",
@@ -27,6 +39,26 @@
                         "type": "command",
                         "command": "powershell -File .claude/hooks/md-check.ps1",
                         "statusMessage": "Checking .md doc consistency..."
+                    }
+                ]
+            },
+            {
+                "matcher": "Edit|Write",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "powershell -File .claude/hooks/sync-workspace.ps1",
+                        "statusMessage": "Syncing workspace.yaml derived files..."
+                    }
+                ]
+            },
+            {
+                "matcher": "Edit|Write",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "powershell -File .claude/hooks/dependency-warn.ps1",
+                        "statusMessage": "Checking dependency cascade..."
                     }
                 ]
             }
