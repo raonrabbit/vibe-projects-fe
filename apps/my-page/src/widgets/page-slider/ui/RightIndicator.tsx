@@ -33,8 +33,10 @@ export function RightIndicator({
         >
           <span
             className={cn(
-              "absolute right-4 text-xs font-medium whitespace-nowrap",
-              "text-zinc-500 opacity-0 transition-opacity group-hover:opacity-100 dark:text-zinc-400",
+              "absolute right-4 text-xs font-medium whitespace-nowrap transition-opacity",
+              i === current
+                ? "text-xs text-zinc-700 opacity-100 dark:text-zinc-200"
+                : "text-[10px] text-zinc-400 opacity-40 group-hover:opacity-100 dark:text-zinc-500",
             )}
           >
             {sections[i].label}
