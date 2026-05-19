@@ -1,18 +1,18 @@
 name: Label PR
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
+    pull_request_target:
+        types: [opened, synchronize, reopened]
 
 permissions:
-  contents: read
-  pull-requests: write
+    contents: read
+    pull-requests: write
 
 jobs:
-  label:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/labeler@v5
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          sync-labels: true
+    label:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/labeler@v5
+              with:
+                  repo-token: ${{ secrets.GITHUB_TOKEN }}
+                  sync-labels: true
