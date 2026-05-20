@@ -6,7 +6,7 @@ import { ItemCard } from "@/entities/item/ui/ItemCard";
 interface ItemGridProps {
     items: MercariItem[];
     loading: boolean;
-    hasSearched: boolean;
+    hasSearched?: boolean;
     favoriteIds: Set<string>;
     sentinelRef: React.RefObject<HTMLDivElement | null>;
     onFavorite?: (item: MercariItem) => void;
