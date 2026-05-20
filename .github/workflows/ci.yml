@@ -11,7 +11,79 @@ env:
     TURBO_CACHE_DIR: .turbo
 
 jobs:
-    ci:
+    lint:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: pnpm
+
+            - run: pnpm install --frozen-lockfile
+
+            - run: pnpm lint
+
+            - run: pnpm type-check
+
+            - run: pnpm format:check
+
+    build-mercari-kor:
+        runs-on: ubuntu-latest
+        env:
+            NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.MERCARI_KOR_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.MERCARI_KOR_SUPABASE_ANON_KEY }}
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: pnpm
+
+            - run: pnpm install --frozen-lockfile
+
+            - uses: actions/cache@v4
+              with:
+                  path: .turbo
+                  key: ${{ runner.os }}-turbo-mercari-kor-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-turbo-mercari-kor-
+
+            - run: pnpm turbo build --filter @vibe/mercari-kor
+
+    build-dev-news:
+        runs-on: ubuntu-latest
+        env:
+            NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.DEV_NEWS_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.DEV_NEWS_SUPABASE_ANON_KEY }}
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: pnpm
+
+            - run: pnpm install --frozen-lockfile
+
+            - uses: actions/cache@v4
+              with:
+                  path: .turbo
+                  key: ${{ runner.os }}-turbo-dev-news-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-turbo-dev-news-
+
+            - run: pnpm turbo build --filter @vibe/dev-news
+
+    build-my-page:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -28,14 +100,8 @@ jobs:
             - uses: actions/cache@v4
               with:
                   path: .turbo
-                  key: ${{ runner.os }}-turbo-${{ github.sha }}
+                  key: ${{ runner.os }}-turbo-my-page-${{ github.sha }}
                   restore-keys: |
-                      ${{ runner.os }}-turbo-
+                      ${{ runner.os }}-turbo-my-page-
 
-            - run: pnpm lint
-
-            - run: pnpm type-check
-
-            - run: pnpm format:check
-
-            - run: pnpm build
+            - run: pnpm turbo build --filter @vibe/my-page
