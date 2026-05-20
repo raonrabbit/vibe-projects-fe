@@ -1,19 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
 import type { MercariItem } from "@/entities/item/model";
 import {
     getRecentlyViewed,
     addRecentlyViewed,
 } from "@/shared/lib/recently-viewed";
 
+let _listeners: (() => void)[] = [];
+
+function subscribe(cb: () => void) {
+    _listeners.push(cb);
+    return () => {
+        _listeners = _listeners.filter((l) => l !== cb);
+    };
+}
+
+function notify() {
+    _listeners.forEach((cb) => cb());
+}
+
 export function useRecentlyViewed() {
-    const [recentlyViewed, setRecentlyViewed] =
-        useState<MercariItem[]>(getRecentlyViewed);
+    const recentlyViewed = useSyncExternalStore(
+        subscribe,
+        getRecentlyViewed,
+        () => [] as MercariItem[],
+    );
 
     function trackItem(item: MercariItem) {
         addRecentlyViewed(item);
-        setRecentlyViewed(getRecentlyViewed());
+        notify();
     }
 
     return { recentlyViewed, trackItem };
