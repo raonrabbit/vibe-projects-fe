@@ -60,7 +60,7 @@ export function BrandModal({
 
                 {modalBrandSuggestions.length > 0 && (
                     <div
-                        className="mx-5 mb-2 rounded-xl overflow-y-auto bg-surface-raised border border-border"
+                        className="mx-5 mb-2 rounded-xl overflow-y-auto scrollbar-hide bg-surface-raised border border-border"
                         style={{ maxHeight: "180px" }}
                     >
                         {modalBrandSuggestions.map((b, i) => {
