@@ -89,17 +89,19 @@ References:
 
 ## 6. 팀 경계 — Agent 라우팅 규칙
 
-**이 모노레포는 4개의 전담 팀(Agent)으로 구성되어 있습니다.**
+**이 모노레포는 6개의 전담 팀(Agent)으로 구성되어 있습니다.**
 각 팀은 고유한 전문성과 담당 영역을 가지며, 타 팀의 파일을 직접 수정하지 않습니다.
 
 ### 팀 → 담당 경로 매핑
 
-| 팀             | 담당 경로                                                                            | Agent 브리핑                      |
-| -------------- | ------------------------------------------------------------------------------------ | --------------------------------- |
-| Design System  | `packages/ui/**`                                                                     | `.claude/agents/design-system.md` |
-| Figma Sync     | `packages/figma-plugin/**`                                                           | `.claude/agents/figma-sync.md`    |
-| Dev-News App   | `apps/dev-news/**`                                                                   | `.claude/agents/dev-news.md`      |
-| Monorepo Infra | `.claude/**`, `.github/**`, `turbo.json`, `pnpm-workspace.yaml`, 루트 `package.json` | `.claude/agents/infra.md`         |
+| 팀              | 담당 경로                                                                            | Agent 브리핑                      |
+| --------------- | ------------------------------------------------------------------------------------ | --------------------------------- |
+| Design System   | `packages/ui/**`                                                                     | `.claude/agents/design-system.md` |
+| Figma Sync      | `packages/figma-plugin/**`                                                           | `.claude/agents/figma-sync.md`    |
+| Dev-News App    | `apps/dev-news/**`                                                                   | `.claude/agents/dev-news.md`      |
+| Mercari KOR App | `apps/mercari-kor/**`                                                                | `.claude/agents/mercari-kor.md`   |
+| My Page App     | `apps/my-page/**`                                                                    | `.claude/agents/my-page.md`       |
+| Monorepo Infra  | `.claude/**`, `.github/**`, `turbo.json`, `pnpm-workspace.yaml`, 루트 `package.json` | `.claude/agents/infra.md`         |
 
 ### 라우팅 규칙 (반드시 준수)
 

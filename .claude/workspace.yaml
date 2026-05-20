@@ -23,3 +23,13 @@ apps:
     name: "@vibe/dev-news"
     scope: dev-news
     owner: "@raonrabbit"
+
+  - path: apps/mercari-kor
+    name: "@vibe/mercari-kor"
+    scope: mercari-kor
+    owner: "@raonrabbit"
+
+  - path: apps/my-page
+    name: "@vibe/my-page"
+    scope: my-page
+    owner: "@raonrabbit"
