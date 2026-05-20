@@ -16,6 +16,12 @@ export interface BrandSuggestion {
     name: string;
 }
 
+export interface SizeOption {
+    id: number;
+    name: string;
+    group: string;
+}
+
 export interface SearchResult {
     items: MercariItem[];
     nextPageToken: string;
@@ -190,6 +196,9 @@ export async function searchMercari(
     pageSize = 30,
     brandId: number[] = [],
     onSaleOnly = false,
+    priceMin = 0,
+    priceMax = 0,
+    sizeId: number[] = [],
 ): Promise<SearchResult> {
     const url = "https://api.mercari.jp/v2/entities:search";
     const dpop = await generateDPoP(url, "POST");
@@ -219,12 +228,12 @@ export async function searchMercari(
                 status: onSaleOnly
                     ? ["STATUS_ON_SALE"]
                     : ["STATUS_ON_SALE", "STATUS_SOLD_OUT"],
-                sizeId: [],
+                sizeId: sizeId.map(String),
                 categoryId: [],
                 brandId,
                 sellerId: [],
-                priceMin: 0,
-                priceMax: 0,
+                priceMin,
+                priceMax,
                 itemConditionId: [],
                 shippingPayerId: [],
                 shippingFromArea: [],
