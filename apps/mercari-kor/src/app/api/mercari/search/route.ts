@@ -10,6 +10,12 @@ export async function GET(req: NextRequest) {
         ? brandIdParam.split(",").map(Number).filter(Boolean)
         : [];
     const onSaleOnly = searchParams.get("onSaleOnly") === "true";
+    const priceMin = parseInt(searchParams.get("priceMin") ?? "0", 10) || 0;
+    const priceMax = parseInt(searchParams.get("priceMax") ?? "0", 10) || 0;
+    const sizeIdParam = searchParams.get("sizeId") ?? "";
+    const sizeId = sizeIdParam
+        ? sizeIdParam.split(",").map(Number).filter(Boolean)
+        : [];
 
     if (!keyword.trim() && brandId.length === 0) {
         return NextResponse.json(
@@ -25,6 +31,9 @@ export async function GET(req: NextRequest) {
             30,
             brandId,
             onSaleOnly,
+            priceMin,
+            priceMax,
+            sizeId,
         );
         return NextResponse.json(result);
     } catch (e) {
