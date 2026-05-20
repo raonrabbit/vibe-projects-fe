@@ -18,6 +18,13 @@
     --color-accent-foreground: #ffffff;
 }
 
+@utility scrollbar-hide {
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
 @layer base {
     * {
         box-sizing: border-box;

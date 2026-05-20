@@ -52,8 +52,6 @@ export function useBrandFilter() {
         setTempSelectedBrands((prev) =>
             prev.some((b) => b.id === brand.id) ? prev : [...prev, brand],
         );
-        setModalBrandInput("");
-        setModalBrandSuggestions([]);
     }
 
     function removeTempBrand(id: number) {
