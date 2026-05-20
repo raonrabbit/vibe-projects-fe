@@ -6,6 +6,7 @@ import { ItemCard } from "@/entities/item/ui/ItemCard";
 interface ItemGridProps {
     items: MercariItem[];
     loading: boolean;
+    hasSearched: boolean;
     favoriteIds: Set<string>;
     sentinelRef: React.RefObject<HTMLDivElement | null>;
     onFavorite?: (item: MercariItem) => void;
@@ -15,11 +16,14 @@ interface ItemGridProps {
 export function ItemGrid({
     items,
     loading,
+    hasSearched,
     favoriteIds,
     sentinelRef,
     onFavorite,
     onItemClick,
 }: ItemGridProps) {
+    const isEmpty = hasSearched && !loading && items.length === 0;
+
     return (
         <>
             {items.length > 0 && (
@@ -35,6 +39,12 @@ export function ItemGrid({
                             onVisit={() => onItemClick(item)}
                         />
                     ))}
+                </div>
+            )}
+
+            {isEmpty && (
+                <div className="flex flex-col items-center justify-center py-24 text-text-secondary">
+                    <span className="text-base">검색 결과가 없습니다</span>
                 </div>
             )}
 
