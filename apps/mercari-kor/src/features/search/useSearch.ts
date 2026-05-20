@@ -16,6 +16,9 @@ export function useSearch() {
     const selectedKeywordsRef = useRef<string[]>([]);
     const selectedBrandsRef = useRef<BrandSuggestion[]>([]);
     const onSaleOnlyRef = useRef(false);
+    const priceMinRef = useRef(0);
+    const priceMaxRef = useRef(0);
+    const sizeIdRef = useRef<number[]>([]);
     const observerRef = useRef<IntersectionObserver | null>(null);
     const sentinelRef = useRef<HTMLDivElement | null>(null);
     const restoreScrollRef = useRef<number | null>(null);
@@ -37,6 +40,12 @@ export function useSearch() {
             if (brands.length > 0)
                 url += `&brandId=${brands.map((b) => b.id).join(",")}`;
             if (onSaleOnlyRef.current) url += `&onSaleOnly=true`;
+            if (priceMinRef.current > 0)
+                url += `&priceMin=${priceMinRef.current}`;
+            if (priceMaxRef.current > 0)
+                url += `&priceMax=${priceMaxRef.current}`;
+            if (sizeIdRef.current.length > 0)
+                url += `&sizeId=${sizeIdRef.current.join(",")}`;
 
             const res = await fetch(url);
             const data = await res.json();
@@ -111,10 +120,16 @@ export function useSearch() {
         cachedItems?: MercariItem[],
         cachedToken?: string,
         cachedScrollY?: number,
+        priceMin = 0,
+        priceMax = 0,
+        sizeId: number[] = [],
     ) {
         selectedKeywordsRef.current = keywords;
         selectedBrandsRef.current = brands;
         onSaleOnlyRef.current = onSaleOnly;
+        priceMinRef.current = priceMin;
+        priceMaxRef.current = priceMax;
+        sizeIdRef.current = sizeId;
 
         if (cachedItems && cachedItems.length > 0) {
             nextPageTokenRef.current = cachedToken ?? "";
@@ -137,6 +152,9 @@ export function useSearch() {
         selectedKeywordsRef.current = [];
         selectedBrandsRef.current = [];
         onSaleOnlyRef.current = false;
+        priceMinRef.current = 0;
+        priceMaxRef.current = 0;
+        sizeIdRef.current = [];
         setItems([]);
         setHasSearched(false);
         setHasMore(false);

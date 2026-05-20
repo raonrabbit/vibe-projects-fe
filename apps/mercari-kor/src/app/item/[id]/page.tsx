@@ -4,6 +4,7 @@ import Link from "next/link";
 import ImageGallery from "./ImageGallery";
 import BackButton from "./BackButton";
 import FavoriteButton from "./FavoriteButton";
+import ShareButton from "./ShareButton";
 import { Chip } from "@/entities/item/ui/Chip";
 import { InfoRow } from "@/entities/item/ui/InfoRow";
 
@@ -80,6 +81,34 @@ export default async function ItemPage({
                             )}
                         </div>
 
+                        <div className="flex gap-2">
+                            <FavoriteButton
+                                itemId={item.id}
+                                itemName={item.name}
+                                itemPrice={item.price}
+                                itemThumbnail={item.thumbnails?.[0] ?? ""}
+                            />
+                            <ShareButton
+                                mercariUrl={
+                                    id.startsWith("m")
+                                        ? `https://jp.mercari.com/item/${item.id}`
+                                        : `https://jp.mercari.com/shops/product/${item.id}`
+                                }
+                            />
+                            <a
+                                href={
+                                    id.startsWith("m")
+                                        ? `https://jp.mercari.com/item/${item.id}`
+                                        : `https://jp.mercari.com/shops/product/${item.id}`
+                                }
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white text-center transition-opacity hover:opacity-90 bg-accent"
+                            >
+                                메루카리에서 보기 →
+                            </a>
+                        </div>
+
                         <div className="flex items-center gap-1.5 text-text-secondary">
                             <svg
                                 width="14"
@@ -150,27 +179,6 @@ export default async function ItemPage({
                         <p className="text-xs text-text-secondary">
                             등록일: {createdDate}
                         </p>
-
-                        <div className="mt-2 flex gap-2">
-                            <FavoriteButton
-                                itemId={item.id}
-                                itemName={item.name}
-                                itemPrice={item.price}
-                                itemThumbnail={item.thumbnails?.[0] ?? ""}
-                            />
-                            <a
-                                href={
-                                    id.startsWith("m")
-                                        ? `https://jp.mercari.com/item/${item.id}`
-                                        : `https://jp.mercari.com/shops/product/${item.id}`
-                                }
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex-1 py-3 rounded-xl text-sm font-semibold text-white text-center transition-opacity hover:opacity-90 bg-accent"
-                            >
-                                메루카리에서 보기 →
-                            </a>
-                        </div>
                     </div>
                 </div>
             </div>
