@@ -27,6 +27,8 @@ Create a branch, commit changes, push, and open a PR for review — never push d
 | `ui` | `packages/ui/` |
 | `figma-plugin` | `packages/figma-plugin/` |
 | `dev-news` | `apps/dev-news/` |
+| `mercari-kor` | `apps/mercari-kor/` |
+| `my-page` | `apps/my-page/` |
 <!-- workspace-scopes:end -->
 | `config` | root config files (`.claude/`, `turbo.json`, etc.) |
 | `deps` | dependency changes (`pnpm-lock.yaml`, `package.json`) |
