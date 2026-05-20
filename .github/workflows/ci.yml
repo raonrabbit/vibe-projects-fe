@@ -105,3 +105,9 @@ jobs:
                       ${{ runner.os }}-turbo-my-page-
 
             - run: pnpm turbo build --filter @vibe/my-page
+
+    ci:
+        needs: [lint, build-mercari-kor, build-dev-news, build-my-page]
+        runs-on: ubuntu-latest
+        steps:
+            - run: echo "All checks passed"
