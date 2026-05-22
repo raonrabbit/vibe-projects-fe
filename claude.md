@@ -87,57 +87,7 @@ References:
 
 - Project planning: `docs/기획.md`
 
-## 6. 팀 경계 — Agent 라우팅 규칙
-
-**이 모노레포는 6개의 전담 팀(Agent)으로 구성되어 있습니다.**
-각 팀은 고유한 전문성과 담당 영역을 가지며, 타 팀의 파일을 직접 수정하지 않습니다.
-
-### 팀 → 담당 경로 매핑
-
-| 팀              | 담당 경로                                                                            | Agent 브리핑                      |
-| --------------- | ------------------------------------------------------------------------------------ | --------------------------------- |
-| Design System   | `packages/ui/**`                                                                     | `.claude/agents/design-system.md` |
-| Figma Sync      | `packages/figma-plugin/**`                                                           | `.claude/agents/figma-sync.md`    |
-| Dev-News App    | `apps/dev-news/**`                                                                   | `.claude/agents/dev-news.md`      |
-| Mercari KOR App | `apps/mercari-kor/**`                                                                | `.claude/agents/mercari-kor.md`   |
-| My Page App     | `apps/my-page/**`                                                                    | `.claude/agents/my-page.md`       |
-| Monorepo Infra  | `.claude/**`, `.github/**`, `turbo.json`, `pnpm-workspace.yaml`, 루트 `package.json` | `.claude/agents/infra.md`         |
-
-### 라우팅 규칙 (반드시 준수)
-
-1. **현재 작업 컨텍스트를 파악한다.** 사용자 요청의 주 대상이 어느 팀의 영역인지 확인.
-
-2. **타 팀 파일을 직접 수정하지 않는다.** 요청이 다른 팀의 영역에 해당하면:
-    - 직접 Edit/Write 금지
-    - 해당 팀의 Agent 브리핑을 읽고 서브에이전트를 소환
-    - 소환 방법: `Agent(prompt="[브리핑 전체 내용]\n\n## 요청\n[구체적 요청 내용]")`
-
-3. **경계 침범 감지 시 사용자에게 먼저 확인한다.**
-
-    ```
-    이 작업은 Design System 팀(packages/ui)의 영역입니다.
-    Design System Agent를 소환하여 처리할까요?
-    해당 Agent는 디자인 원칙과 토큰 규칙을 검토한 후 구현합니다.
-    ```
-
-4. **소환된 Agent의 결과를 메인 세션에 보고한다.**
-   Agent 완료 후 변경 사항, 브레이킹 체인지 여부, 후속 조치를 요약해 사용자에게 전달.
-
-### 연쇄 요청 예시
-
-> 사용자: "dev-news에서 쓸 버튼 variant 하나 추가해줘"
-
-올바른 흐름:
-
-```
-1. 현재 컨텍스트: apps/dev-news 작업 중
-2. 버튼 variant는 packages/ui 영역 → Design System Agent 소환
-3. Agent가 디자인 원칙 검토 후 Button 컴포넌트 수정
-4. Agent 보고: "variant 추가 완료, 브레이킹 체인지 없음, Figma 동기화 불필요"
-5. 메인 세션 복귀: dev-news에서 새 variant import 사용 가능
-```
-
-## 7. Git Hooks
+## 6. Git Hooks
 
 Run once after cloning to install pre-commit enforcement:
 
