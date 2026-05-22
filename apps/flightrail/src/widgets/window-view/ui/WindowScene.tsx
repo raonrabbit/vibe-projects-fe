@@ -3,25 +3,40 @@
 import {
     Cloud,
     Clouds,
-    GradientTexture,
     PerspectiveCamera,
+    Sky,
     Stars,
     useGLTF,
     useTexture,
 } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
+    type ComponentProps,
     memo,
     Suspense,
     useCallback,
     useEffect,
+    useLayoutEffect,
     useMemo,
     useRef,
-    useState,
 } from "react";
 import * as THREE from "three";
 
-import { getSunPosition, getTimeOfDay } from "@/shared/lib/sky-time";
+import {
+    getBlend,
+    getSunPosition,
+    type TimeOfDay,
+} from "@/shared/lib/sky-time";
+
+// ─── Lerp helpers ─────────────────────────────────────────────────
+function lerpN(a: number, b: number, t: number) {
+    return a + (b - a) * t;
+}
+function lerpColor(a: string, b: string, t: number): string {
+    return new THREE.Color(a).lerp(new THREE.Color(b), t).getStyle();
+}
+
+export type CabinLightMode = "auto" | "on" | "off";
 
 // ─── Window opening dimensions ────────────────────────────────────
 const WIN_RX = 0.5;
@@ -39,25 +54,36 @@ const HANDLE_OFFSET = 0.09;
 // At BLIND_CLOSED: handle near bottom (-(WIN_RY - margin)), top of blind partially in view
 const BLIND_MARGIN = 0.15;
 const BLIND_OPEN = WIN_RY - BLIND_MARGIN + 0.68; //  ≈  0.64
-const BLIND_CLOSED = -(WIN_RY - BLIND_MARGIN) + 0.75; // ≈ -0.64
+const BLIND_CLOSED = -(WIN_RY - BLIND_MARGIN) + 0.72; // ≈ -0.64
 const BLIND_X = 0.02;
 
 // ─── Airplane window + blind ───────────────────────────────────────
 function AirplaneWindow({
     sunPosition,
-    isNight,
+    nightFactor,
+    skyGlowColor,
+    cabinMode,
 }: {
     sunPosition: [number, number, number];
-    isNight: boolean;
+    nightFactor: number;
+    skyGlowColor: string;
+    cabinMode: CabinLightMode;
 }) {
     const { camera, gl, size } = useThree();
 
-    // blindOffset drives the vertical position of the blind mesh.
-    // Starts open so the sky is visible immediately.
-    const [blindOffset, setBlindOffset] = useState(BLIND_OPEN);
+    const blindOffsetRef = useRef(BLIND_OPEN);
     const draggingRef = useRef(false);
 
-    // Project pointer client coords → world Y at the window group plane (z = 2)
+    const blindMeshRef = useRef<THREE.Mesh>(null!);
+    const handleMeshRef = useRef<THREE.Mesh>(null!);
+    const sunLightRef = useRef<THREE.PointLight>(null!);
+    const skyGlowLightRef = useRef<THREE.PointLight>(null!);
+
+    const nightFactorRef = useRef(nightFactor);
+    useEffect(() => {
+        nightFactorRef.current = nightFactor;
+    }, [nightFactor]);
+
     const clientToWorldY = useCallback(
         (clientX: number, clientY: number) => {
             const ndcX = (clientX / size.width) * 2 - 1;
@@ -74,10 +100,10 @@ function AirplaneWindow({
         const onMove = (e: PointerEvent) => {
             if (!draggingRef.current) return;
             const handleWorldY = clientToWorldY(e.clientX, e.clientY);
-            // handle Y = (blindOffset - WIN_RY) + HANDLE_OFFSET → blindOffset = handleWorldY + WIN_RY - HANDLE_OFFSET
             const newOffset = handleWorldY + WIN_RY - HANDLE_OFFSET;
-            setBlindOffset(
-                Math.max(BLIND_CLOSED, Math.min(BLIND_OPEN, newOffset)),
+            blindOffsetRef.current = Math.max(
+                BLIND_CLOSED,
+                Math.min(BLIND_OPEN, newOffset),
             );
         };
         const onUp = () => {
@@ -93,8 +119,21 @@ function AirplaneWindow({
         };
     }, [clientToWorldY, gl]);
 
+    useFrame(() => {
+        const offset = blindOffsetRef.current;
+        const nf = nightFactorRef.current;
+        const blindOpenFactor =
+            (offset - BLIND_CLOSED) / (BLIND_OPEN - BLIND_CLOSED);
+
+        blindMeshRef.current.position.y = offset;
+        handleMeshRef.current.position.y = offset - WIN_RY + HANDLE_OFFSET;
+        sunLightRef.current.intensity =
+            lerpN(35, 6, nf) * lerpN(0.05, 1, blindOpenFactor);
+        skyGlowLightRef.current.intensity =
+            lerpN(12, 3, nf) * lerpN(0.08, 1, blindOpenFactor);
+    });
+
     const { scene } = useGLTF("/planewindow.glb");
-    // Clone so each mount gets a fresh object — prevents accumulated position drift on hot reload
     const windowModel = useMemo(() => scene.clone(), [scene]);
 
     const modelCenterOffset = useMemo(() => {
@@ -137,8 +176,22 @@ function AirplaneWindow({
 
     const lx = sunPosition[0] * 4;
     const ly = Math.max(sunPosition[1] * 4, -1) + 2;
+    const autoCabinFactor = Math.max(
+        0,
+        Math.min(1, (nightFactor - 0.55) / 0.2),
+    );
+    const cabinFactor =
+        cabinMode === "on" ? 1 : cabinMode === "off" ? 0 : autoCabinFactor;
 
-    // Dispose GPU resources on unmount to prevent VRAM leak across HMR cycles
+    const blindInitPos = useMemo<[number, number, number]>(
+        () => [BLIND_X, BLIND_OPEN, -0.05],
+        [],
+    );
+    const handleInitPos = useMemo<[number, number, number]>(
+        () => [BLIND_X, BLIND_OPEN - WIN_RY + HANDLE_OFFSET, 0.02],
+        [],
+    );
+
     useEffect(() => {
         return () => {
             blindGeo.dispose();
@@ -158,18 +211,25 @@ function AirplaneWindow({
     return (
         <group position={[0, 0, 2]}>
             <pointLight
+                ref={sunLightRef}
                 position={[lx, ly, -14]}
-                intensity={isNight ? 6 : 35}
-                color={isNight ? "#b8ccff" : "#fff8ee"}
+                color={lerpColor("#fff8ee", "#b8ccff", nightFactor)}
                 distance={45}
                 decay={1.5}
             />
             <pointLight
+                ref={skyGlowLightRef}
                 position={[0, 1.5, 4]}
-                intensity={isNight ? 3 : 12}
-                color={isNight ? "#3a3a50" : "#ffe8c8"}
+                color={skyGlowColor}
                 distance={12}
                 decay={1.5}
+            />
+            <pointLight
+                position={[0, WIN_RY + 0.1, 0.4]}
+                intensity={cabinFactor * 5}
+                color="#ffe896"
+                distance={2.0}
+                decay={2}
             />
 
             <primitive
@@ -181,8 +241,11 @@ function AirplaneWindow({
                 ]}
             />
 
-            {/* Blind slides as a unit — frame GLB masks what goes above/below the opening */}
-            <mesh geometry={blindGeo} position={[BLIND_X, blindOffset, -0.05]}>
+            <mesh
+                ref={blindMeshRef}
+                geometry={blindGeo}
+                position={blindInitPos}
+            >
                 <meshStandardMaterial
                     color="#c4bcb3"
                     roughness={0.75}
@@ -190,10 +253,10 @@ function AirplaneWindow({
                 />
             </mesh>
 
-            {/* Handle tracks the bottom edge of the blind */}
             <mesh
+                ref={handleMeshRef}
                 geometry={handleGeo}
-                position={[BLIND_X, blindOffset - WIN_RY + HANDLE_OFFSET, 0.02]}
+                position={handleInitPos}
                 onPointerDown={(e) => {
                     e.stopPropagation();
                     draggingRef.current = true;
@@ -253,10 +316,10 @@ const BOUNDS = 70;
 
 function MovingCloud({
     def,
-    isNight,
+    nightFactor,
 }: {
     def: (typeof CLOUD_POOL)[number];
-    isNight: boolean;
+    nightFactor: number;
 }) {
     const ref = useRef<THREE.Group>(null!);
     const layer = LAYERS[def.layer];
@@ -271,7 +334,7 @@ function MovingCloud({
         <Cloud
             ref={ref}
             position={[def.x, def.y, layer.z]}
-            opacity={layer.opacity * (isNight ? 0.3 : 1)}
+            opacity={layer.opacity * lerpN(1, 0.3, nightFactor)}
             scale={def.scale}
             seed={def.id}
             speed={0}
@@ -282,43 +345,100 @@ function MovingCloud({
     );
 }
 
-type SkyColors = [string, string, string];
-const SKY_COLORS: Record<ReturnType<typeof getTimeOfDay>, SkyColors> = {
-    night: ["#020810", "#060F1E", "#0D1F35"],
-    dawn: ["#1A3A6B", "#6A6AAA", "#FF9A5C"],
-    morning: ["#0B3A7A", "#3A82BC", "#D0EAFF"],
-    day: ["#0A3A8F", "#2B72C8", "#B8DEFF"],
-    evening: ["#1A1050", "#8A3060", "#FF8040"],
-    dusk: ["#0D0828", "#3A1050", "#C05070"],
+const SKY_PARAMS: Record<
+    TimeOfDay,
+    {
+        turbidity: number;
+        rayleigh: number;
+        mieCoefficient: number;
+        mieDirectionalG: number;
+    }
+> = {
+    night: {
+        turbidity: 10,
+        rayleigh: 3,
+        mieCoefficient: 0.005,
+        mieDirectionalG: 0.7,
+    },
+    dawn: {
+        turbidity: 10,
+        rayleigh: 3,
+        mieCoefficient: 0.005,
+        mieDirectionalG: 0.8,
+    },
+    morning: {
+        turbidity: 6,
+        rayleigh: 3,
+        mieCoefficient: 0.005,
+        mieDirectionalG: 0.8,
+    },
+    day: {
+        turbidity: 4,
+        rayleigh: 3,
+        mieCoefficient: 0.005,
+        mieDirectionalG: 0.8,
+    },
+    evening: {
+        turbidity: 10,
+        rayleigh: 3,
+        mieCoefficient: 0.005,
+        mieDirectionalG: 0.8,
+    },
+    dusk: {
+        turbidity: 10,
+        rayleigh: 3,
+        mieCoefficient: 0.005,
+        mieDirectionalG: 0.8,
+    },
 };
 
-function GradientSky({
-    timeOfDay,
-}: {
-    timeOfDay: ReturnType<typeof getTimeOfDay>;
-}) {
-    const colors = SKY_COLORS[timeOfDay];
-    const stops = [0, 0.5, 1] as [number, number, number];
-    return (
-        <mesh scale={450} renderOrder={-1}>
-            <sphereGeometry args={[1, 32, 16]} />
-            <meshBasicMaterial side={THREE.BackSide} depthWrite={false}>
-                <GradientTexture
-                    stops={stops as [number, ...number[]]}
-                    colors={colors}
-                />
-            </meshBasicMaterial>
-        </mesh>
-    );
-}
+const HEMI_LIGHT: Record<
+    TimeOfDay,
+    { sky: string; ground: string; intensity: number }
+> = {
+    night: { sky: "#0a1020", ground: "#000005", intensity: 0.45 },
+    dawn: { sky: "#ff8c40", ground: "#201008", intensity: 0.85 },
+    morning: { sky: "#87ceeb", ground: "#8b7355", intensity: 1.0 },
+    day: { sky: "#87ceeb", ground: "#8b8b6b", intensity: 1.6 },
+    evening: { sky: "#ff6020", ground: "#201008", intensity: 1.0 },
+    dusk: { sky: "#4020a0", ground: "#100818", intensity: 0.6 },
+};
 
-const FOG_COLORS: Record<ReturnType<typeof getTimeOfDay>, string> = {
+const FOG_COLORS: Record<TimeOfDay, string> = {
     night: "#020810",
-    dawn: "#6a6aaa",
-    morning: "#3a82bc",
-    day: "#2b72c8",
-    evening: "#8a3060",
-    dusk: "#3a1050",
+    dawn: "#c07840",
+    morning: "#5090c0",
+    day: "#70b0e0",
+    evening: "#c06030",
+    dusk: "#302050",
+};
+
+// 0 = full day, 1 = full night — used to lerp lights / cloud opacity / stars
+const NIGHT_FACTOR: Record<TimeOfDay, number> = {
+    night: 1,
+    dawn: 0.25,
+    morning: 0,
+    day: 0,
+    evening: 0.05,
+    dusk: 0.55,
+};
+
+const AMBIENT_INTENSITY: Record<TimeOfDay, number> = {
+    night: 0.15,
+    dawn: 0.4,
+    morning: 0.7,
+    day: 0.75,
+    evening: 0.65,
+    dusk: 0.3,
+};
+
+const SKY_GLOW: Record<TimeOfDay, string> = {
+    night: "#0c1628",
+    dawn: "#e06830",
+    morning: "#a8c8f0",
+    day: "#88b8f0",
+    evening: "#c04018",
+    dusk: "#3818a0",
 };
 
 const OCEAN_TILE_W = 400;
@@ -350,10 +470,13 @@ function HorizonPlane() {
     const geo = useMemo(() => new THREE.PlaneGeometry(OCEAN_TILE_W, 1000), []);
     const mat = useMemo(
         () =>
-            new THREE.MeshBasicMaterial({
+            new THREE.MeshStandardMaterial({
                 map: blurredTexture,
-                color: "#4a6878",
+                color: "#6a8898",
+                roughness: 0.8,
+                metalness: 0.1,
                 depthWrite: false,
+                fog: false,
             }),
         [blurredTexture],
     );
@@ -397,28 +520,129 @@ function HorizonPlane() {
     );
 }
 
+// ─── Horizon haze ─────────────────────────────────────────────────
+function HorizonHaze({ color }: { color: string }) {
+    const material = useMemo(
+        () =>
+            new THREE.ShaderMaterial({
+                uniforms: { hazeColor: { value: new THREE.Color(color) } },
+                vertexShader: `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 hazeColor;
+                    varying vec2 vUv;
+                    void main() {
+                        float d = abs(vUv.y - 0.5) * 2.0;
+                        float alpha = smoothstep(1.0, 0.1, d) * 0.82;
+                        gl_FragColor = vec4(hazeColor, alpha);
+                    }
+                `,
+                transparent: true,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+            }),
+        [],
+    );
+
+    useEffect(() => {
+        material.uniforms.hazeColor.value.set(color);
+    }, [color, material]);
+
+    useEffect(() => () => material.dispose(), [material]);
+
+    return (
+        <mesh material={material} position={[0, -5, -85]} renderOrder={0}>
+            <planeGeometry args={[600, 38]} />
+        </mesh>
+    );
+}
+
+function LayeredSky(props: ComponentProps<typeof Sky>) {
+    const root = useRef<THREE.Group>(null!);
+    useLayoutEffect(() => {
+        root.current.traverse((obj) => {
+            obj.renderOrder = -2;
+        });
+    }, []);
+    return (
+        <group ref={root}>
+            <Sky {...props} />
+        </group>
+    );
+}
+
 // ─── Scene ────────────────────────────────────────────────────────
-function Scene({ hour }: { hour: number }) {
+function Scene({
+    hour,
+    cabinMode,
+}: {
+    hour: number;
+    cabinMode: CabinLightMode;
+}) {
     const sunPosition = getSunPosition(hour);
-    const timeOfDay = getTimeOfDay(hour);
-    const isNight = timeOfDay === "night";
+    const { from, to, t } = getBlend(hour);
+
+    const fogColor = lerpColor(FOG_COLORS[from], FOG_COLORS[to], t);
+    const skyParams = {
+        turbidity: lerpN(
+            SKY_PARAMS[from].turbidity,
+            SKY_PARAMS[to].turbidity,
+            t,
+        ),
+        rayleigh: lerpN(SKY_PARAMS[from].rayleigh, SKY_PARAMS[to].rayleigh, t),
+        mieCoefficient: lerpN(
+            SKY_PARAMS[from].mieCoefficient,
+            SKY_PARAMS[to].mieCoefficient,
+            t,
+        ),
+        mieDirectionalG: lerpN(
+            SKY_PARAMS[from].mieDirectionalG,
+            SKY_PARAMS[to].mieDirectionalG,
+            t,
+        ),
+    };
+    const hemi = {
+        sky: lerpColor(HEMI_LIGHT[from].sky, HEMI_LIGHT[to].sky, t),
+        ground: lerpColor(HEMI_LIGHT[from].ground, HEMI_LIGHT[to].ground, t),
+        intensity: lerpN(
+            HEMI_LIGHT[from].intensity,
+            HEMI_LIGHT[to].intensity,
+            t,
+        ),
+    };
+    const ambientIntensity = lerpN(
+        AMBIENT_INTENSITY[from],
+        AMBIENT_INTENSITY[to],
+        t,
+    );
+    const nightFactor = lerpN(NIGHT_FACTOR[from], NIGHT_FACTOR[to], t);
+    const skyGlowColor = lerpColor(SKY_GLOW[from], SKY_GLOW[to], t);
 
     return (
         <>
-            <fog attach="fog" args={[FOG_COLORS[timeOfDay], 100, 220]} />
-            <GradientSky timeOfDay={timeOfDay} />
+            <fog attach="fog" args={[fogColor, 100, 220]} />
+            <LayeredSky
+                sunPosition={sunPosition}
+                {...skyParams}
+                distance={450}
+            />
             <Suspense>
                 <HorizonPlane />
             </Suspense>
-            <ambientLight intensity={isNight ? 0.05 : 0.35} />
-            {!isNight && (
-                <directionalLight
-                    position={sunPosition}
-                    intensity={1.0}
-                    color="#fff8ee"
-                />
-            )}
-            {isNight && (
+            <HorizonHaze color={fogColor} />
+            <ambientLight intensity={ambientIntensity} />
+            <hemisphereLight args={[hemi.sky, hemi.ground, hemi.intensity]} />
+            <directionalLight
+                position={sunPosition}
+                intensity={lerpN(1.8, 0, nightFactor)}
+                color="#fff8ee"
+            />
+            {nightFactor > 0.1 && (
                 <group position={[0, 120, 0]}>
                     <Stars
                         radius={100}
@@ -432,12 +656,21 @@ function Scene({ hour }: { hour: number }) {
             <Suspense>
                 <Clouds material={THREE.MeshBasicMaterial}>
                     {CLOUD_POOL.map((def) => (
-                        <MovingCloud key={def.id} def={def} isNight={isNight} />
+                        <MovingCloud
+                            key={def.id}
+                            def={def}
+                            nightFactor={nightFactor}
+                        />
                     ))}
                 </Clouds>
             </Suspense>
             <Suspense>
-                <AirplaneWindow sunPosition={sunPosition} isNight={isNight} />
+                <AirplaneWindow
+                    sunPosition={sunPosition}
+                    nightFactor={nightFactor}
+                    skyGlowColor={skyGlowColor}
+                    cabinMode={cabinMode}
+                />
             </Suspense>
         </>
     );
@@ -445,13 +678,20 @@ function Scene({ hour }: { hour: number }) {
 
 useGLTF.preload("/planewindow.glb");
 
-function WindowScene({ hour }: { hour: number }) {
+function WindowScene({
+    hour,
+    cabinMode,
+}: {
+    hour: number;
+    cabinMode: CabinLightMode;
+}) {
     return (
         <Canvas
             dpr={[1, 1.5]}
             gl={{ antialias: false, powerPreference: "high-performance" }}
             onCreated={({ gl }) => {
-                // e.preventDefault() allows the browser to attempt context restoration
+                gl.toneMapping = THREE.ACESFilmicToneMapping;
+                gl.toneMappingExposure = 1.2;
                 gl.domElement.addEventListener(
                     "webglcontextlost",
                     (e) => e.preventDefault(),
@@ -460,7 +700,7 @@ function WindowScene({ hour }: { hour: number }) {
             }}
         >
             <PerspectiveCamera makeDefault position={[0, 0, 10]} fov={20} />
-            <Scene hour={hour} />
+            <Scene hour={hour} cabinMode={cabinMode} />
         </Canvas>
     );
 }

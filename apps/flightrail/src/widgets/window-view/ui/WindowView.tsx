@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
+import type { CabinLightMode } from "./WindowScene";
+
 const WindowScene = dynamic(() => import("./WindowScene"), { ssr: false });
 
 function formatTime(s: number) {
@@ -17,15 +19,13 @@ function formatDistance(s: number) {
     return `${km.toLocaleString()} km`;
 }
 
+const CABIN_MODES: CabinLightMode[] = ["auto", "on", "off"];
+
 export default function WindowView() {
-    const [hour, setHour] = useState(() => new Date().getHours());
+    const [hour] = useState(9);
     const [elapsed, setElapsed] = useState(0);
     const [running, setRunning] = useState(true);
-
-    useEffect(() => {
-        const id = setInterval(() => setHour(new Date().getHours()), 60_000);
-        return () => clearInterval(id);
-    }, []);
+    const [cabinMode, setCabinMode] = useState<CabinLightMode>("auto");
 
     useEffect(() => {
         if (!running) return;
@@ -37,7 +37,7 @@ export default function WindowView() {
         <div className="relative w-full h-screen overflow-hidden bg-[#0a0806]">
             {/* 3D sky canvas */}
             <div className="absolute inset-0">
-                <WindowScene hour={hour} />
+                <WindowScene hour={hour} cabinMode={cabinMode} />
             </div>
 
             {/* Top stats */}
@@ -120,6 +120,22 @@ export default function WindowView() {
                         </svg>
                     )}
                 </button>
+                {/* Cabin light */}
+                <div className="flex flex-col rounded-2xl bg-white/10 overflow-hidden">
+                    {CABIN_MODES.map((mode) => (
+                        <button
+                            key={mode}
+                            onClick={() => setCabinMode(mode)}
+                            className={`w-14 py-2.5 text-[11px] font-semibold tracking-widest uppercase transition-colors ${
+                                cabinMode === mode
+                                    ? "bg-white/25 text-white"
+                                    : "text-white/35 hover:text-white/60"
+                            }`}
+                        >
+                            {mode}
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );
