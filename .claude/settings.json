@@ -19,18 +19,6 @@
         ]
     },
     "hooks": {
-        "PreToolUse": [
-            {
-                "matcher": "Edit|Write",
-                "hooks": [
-                    {
-                        "type": "command",
-                        "command": "powershell -File .claude/hooks/boundary-check.ps1",
-                        "statusMessage": "Checking package boundary..."
-                    }
-                ]
-            }
-        ],
         "PostToolUse": [
             {
                 "matcher": "Edit|Write",

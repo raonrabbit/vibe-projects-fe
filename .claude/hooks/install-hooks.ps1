@@ -25,15 +25,28 @@ if (-not $staged) { exit 0 }
 $uiChanged = $staged | Where-Object { $_ -match '^packages/ui/' }
 if (-not $uiChanged) { exit 0 }
 
+# ── Changeset check (advisory by default) ────────────────────────────────
 $changesetStaged = $staged | Where-Object { $_ -match '^\.changeset/[^/]+\.md$' }
-if ($changesetStaged) { exit 0 }
+if (-not $changesetStaged) {
+    $slug = Get-Date -Format 'yyyyMMdd-HHmmss'
+    $msg = "[CHANGESET] packages/ui has staged changes but no changeset file is staged.`n`n  To add a changeset:`n    1. Copy .changeset\template.md to .changeset\$slug-<slug>.md`n    2. Fill in type (patch/minor/major) and summary`n    3. git add .changeset\*.md`n    4. git commit`n`n  To skip (not recommended): git commit --no-verify"
+    [Console]::Error.WriteLine($msg)
+    if ($env:CHANGESET_BLOCK -eq '1') { exit 1 }
+}
 
-$slug = Get-Date -Format 'yyyyMMdd-HHmmss'
-$msg = "[CHANGESET] packages/ui has staged changes but no changeset file is staged.`n`n  To add a changeset:`n    1. Copy .changeset\template.md to .changeset\$slug-<slug>.md`n    2. Fill in type (patch/minor/major) and summary`n    3. git add .changeset\*.md`n    4. git commit`n`n  To skip (not recommended): git commit --no-verify"
+# ── Type-check: @vibe/ui + all dependents (always blocking) ──────────────
+[Console]::Error.WriteLine("[TYPE-CHECK] packages/ui changed — verifying @vibe/ui and all dependents...")
+$ErrorActionPreference = 'Continue'
 
-[Console]::Error.WriteLine($msg)
+pnpm turbo run type-check --filter=...@vibe/ui
+$tcResult = $LASTEXITCODE
 
-if ($env:CHANGESET_BLOCK -eq '1') { exit 1 }
+if ($tcResult -ne 0) {
+    [Console]::Error.WriteLine("`n[TYPE-CHECK FAILED] Fix type errors before committing.")
+    exit 1
+}
+
+[Console]::Error.WriteLine("[TYPE-CHECK] All packages passed.")
 exit 0
 '@
 [System.IO.File]::WriteAllText($ps1Path, $ps1Content, $utf8NoBom)
