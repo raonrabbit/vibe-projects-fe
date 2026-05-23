@@ -7,6 +7,7 @@ import {
     Sky,
     Stars,
     useGLTF,
+    useProgress,
     useTexture,
 } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
@@ -259,6 +260,7 @@ function AirplaneWindow({
                 position={handleInitPos}
                 onPointerDown={(e) => {
                     e.stopPropagation();
+                    (e.target as Element).setPointerCapture(e.pointerId);
                     draggingRef.current = true;
                     gl.domElement.style.cursor = "grabbing";
                 }}
@@ -466,29 +468,49 @@ function HorizonPlane() {
         return tex;
     }, [rawTexture]);
 
+    // Horizon alpha gradient: UV.y=1 (far horizon) → transparent, UV.y<0.85 → opaque
+    // Canvas top row → UV.y=1 (flipY=true), so top=black, bottom=white
+    const alphaMap = useMemo(() => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1;
+        canvas.height = 256;
+        const ctx = canvas.getContext("2d")!;
+        const grad = ctx.createLinearGradient(0, 0, 0, 256);
+        grad.addColorStop(0.0, "black");
+        grad.addColorStop(0.08, "black");
+        grad.addColorStop(0.2, "white");
+        grad.addColorStop(1.0, "white");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 1, 256);
+        return new THREE.CanvasTexture(canvas);
+    }, []);
+
     // Shared across all 3 tiles — one GPU allocation
     const geo = useMemo(() => new THREE.PlaneGeometry(OCEAN_TILE_W, 1000), []);
     const mat = useMemo(
         () =>
             new THREE.MeshStandardMaterial({
                 map: blurredTexture,
+                alphaMap,
                 color: "#6a8898",
                 roughness: 0.8,
                 metalness: 0.1,
                 depthWrite: false,
                 fog: false,
+                transparent: true,
             }),
-        [blurredTexture],
+        [blurredTexture, alphaMap],
     );
 
     useEffect(() => {
         return () => {
             geo.dispose();
             mat.dispose();
+            alphaMap.dispose();
             blurredTexture.dispose();
             rawTexture.dispose();
         };
-    }, [geo, mat, blurredTexture, rawTexture]);
+    }, [geo, mat, alphaMap, blurredTexture, rawTexture]);
 
     // Single useFrame instead of 3
     useFrame((_, delta) => {
@@ -643,7 +665,7 @@ function Scene({
                 color="#fff8ee"
             />
             {nightFactor > 0.1 && (
-                <group position={[0, 120, 0]}>
+                <group position={[0, 180, 0]}>
                     <Stars
                         radius={100}
                         depth={30}
@@ -676,17 +698,47 @@ function Scene({
     );
 }
 
+function ReadySignal({ onReady }: { onReady?: () => void }) {
+    const { active, total, loaded } = useProgress();
+    const called = useRef(false);
+    const onReadyRef = useRef(onReady);
+    onReadyRef.current = onReady;
+
+    useEffect(() => {
+        if (!active && total > 0 && loaded >= total && !called.current) {
+            called.current = true;
+            onReadyRef.current?.();
+        }
+    }, [active, total, loaded]);
+
+    // Fallback: if all assets are cached (total stays 0), fire after mount
+    useEffect(() => {
+        const id = setTimeout(() => {
+            if (!called.current) {
+                called.current = true;
+                onReadyRef.current?.();
+            }
+        }, 600);
+        return () => clearTimeout(id);
+    }, []);
+
+    return null;
+}
+
 useGLTF.preload("/planewindow.glb");
 
 function WindowScene({
     hour,
     cabinMode,
+    onReady,
 }: {
     hour: number;
     cabinMode: CabinLightMode;
+    onReady?: () => void;
 }) {
     return (
         <Canvas
+            style={{ touchAction: "none" }}
             dpr={[1, 1.5]}
             gl={{ antialias: false, powerPreference: "high-performance" }}
             onCreated={({ gl }) => {
@@ -699,6 +751,7 @@ function WindowScene({
                 );
             }}
         >
+            <ReadySignal onReady={onReady} />
             <PerspectiveCamera makeDefault position={[0, 0, 10]} fov={20} />
             <Scene hour={hour} cabinMode={cabinMode} />
         </Canvas>
