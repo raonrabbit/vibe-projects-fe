@@ -1,8 +1,11 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { findDestination } from "@/entities/airport";
+import { saveSession } from "@/entities/session";
 import BoardingTicket from "@/shared/ui/BoardingTicket";
 
 import TimeBar, { type TimeMode } from "./TimeBar";
@@ -34,7 +37,6 @@ function skyClockDisplay(hour: number) {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-// ─── Analog clock ─────────────────────────────────────────────────
 function AnalogClock({ hour }: { hour: number }) {
     const n = ((hour % 24) + 24) % 24;
     const h12 = n % 12;
@@ -69,7 +71,6 @@ function AnalogClock({ hour }: { hour: number }) {
                     strokeLinecap="round"
                 />
             ))}
-            {/* Hour hand */}
             <line
                 x1="28"
                 y1="28"
@@ -80,7 +81,6 @@ function AnalogClock({ hour }: { hour: number }) {
                 strokeLinecap="round"
                 strokeOpacity="0.9"
             />
-            {/* Minute hand */}
             <line
                 x1="28"
                 y1="28"
@@ -96,7 +96,6 @@ function AnalogClock({ hour }: { hour: number }) {
     );
 }
 
-// ─── Left-side tooltip ────────────────────────────────────────────
 function LeftTooltip({ label }: { label: string }) {
     return (
         <div className="absolute right-full top-1/2 -translate-y-1/2 mr-3 px-2 py-1 bg-black/60 backdrop-blur-sm rounded text-xs text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
@@ -105,22 +104,113 @@ function LeftTooltip({ label }: { label: string }) {
     );
 }
 
-const CABIN_MODES: CabinLightMode[] = ["auto", "on", "off"];
-
 export default function WindowView() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    const mode = (searchParams.get("mode") ?? "free") as "free" | "planned";
+    const subject = searchParams.get("subject") ?? "";
+    const from = searchParams.get("from") ?? "ICN";
+    const plannedDuration =
+        mode === "planned"
+            ? Number(searchParams.get("duration") ?? 7200)
+            : undefined;
+
+    const startedAt = useRef(new Date());
     const [ready, setReady] = useState(false);
     const [elapsed, setElapsed] = useState(0);
     const [running, setRunning] = useState(true);
+    const [reachedGoal, setReachedGoal] = useState(false);
+    const [saving, setSaving] = useState(false);
+
     const [cabinMode, setCabinMode] = useState<CabinLightMode>("auto");
     const [cabinOpen, setCabinOpen] = useState(false);
     const [clockOpen, setClockOpen] = useState(false);
+    const [muted, setMuted] = useState(false);
+    const audioCtxRef = useRef<AudioContext | null>(null);
+    const gainRef = useRef<GainNode | null>(null);
 
     const [timeMode, setTimeMode] = useState<TimeMode>("local");
     const [fromOffset, setFromOffset] = useState(0);
     const [fixedHour, setFixedHour] = useState(0);
-    const [localHour, setLocalHour] = useState(getLocalHour);
+    const [localHour, setLocalHour] = useState(0);
 
     useEffect(() => {
+        const ctx = new AudioContext();
+        const masterGain = ctx.createGain();
+        masterGain.gain.value = 0.4;
+        masterGain.connect(ctx.destination);
+        audioCtxRef.current = ctx;
+        gainRef.current = masterGain;
+
+        const CROSSFADE = 3; // seconds of overlap between loop iterations
+
+        let timerId: ReturnType<typeof setTimeout> | null = null;
+
+        const schedule = (
+            buffer: AudioBuffer,
+            when: number,
+            fadeInDur: number,
+        ) => {
+            const source = ctx.createBufferSource();
+            const segGain = ctx.createGain();
+            source.buffer = buffer;
+            source.connect(segGain);
+            segGain.connect(masterGain);
+
+            segGain.gain.setValueAtTime(0, when);
+            segGain.gain.linearRampToValueAtTime(1, when + fadeInDur);
+            segGain.gain.setValueAtTime(1, when + buffer.duration - CROSSFADE);
+            segGain.gain.linearRampToValueAtTime(0, when + buffer.duration);
+
+            source.start(when);
+            source.stop(when + buffer.duration);
+
+            const nextWhen = when + buffer.duration - CROSSFADE;
+            const delayMs = (nextWhen - ctx.currentTime) * 1000 - 200;
+            timerId = setTimeout(
+                () => schedule(buffer, nextWhen, CROSSFADE),
+                Math.max(0, delayMs),
+            );
+        };
+
+        const startAudio = (decoded: AudioBuffer) => {
+            schedule(decoded, ctx.currentTime, 2);
+        };
+
+        fetch("/audios/cabin.mp3")
+            .then((r) => r.arrayBuffer())
+            .then((buf) => ctx.decodeAudioData(buf))
+            .then((decoded) => {
+                if (ctx.state === "suspended") {
+                    // 새로고침 등으로 제스처 없이 로드된 경우 — 첫 인터랙션에 재개
+                    const resume = () => {
+                        ctx.resume().then(() => startAudio(decoded));
+                        window.removeEventListener("pointerdown", resume);
+                        window.removeEventListener("keydown", resume);
+                    };
+                    window.addEventListener("pointerdown", resume, {
+                        once: true,
+                    });
+                    window.addEventListener("keydown", resume, { once: true });
+                } else {
+                    startAudio(decoded);
+                }
+            })
+            .catch(() => {});
+
+        return () => {
+            if (timerId !== null) clearTimeout(timerId);
+            ctx.close();
+        };
+    }, []);
+
+    useEffect(() => {
+        if (gainRef.current) gainRef.current.gain.value = muted ? 0 : 0.4;
+    }, [muted]);
+
+    useEffect(() => {
+        setLocalHour(getLocalHour());
         const id = setInterval(() => setLocalHour(getLocalHour()), 1000);
         return () => clearInterval(id);
     }, []);
@@ -130,6 +220,18 @@ export default function WindowView() {
         const id = setInterval(() => setElapsed((s) => s + 1), 1000);
         return () => clearInterval(id);
     }, [running]);
+
+    // Mark goal reached for planned mode
+    useEffect(() => {
+        if (
+            mode === "planned" &&
+            plannedDuration &&
+            elapsed >= plannedDuration &&
+            !reachedGoal
+        ) {
+            setReachedGoal(true);
+        }
+    }, [elapsed, mode, plannedDuration, reachedGoal]);
 
     const displayHour =
         timeMode === "local"
@@ -167,6 +269,60 @@ export default function WindowView() {
         [timeMode, elapsed],
     );
 
+    async function handleLand() {
+        if (saving) return;
+        setSaving(true);
+        setRunning(false);
+
+        const destination = findDestination(from, elapsed);
+        const arrivalStatus =
+            mode === "free"
+                ? "ontime"
+                : elapsed >= (plannedDuration ?? 0)
+                  ? "delayed"
+                  : "abandoned";
+
+        try {
+            await saveSession({
+                mode,
+                subject,
+                departureAirport: from,
+                destinationAirport: destination?.iata ?? from,
+                startedAt: startedAt.current,
+                endedAt: new Date(),
+                plannedDuration,
+                arrivalStatus,
+            });
+        } catch {
+            // silently fail — don't block navigation
+        }
+
+        router.push("/");
+    }
+
+    // Timer display values
+    const timerMain = (() => {
+        if (mode === "planned" && plannedDuration !== undefined) {
+            if (elapsed < plannedDuration) {
+                return {
+                    value: formatElapsed(plannedDuration - elapsed),
+                    label: "남은 시간",
+                    delayed: false,
+                };
+            }
+            return {
+                value: formatElapsed(elapsed - plannedDuration),
+                label: "연착 중",
+                delayed: true,
+            };
+        }
+        return {
+            value: formatElapsed(elapsed),
+            label: "비행 시간",
+            delayed: false,
+        };
+    })();
+
     const modeLabel =
         timeMode === "local"
             ? "현재 시각"
@@ -191,7 +347,37 @@ export default function WindowView() {
             {/* Boarding ticket loading overlay */}
             <BoardingTicket ready={ready} />
 
-            {/* Top-left: clock (click to open time controls) */}
+            {/* Pause overlay */}
+            {!running && !saving && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md">
+                    <p className="text-white/40 text-[11px] tracking-widest uppercase mb-5">
+                        일시정지
+                    </p>
+                    <button
+                        onClick={() => setRunning(true)}
+                        className="px-8 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl text-white font-semibold text-[15px] transition-all"
+                    >
+                        재개하기
+                    </button>
+                    <button
+                        onClick={handleLand}
+                        className="mt-3 px-6 py-2.5 text-white/40 hover:text-white/70 text-[13px] transition-colors"
+                    >
+                        착륙 (세션 종료)
+                    </button>
+                </div>
+            )}
+
+            {/* Saving overlay */}
+            {saving && (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/70 backdrop-blur-md">
+                    <p className="text-white/60 text-[13px] tracking-widest uppercase">
+                        착륙 중...
+                    </p>
+                </div>
+            )}
+
+            {/* Top-left: clock */}
             <div className="absolute top-8 left-8 z-10">
                 <button
                     className="flex items-center gap-3 group"
@@ -225,7 +411,6 @@ export default function WindowView() {
                     </div>
                 </button>
 
-                {/* Collapsible time bar */}
                 <div
                     className={`mt-3 transition-all duration-200 origin-top ${
                         clockOpen
@@ -242,15 +427,35 @@ export default function WindowView() {
                 </div>
             </div>
 
-            {/* Top-right: study stats */}
+            {/* Top-right: flight stats */}
             <div className="absolute top-8 right-8 z-10">
                 <div className="bg-black/20 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/8 text-right">
-                    <p className="text-2xl font-bold text-white tabular-nums tracking-tight leading-none">
-                        {formatElapsed(elapsed)}
+                    {subject && (
+                        <p className="text-[10px] text-sky-400/70 tracking-widest uppercase mb-2">
+                            {subject}
+                        </p>
+                    )}
+                    <p
+                        className={`text-2xl font-bold tabular-nums tracking-tight leading-none ${
+                            timerMain.delayed ? "text-amber-400" : "text-white"
+                        }`}
+                    >
+                        {timerMain.value}
                     </p>
                     <p className="text-[10px] text-white/35 mt-0.5 tracking-widest uppercase">
-                        비행 시간
+                        {timerMain.label}
                     </p>
+                    {mode === "planned" && (
+                        <>
+                            <div className="h-px bg-white/8 my-2" />
+                            <p className="text-sm font-medium text-white/50 tabular-nums tracking-tight leading-none">
+                                {formatElapsed(elapsed)}
+                            </p>
+                            <p className="text-[10px] text-white/25 mt-0.5 tracking-widest uppercase">
+                                총 비행 시간
+                            </p>
+                        </>
+                    )}
                     <div className="h-px bg-white/8 my-2" />
                     <p className="text-lg font-semibold text-white/70 tabular-nums tracking-tight leading-none">
                         {formatDistance(elapsed)}
@@ -264,26 +469,54 @@ export default function WindowView() {
             {/* Right: controls pill */}
             <div className="absolute right-8 top-1/2 -translate-y-1/2 z-10">
                 <div className="bg-black/20 backdrop-blur-md rounded-2xl flex flex-col divide-y divide-white/8">
-                    {/* Music */}
+                    {/* Music / mute toggle */}
                     <div className="relative group">
-                        <button className={`${btnCls} rounded-t-2xl`}>
-                            <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="white"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeOpacity="0.65"
-                            >
-                                <path d="M9 18V5l12-2v13" />
-                                <circle cx="6" cy="18" r="3" />
-                                <circle cx="18" cy="16" r="3" />
-                            </svg>
+                        <button
+                            className={`${btnCls} rounded-t-2xl`}
+                            onClick={() => setMuted((m) => !m)}
+                        >
+                            {muted ? (
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="white"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeOpacity="0.25"
+                                >
+                                    <path d="M9 18V5l12-2v13" />
+                                    <circle cx="6" cy="18" r="3" />
+                                    <circle cx="18" cy="16" r="3" />
+                                    <line
+                                        x1="2"
+                                        y1="2"
+                                        x2="22"
+                                        y2="22"
+                                        strokeOpacity="0.4"
+                                    />
+                                </svg>
+                            ) : (
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="white"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeOpacity="0.65"
+                                >
+                                    <path d="M9 18V5l12-2v13" />
+                                    <circle cx="6" cy="18" r="3" />
+                                    <circle cx="18" cy="16" r="3" />
+                                </svg>
+                            )}
                         </button>
-                        <LeftTooltip label="음악" />
+                        <LeftTooltip label={muted ? "음소거 해제" : "음소거"} />
                     </div>
                     {/* Globe */}
                     <div className="relative group">
@@ -358,18 +591,34 @@ export default function WindowView() {
                                 height="18"
                                 viewBox="0 0 24 24"
                                 fill="none"
-                                stroke="white"
+                                stroke={
+                                    cabinMode === "on"
+                                        ? "#fbbf24"
+                                        : cabinMode === "auto"
+                                          ? "#7dd3fc"
+                                          : "white"
+                                }
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                strokeOpacity="0.65"
+                                strokeOpacity={cabinMode === "off" ? 0.3 : 0.85}
                             >
                                 <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
                                 <path d="M9 18h6" />
                                 <path d="M10 22h4" />
                             </svg>
                         </button>
-                        {!cabinOpen && <LeftTooltip label="캐빈 조명" />}
+                        {!cabinOpen && (
+                            <LeftTooltip
+                                label={
+                                    cabinMode === "on"
+                                        ? "캐빈 조명: 켜짐"
+                                        : cabinMode === "auto"
+                                          ? "캐빈 조명: 자동"
+                                          : "캐빈 조명: 꺼짐"
+                                }
+                            />
+                        )}
                         <div
                             className={`absolute right-full top-1/2 -translate-y-1/2 mr-3 flex flex-row gap-2 transition-all duration-200 ease-out ${
                                 cabinOpen
@@ -377,22 +626,90 @@ export default function WindowView() {
                                     : "translate-x-4 opacity-0 pointer-events-none"
                             }`}
                         >
-                            {CABIN_MODES.map((mode) => (
-                                <button
-                                    key={mode}
-                                    onClick={() => {
-                                        setCabinMode(mode);
-                                        setCabinOpen(false);
-                                    }}
-                                    className={`w-12 h-12 rounded-full text-[11px] font-semibold tracking-widest uppercase transition-colors ${
-                                        cabinMode === mode
-                                            ? "bg-white/25 text-white"
-                                            : "bg-white/10 text-white/50 hover:text-white/80 hover:bg-white/15"
-                                    }`}
+                            <button
+                                onClick={() => {
+                                    setCabinMode("on");
+                                    setCabinOpen(false);
+                                }}
+                                className={`w-12 h-12 rounded-full flex flex-col items-center justify-center gap-0.5 transition-all ${
+                                    cabinMode === "on"
+                                        ? "bg-amber-400/25 ring-1 ring-amber-400/50 text-amber-300"
+                                        : "bg-white/8 text-white/30 hover:bg-white/12 hover:text-white/55"
+                                }`}
+                            >
+                                <svg
+                                    width="15"
+                                    height="15"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
                                 >
-                                    {mode}
-                                </button>
-                            ))}
+                                    <circle
+                                        cx="12"
+                                        cy="12"
+                                        r="4"
+                                        fill="currentColor"
+                                        stroke="none"
+                                    />
+                                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                                </svg>
+                                <span className="text-[8px] font-bold tracking-wider">
+                                    ON
+                                </span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setCabinMode("auto");
+                                    setCabinOpen(false);
+                                }}
+                                className={`w-12 h-12 rounded-full flex flex-col items-center justify-center gap-0.5 transition-all ${
+                                    cabinMode === "auto"
+                                        ? "bg-sky-400/20 ring-1 ring-sky-400/40 text-sky-200"
+                                        : "bg-white/8 text-white/30 hover:bg-white/12 hover:text-white/55"
+                                }`}
+                            >
+                                <svg
+                                    width="15"
+                                    height="15"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                    stroke="none"
+                                >
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                                </svg>
+                                <span className="text-[8px] font-bold tracking-wider">
+                                    AUTO
+                                </span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setCabinMode("off");
+                                    setCabinOpen(false);
+                                }}
+                                className={`w-12 h-12 rounded-full flex flex-col items-center justify-center gap-0.5 transition-all ${
+                                    cabinMode === "off"
+                                        ? "bg-white/12 ring-1 ring-white/20 text-white/55"
+                                        : "bg-white/8 text-white/30 hover:bg-white/12 hover:text-white/55"
+                                }`}
+                            >
+                                <svg
+                                    width="15"
+                                    height="15"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2.5"
+                                    strokeLinecap="round"
+                                >
+                                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                                    <line x1="12" y1="2" x2="12" y2="12" />
+                                </svg>
+                                <span className="text-[8px] font-bold tracking-wider">
+                                    OFF
+                                </span>
+                            </button>
                         </div>
                     </div>
                 </div>
