@@ -1,16 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 import { PassportButton } from "@/features/auth";
 import { DepartureModal } from "@/widgets/departure-modal";
-
-const STATS = [
-    { label: "누적 비행 시간", value: "0h 00m" },
-    { label: "총 비행 거리", value: "0 km" },
-    { label: "방문 공항", value: "0곳" },
-    { label: "오늘 공부", value: "0h 00m" },
-];
 
 function PlaneIcon({ size = 20 }: { size?: number }) {
     return (
@@ -64,12 +58,12 @@ export default function HomePage() {
                     </span>
                 </div>
                 <nav className="flex items-center gap-3">
-                    <button className="px-4 py-2 text-white/35 hover:text-white/65 text-[13px] transition-colors tracking-wide rounded-xl hover:bg-white/5">
+                    <Link
+                        href="/records"
+                        className="px-4 py-2 text-white/35 hover:text-white/65 text-[13px] transition-colors tracking-wide rounded-xl hover:bg-white/5"
+                    >
                         기록
-                    </button>
-                    <button className="px-4 py-2 text-white/35 hover:text-white/65 text-[13px] transition-colors tracking-wide rounded-xl hover:bg-white/5">
-                        설정
-                    </button>
+                    </Link>
                     <PassportButton />
                 </nav>
             </header>
@@ -93,36 +87,6 @@ export default function HomePage() {
                     <PlaneIcon size={17} />
                     출발하기
                 </button>
-            </div>
-
-            {/* Bottom dashboard */}
-            <div className="relative z-10 px-10 pb-10 space-y-3">
-                {/* Stats */}
-                <div className="grid grid-cols-4 gap-3">
-                    {STATS.map(({ label, value }) => (
-                        <div
-                            key={label}
-                            className="bg-black/20 backdrop-blur-sm border border-white/[0.06] rounded-2xl px-5 py-4"
-                        >
-                            <p className="text-xl font-bold text-white tabular-nums tracking-tight leading-none">
-                                {value}
-                            </p>
-                            <p className="text-[10px] text-white/30 mt-1.5 tracking-widest uppercase">
-                                {label}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-
-                {/* Recent trips */}
-                <div className="bg-black/20 backdrop-blur-sm border border-white/[0.06] rounded-2xl px-6 py-4">
-                    <p className="text-[10px] text-white/30 tracking-widest uppercase mb-3">
-                        최근 여행
-                    </p>
-                    <p className="text-white/20 text-[13px] text-center py-2">
-                        아직 비행 기록이 없습니다. 첫 출발을 시작해보세요.
-                    </p>
-                </div>
             </div>
 
             {/* Departure modal */}
