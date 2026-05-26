@@ -1,28 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+
+import { AIRPORTS, findDestinationCandidates } from "@/entities/airport";
 
 type Mode = "free" | "planned";
 
-const AIRPORTS = [
-    { iata: "ICN", name: "인천국제공항", city: "서울" },
-    { iata: "GMP", name: "김포국제공항", city: "서울" },
-    { iata: "PUS", name: "김해국제공항", city: "부산" },
-    { iata: "CJU", name: "제주국제공항", city: "제주" },
-    { iata: "NRT", name: "나리타국제공항", city: "도쿄" },
-    { iata: "HND", name: "하네다공항", city: "도쿄" },
-    { iata: "LAX", name: "로스앤젤레스 국제공항", city: "LA" },
-    { iata: "JFK", name: "존F케네디 국제공항", city: "뉴욕" },
-    { iata: "LHR", name: "히드로공항", city: "런던" },
-    { iata: "CDG", name: "샤를드골공항", city: "파리" },
-    { iata: "SIN", name: "창이공항", city: "싱가포르" },
-    { iata: "HKG", name: "홍콩국제공항", city: "홍콩" },
-    { iata: "SYD", name: "시드니공항", city: "시드니" },
-    { iata: "DXB", name: "두바이국제공항", city: "두바이" },
-];
-
-type Step = "mode" | "subject" | "airport" | "duration";
+type Step = "mode" | "subject" | "airport" | "duration" | "destination";
 
 interface DepartureModalProps {
     onClose: () => void;
@@ -37,13 +22,23 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
     const [airportSearch, setAirportSearch] = useState("");
     const [hours, setHours] = useState(2);
     const [minutes, setMinutes] = useState(0);
+    const [hoursText, setHoursText] = useState<string | null>(null);
+    const [minutesText, setMinutesText] = useState<string | null>(null);
+    const [destination, setDestination] = useState<string>("");
 
     const steps: Step[] = [
         "mode",
         "subject",
         "airport",
-        ...(mode === "planned" ? (["duration"] as Step[]) : []),
+        ...(mode === "planned" ? (["duration", "destination"] as Step[]) : []),
     ];
+
+    const destinationCandidates = useMemo(() => {
+        if (mode !== "planned") return [];
+        const totalSec = hours * 3600 + minutes * 60;
+        if (totalSec === 0) return [];
+        return findDestinationCandidates(airport, totalSec);
+    }, [mode, airport, hours, minutes]);
     const stepIndex = steps.indexOf(step);
     const isLast = stepIndex === steps.length - 1;
 
@@ -78,6 +73,7 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
         });
         if (mode === "planned") {
             params.set("duration", String(hours * 3600 + minutes * 60));
+            params.set("to", destination);
         }
         router.push(`/timer?${params}`);
     }
@@ -86,7 +82,8 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
         (step === "mode" && mode !== null) ||
         step === "subject" ||
         step === "airport" ||
-        step === "duration";
+        step === "duration" ||
+        (step === "destination" && destination !== "");
 
     return (
         <div
@@ -327,11 +324,18 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
                                 공부할 목표 시간을 설정하세요
                             </p>
                             <div className="flex items-center justify-center gap-6">
+                                {/* Hours */}
                                 <div className="flex flex-col items-center gap-3">
                                     <button
-                                        onClick={() =>
-                                            setHours((h) => Math.min(h + 1, 23))
-                                        }
+                                        onClick={() => {
+                                            const cur =
+                                                hoursText !== null
+                                                    ? parseInt(hoursText, 10) ||
+                                                      0
+                                                    : hours;
+                                            setHours(Math.min(cur + 1, 23));
+                                            setHoursText(null);
+                                        }}
                                         className="w-10 h-10 flex items-center justify-center rounded-full bg-white/[0.06] hover:bg-white/12 text-white/60 hover:text-white transition-colors"
                                     >
                                         <svg
@@ -346,15 +350,48 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
                                             <path d="M18 15l-6-6-6 6" />
                                         </svg>
                                     </button>
-                                    <div className="w-20 h-20 flex items-center justify-center bg-white/[0.04] border border-white/[0.08] rounded-2xl">
-                                        <span className="text-4xl font-bold text-white tabular-nums">
-                                            {String(hours).padStart(2, "0")}
-                                        </span>
-                                    </div>
-                                    <button
-                                        onClick={() =>
-                                            setHours((h) => Math.max(h - 1, 0))
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={
+                                            hoursText ??
+                                            String(hours).padStart(2, "0")
                                         }
+                                        onChange={(e) =>
+                                            setHoursText(
+                                                e.target.value
+                                                    .replace(/\D/g, "")
+                                                    .slice(0, 2),
+                                            )
+                                        }
+                                        onFocus={(e) => e.target.select()}
+                                        onBlur={() => {
+                                            const n = parseInt(
+                                                hoursText ?? "",
+                                                10,
+                                            );
+                                            setHours(
+                                                isNaN(n)
+                                                    ? 0
+                                                    : Math.min(
+                                                          23,
+                                                          Math.max(0, n),
+                                                      ),
+                                            );
+                                            setHoursText(null);
+                                        }}
+                                        className="w-20 h-20 text-center text-4xl font-bold text-white tabular-nums bg-white/[0.04] border border-white/[0.08] rounded-2xl outline-none focus:border-sky-500/40 transition-colors caret-sky-400"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const cur =
+                                                hoursText !== null
+                                                    ? parseInt(hoursText, 10) ||
+                                                      0
+                                                    : hours;
+                                            setHours(Math.max(cur - 1, 0));
+                                            setHoursText(null);
+                                        }}
                                         className="w-10 h-10 flex items-center justify-center rounded-full bg-white/[0.06] hover:bg-white/12 text-white/60 hover:text-white transition-colors"
                                     >
                                         <svg
@@ -373,14 +410,25 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
                                         시간
                                     </span>
                                 </div>
+
                                 <span className="text-3xl font-bold text-white/20 mb-8">
                                     :
                                 </span>
+
+                                {/* Minutes */}
                                 <div className="flex flex-col items-center gap-3">
                                     <button
-                                        onClick={() =>
-                                            setMinutes((m) => (m + 10) % 60)
-                                        }
+                                        onClick={() => {
+                                            const cur =
+                                                minutesText !== null
+                                                    ? parseInt(
+                                                          minutesText,
+                                                          10,
+                                                      ) || 0
+                                                    : minutes;
+                                            setMinutes((cur + 1) % 60);
+                                            setMinutesText(null);
+                                        }}
                                         className="w-10 h-10 flex items-center justify-center rounded-full bg-white/[0.06] hover:bg-white/12 text-white/60 hover:text-white transition-colors"
                                     >
                                         <svg
@@ -395,17 +443,50 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
                                             <path d="M18 15l-6-6-6 6" />
                                         </svg>
                                     </button>
-                                    <div className="w-20 h-20 flex items-center justify-center bg-white/[0.04] border border-white/[0.08] rounded-2xl">
-                                        <span className="text-4xl font-bold text-white tabular-nums">
-                                            {String(minutes).padStart(2, "0")}
-                                        </span>
-                                    </div>
-                                    <button
-                                        onClick={() =>
-                                            setMinutes(
-                                                (m) => (m - 10 + 60) % 60,
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={
+                                            minutesText ??
+                                            String(minutes).padStart(2, "0")
+                                        }
+                                        onChange={(e) =>
+                                            setMinutesText(
+                                                e.target.value
+                                                    .replace(/\D/g, "")
+                                                    .slice(0, 2),
                                             )
                                         }
+                                        onFocus={(e) => e.target.select()}
+                                        onBlur={() => {
+                                            const n = parseInt(
+                                                minutesText ?? "",
+                                                10,
+                                            );
+                                            setMinutes(
+                                                isNaN(n)
+                                                    ? 0
+                                                    : Math.min(
+                                                          59,
+                                                          Math.max(0, n),
+                                                      ),
+                                            );
+                                            setMinutesText(null);
+                                        }}
+                                        className="w-20 h-20 text-center text-4xl font-bold text-white tabular-nums bg-white/[0.04] border border-white/[0.08] rounded-2xl outline-none focus:border-sky-500/40 transition-colors caret-sky-400"
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const cur =
+                                                minutesText !== null
+                                                    ? parseInt(
+                                                          minutesText,
+                                                          10,
+                                                      ) || 0
+                                                    : minutes;
+                                            setMinutes((cur - 1 + 60) % 60);
+                                            setMinutesText(null);
+                                        }}
                                         className="w-10 h-10 flex items-center justify-center rounded-full bg-white/[0.06] hover:bg-white/12 text-white/60 hover:text-white transition-colors"
                                     >
                                         <svg
@@ -425,6 +506,95 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
                                     </span>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Step: Destination (planned only) */}
+                    {step === "destination" && (
+                        <div>
+                            <h2 className="text-[22px] font-bold text-white mb-1">
+                                목적지를 선택하세요
+                            </h2>
+                            <p className="text-[13px] text-white/40 mb-4">
+                                {hours}시간{minutes > 0 ? ` ${minutes}분` : ""}{" "}
+                                기준 ±30분 후보
+                            </p>
+                            {destinationCandidates.length === 0 ? (
+                                <p className="text-white/30 text-[13px] text-center py-6">
+                                    해당 시간대 후보 공항이 없습니다
+                                </p>
+                            ) : (
+                                <div className="max-h-64 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/[0.15] [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
+                                    <div className="grid grid-cols-2 gap-2 pr-2">
+                                        {[...destinationCandidates]
+                                            .sort((a, b) =>
+                                                a.airport.country.localeCompare(
+                                                    b.airport.country,
+                                                    "ko",
+                                                ),
+                                            )
+                                            .map(
+                                                ({
+                                                    airport: a,
+                                                    distKm,
+                                                    flightMinutes,
+                                                }) => {
+                                                    const fh = Math.floor(
+                                                        flightMinutes / 60,
+                                                    );
+                                                    const fm =
+                                                        flightMinutes % 60;
+                                                    const timeStr =
+                                                        fh > 0
+                                                            ? `${fh}h${fm > 0 ? ` ${fm}m` : ""}`
+                                                            : `${fm}m`;
+                                                    const selected =
+                                                        destination === a.iata;
+                                                    return (
+                                                        <button
+                                                            key={a.iata}
+                                                            onClick={() =>
+                                                                setDestination(
+                                                                    a.iata,
+                                                                )
+                                                            }
+                                                            className={`flex flex-col p-4 rounded-2xl border text-left transition-all duration-150 ${
+                                                                selected
+                                                                    ? "border-sky-500/50 bg-sky-500/10"
+                                                                    : "border-white/[0.07] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]"
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-start justify-between mb-2">
+                                                                <span
+                                                                    className={`text-[22px] font-bold tracking-tight leading-none ${selected ? "text-sky-400" : "text-white"}`}
+                                                                >
+                                                                    {a.iata}
+                                                                </span>
+                                                                <span
+                                                                    className={`text-[11px] font-semibold tabular-nums mt-0.5 ${selected ? "text-sky-400/80" : "text-white/35"}`}
+                                                                >
+                                                                    ≈ {timeStr}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-[12px] text-white/60 leading-tight">
+                                                                {a.city}
+                                                            </p>
+                                                            <p className="text-[11px] text-white/30 leading-tight mt-0.5">
+                                                                {a.country}
+                                                            </p>
+                                                            <p
+                                                                className={`text-[10px] mt-1.5 tabular-nums ${selected ? "text-sky-500/50" : "text-white/20"}`}
+                                                            >
+                                                                {distKm.toLocaleString()}{" "}
+                                                                km
+                                                            </p>
+                                                        </button>
+                                                    );
+                                                },
+                                            )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
