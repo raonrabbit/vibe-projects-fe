@@ -1,5 +1,42 @@
 import { type Airport, AIRPORTS } from "../data/airports";
 
+export interface AirportCandidate {
+    airport: Airport;
+    distKm: number;
+    flightMinutes: number;
+}
+
+export function findDestinationCandidates(
+    fromIata: string,
+    targetSeconds: number,
+): AirportCandidate[] {
+    const from = AIRPORTS.find((a) => a.iata === fromIata);
+    if (!from) return [];
+
+    const targetKm = (targetSeconds / 3600) * 900;
+    const toleranceKm = 450; // ±30min at 900 km/h
+
+    const all = AIRPORTS.filter((a) => a.iata !== fromIata)
+        .map((a) => {
+            const distKm = haversineKm(from.lat, from.lng, a.lat, a.lng);
+            return {
+                airport: a,
+                distKm: Math.round(distKm),
+                flightMinutes: Math.round((distKm / 900) * 60),
+            };
+        })
+        .sort(
+            (a, b) =>
+                Math.abs(a.distKm - targetKm) - Math.abs(b.distKm - targetKm),
+        );
+
+    const inRange = all.filter(
+        ({ distKm }) => Math.abs(distKm - targetKm) <= toleranceKm,
+    );
+    // 후보가 없으면 가장 가까운 5개 fallback
+    return inRange.length > 0 ? inRange : all.slice(0, 5);
+}
+
 function haversineKm(
     lat1: number,
     lng1: number,
@@ -23,6 +60,9 @@ export function findDestination(
 ): Airport | null {
     const from = AIRPORTS.find((a) => a.iata === fromIata);
     if (!from) return null;
+
+    // 경비행기: 30분 미만은 출발지 그대로
+    if (elapsedSeconds < 1800) return from;
 
     const reachableKm = (elapsedSeconds / 3600) * 900;
 
