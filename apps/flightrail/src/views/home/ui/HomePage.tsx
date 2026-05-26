@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { PassportButton } from "@/features/auth";
 import { DepartureModal } from "@/widgets/departure-modal";
+import { MapScene } from "@/widgets/map-scene";
 
 function PlaneIcon({ size = 20 }: { size?: number }) {
     return (
@@ -27,27 +28,15 @@ export default function HomePage() {
     const [modalOpen, setModalOpen] = useState(false);
 
     return (
-        <main className="relative w-full h-screen bg-[#0a0806] overflow-hidden flex flex-col">
-            {/* Atmosphere */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#080d18] via-[#0a0806] to-[#060608]" />
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-80 bg-gradient-to-t from-sky-950/20 to-transparent" />
+        <main className="relative w-full h-screen bg-[#070e1a] overflow-hidden flex flex-col">
+            {/* 3D Map Scene */}
+            <div className="pointer-events-none absolute inset-0">
+                <MapScene />
+            </div>
 
-            {/* Decorative flight arc */}
-            <svg
-                className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.04]"
-                viewBox="0 0 1440 900"
-                preserveAspectRatio="xMidYMid slice"
-                fill="none"
-            >
-                <path
-                    d="M 120 760 Q 720 120 1320 680"
-                    stroke="white"
-                    strokeWidth="1.5"
-                    strokeDasharray="6 10"
-                />
-                <circle cx="120" cy="760" r="5" fill="white" />
-                <circle cx="1320" cy="680" r="5" fill="white" />
-            </svg>
+            {/* Atmosphere overlay */}
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#050810]/60 via-transparent to-[#050810]/75" />
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#070e1a] to-transparent" />
 
             {/* Header */}
             <header className="relative z-10 flex items-center justify-between px-10 pt-8">

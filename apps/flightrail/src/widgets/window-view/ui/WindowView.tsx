@@ -2,16 +2,27 @@
 
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { findDestination } from "@/entities/airport";
+import { type Airport, findDestination, getAirport } from "@/entities/airport";
 import { saveSession } from "@/entities/session";
+import { haversineKm } from "@/shared/lib/mapUtils";
 import BoardingTicket from "@/shared/ui/BoardingTicket";
 
+import { MiniMap } from "./MiniMap";
 import TimeBar, { type TimeMode } from "./TimeBar";
 import type { CabinLightMode } from "./WindowScene";
 
 const WindowScene = dynamic(() => import("./WindowScene"), { ssr: false });
+const LiveMapCanvas = dynamic(() => import("./LiveMapCanvas"), { ssr: false });
+
+interface LandResult {
+    destination: Airport | null;
+    fromAirport: Airport | undefined;
+    arrivalStatus: "ontime" | "delayed" | "abandoned";
+    elapsed: number;
+    subject: string;
+}
 
 function getLocalHour() {
     const now = new Date();
@@ -115,6 +126,8 @@ export default function WindowView() {
         mode === "planned"
             ? Number(searchParams.get("duration") ?? 7200)
             : undefined;
+    const toIata = searchParams.get("to") ?? undefined;
+    const preSelectedDestination = toIata ? getAirport(toIata) : undefined;
 
     const startedAt = useRef(new Date());
     const [ready, setReady] = useState(false);
@@ -122,6 +135,9 @@ export default function WindowView() {
     const [running, setRunning] = useState(true);
     const [reachedGoal, setReachedGoal] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [landResult, setLandResult] = useState<LandResult | null>(null);
+
+    const [showMap, setShowMap] = useState(false);
 
     const [cabinMode, setCabinMode] = useState<CabinLightMode>("auto");
     const [cabinOpen, setCabinOpen] = useState(false);
@@ -206,8 +222,21 @@ export default function WindowView() {
     }, []);
 
     useEffect(() => {
-        if (gainRef.current) gainRef.current.gain.value = muted ? 0 : 0.4;
-    }, [muted]);
+        const ctx = audioCtxRef.current;
+        const gain = gainRef.current;
+        if (!ctx || !gain) return;
+
+        gain.gain.cancelScheduledValues(ctx.currentTime);
+        gain.gain.setValueAtTime(gain.gain.value, ctx.currentTime);
+
+        if (!running) {
+            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
+        } else {
+            const target = muted ? 0 : 0.4;
+            const dur = muted ? 0.15 : 0.5;
+            gain.gain.linearRampToValueAtTime(target, ctx.currentTime + dur);
+        }
+    }, [running, muted]);
 
     useEffect(() => {
         setLocalHour(getLocalHour());
@@ -239,6 +268,36 @@ export default function WindowView() {
             : timeMode === "from"
               ? (((fromOffset + elapsed / 3600) % 24) + 24) % 24
               : fixedHour;
+
+    const fromAirportData = useMemo(() => getAirport(from), [from]);
+
+    const mapDestination = useMemo(() => {
+        if (mode === "planned" && preSelectedDestination)
+            return preSelectedDestination;
+        return findDestination(from, elapsed) ?? fromAirportData ?? null;
+    }, [mode, preSelectedDestination, from, elapsed, fromAirportData]);
+
+    const routeTotalKm = useMemo(() => {
+        if (!fromAirportData || !mapDestination) return 0;
+        return haversineKm(
+            fromAirportData.lat,
+            fromAirportData.lng,
+            mapDestination.lat,
+            mapDestination.lng,
+        );
+    }, [fromAirportData, mapDestination]);
+
+    const mapProgress = useMemo(() => {
+        if (!routeTotalKm) return 0;
+        const traveledKm = (elapsed / 3600) * 900;
+        return Math.min(traveledKm / routeTotalKm, 1);
+    }, [routeTotalKm, elapsed]);
+
+    /** 초당 route progress 증가량 — 3D 비행기 연속 이동용 (elapsed는 1초마다만 갱신) */
+    const mapProgressRate = useMemo(() => {
+        if (!routeTotalKm) return 0;
+        return 900 / 3600 / routeTotalKm;
+    }, [routeTotalKm]);
 
     const handleModeChange = useCallback(
         (m: TimeMode) => {
@@ -274,13 +333,25 @@ export default function WindowView() {
         setSaving(true);
         setRunning(false);
 
-        const destination = findDestination(from, elapsed);
-        const arrivalStatus =
-            mode === "free"
-                ? "ontime"
-                : elapsed >= (plannedDuration ?? 0)
-                  ? "delayed"
-                  : "abandoned";
+        let destination: ReturnType<typeof findDestination>;
+        let arrivalStatus: "ontime" | "delayed" | "abandoned";
+
+        if (mode === "planned" && plannedDuration !== undefined) {
+            if (elapsed >= plannedDuration - 1800) {
+                // 목표 30분 전 ~ 초과: 선택한 목적지 유지
+                arrivalStatus =
+                    elapsed > plannedDuration ? "delayed" : "ontime";
+                destination =
+                    preSelectedDestination ?? findDestination(from, elapsed);
+            } else {
+                // 30분 이상 일찍 포기: 실제 비행 거리 공항
+                arrivalStatus = "abandoned";
+                destination = findDestination(from, elapsed);
+            }
+        } else {
+            arrivalStatus = "ontime";
+            destination = findDestination(from, elapsed);
+        }
 
         try {
             await saveSession({
@@ -297,7 +368,14 @@ export default function WindowView() {
             // silently fail — don't block navigation
         }
 
-        router.push("/");
+        setSaving(false);
+        setLandResult({
+            destination,
+            fromAirport: getAirport(from),
+            arrivalStatus,
+            elapsed,
+            subject,
+        });
     }
 
     // Timer display values
@@ -335,21 +413,54 @@ export default function WindowView() {
 
     return (
         <div className="relative w-full h-screen overflow-hidden bg-[#0a0806]">
-            {/* 3D sky canvas */}
-            <div className="absolute inset-0">
-                <WindowScene
+            {/* 3D sky canvas — unmounted while map is open to avoid dual WebGL context */}
+            {!showMap && (
+                <div className="absolute inset-0">
+                    <WindowScene
+                        hour={displayHour}
+                        cabinMode={cabinMode}
+                        onReady={() => setReady(true)}
+                    />
+                </div>
+            )}
+
+            {/* 3D map view — rendered on top, shown when showMap is true */}
+            {showMap && fromAirportData && mapDestination && (
+                <LiveMapCanvas
+                    fromLat={fromAirportData.lat}
+                    fromLng={fromAirportData.lng}
+                    toLat={mapDestination.lat}
+                    toLng={mapDestination.lng}
+                    progress={mapProgress}
+                    progressRate={running ? mapProgressRate : 0}
                     hour={displayHour}
-                    cabinMode={cabinMode}
-                    onReady={() => setReady(true)}
+                    onClose={() => setShowMap(false)}
                 />
-            </div>
+            )}
+
+            {/* Mini-map overlay — bottom-left of window view */}
+            {ready && !landResult && fromAirportData && mapDestination && (
+                <div
+                    className={`absolute bottom-8 left-8 ${showMap ? "z-30" : "z-10"}`}
+                >
+                    <MiniMap
+                        fromLat={fromAirportData.lat}
+                        fromLng={fromAirportData.lng}
+                        toLat={mapDestination.lat}
+                        toLng={mapDestination.lng}
+                        fromIata={fromAirportData.iata}
+                        toIata={mapDestination.iata}
+                        progress={mapProgress}
+                    />
+                </div>
+            )}
 
             {/* Boarding ticket loading overlay */}
             <BoardingTicket ready={ready} />
 
             {/* Pause overlay */}
-            {!running && !saving && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md">
+            {!running && !saving && !landResult && (
+                <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md">
                     <p className="text-white/40 text-[11px] tracking-widest uppercase mb-5">
                         일시정지
                     </p>
@@ -370,15 +481,152 @@ export default function WindowView() {
 
             {/* Saving overlay */}
             {saving && (
-                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/70 backdrop-blur-md">
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
                     <p className="text-white/60 text-[13px] tracking-widest uppercase">
                         착륙 중...
                     </p>
                 </div>
             )}
 
+            {/* Landing result overlay */}
+            {landResult && (
+                <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md">
+                    <div className="w-[480px] bg-[#111210] border border-white/[0.08] rounded-3xl shadow-2xl shadow-black/60 overflow-hidden">
+                        {/* Status header */}
+                        <div
+                            className={`px-8 pt-6 pb-4 border-b border-white/[0.06] flex items-center justify-between ${
+                                landResult.arrivalStatus === "ontime"
+                                    ? "bg-sky-500/5"
+                                    : landResult.arrivalStatus === "delayed"
+                                      ? "bg-amber-500/5"
+                                      : "bg-rose-500/5"
+                            }`}
+                        >
+                            <p className="text-[10px] text-white/30 tracking-[0.4em] uppercase">
+                                착륙 완료
+                            </p>
+                            <span
+                                className={`text-[10px] font-bold tracking-[0.2em] uppercase px-3 py-1 rounded-full ${
+                                    landResult.arrivalStatus === "ontime"
+                                        ? "bg-sky-500/20 text-sky-400"
+                                        : landResult.arrivalStatus === "delayed"
+                                          ? "bg-amber-500/20 text-amber-400"
+                                          : "bg-rose-500/20 text-rose-400"
+                                }`}
+                            >
+                                {landResult.arrivalStatus === "ontime"
+                                    ? "정시 도착"
+                                    : landResult.arrivalStatus === "delayed"
+                                      ? "연착 도착"
+                                      : "중도 포기"}
+                            </span>
+                        </div>
+
+                        <div className="px-8 py-6">
+                            {/* Route */}
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className="text-center">
+                                    <p className="text-3xl font-bold text-white tracking-tight leading-none">
+                                        {landResult.fromAirport?.iata ?? from}
+                                    </p>
+                                    <p className="text-[11px] text-white/35 mt-1.5 tracking-wide">
+                                        {landResult.fromAirport?.city ?? ""}
+                                    </p>
+                                </div>
+
+                                <div className="flex-1 flex flex-col items-center gap-1">
+                                    <svg
+                                        width="100%"
+                                        height="20"
+                                        viewBox="0 0 120 20"
+                                        fill="none"
+                                    >
+                                        <line
+                                            x1="0"
+                                            y1="10"
+                                            x2="105"
+                                            y2="10"
+                                            stroke="rgba(255,255,255,0.15)"
+                                            strokeWidth="1"
+                                            strokeDasharray="4 4"
+                                        />
+                                        <path
+                                            d="M105 10 l-6 -4 l0 8 z"
+                                            fill="rgba(255,255,255,0.25)"
+                                        />
+                                    </svg>
+                                    <p className="text-[9px] text-white/20 tracking-widest uppercase">
+                                        {formatDistance(landResult.elapsed)}
+                                    </p>
+                                </div>
+
+                                <div className="text-center">
+                                    <p
+                                        className={`text-3xl font-bold tracking-tight leading-none ${
+                                            landResult.destination
+                                                ? "text-white"
+                                                : "text-white/30"
+                                        }`}
+                                    >
+                                        {landResult.destination?.iata ?? "---"}
+                                    </p>
+                                    <p className="text-[11px] text-white/35 mt-1.5 tracking-wide">
+                                        {landResult.destination?.city ?? ""}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Destination detail */}
+                            {landResult.destination && (
+                                <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl px-4 py-3.5 mb-5">
+                                    <p className="text-[11px] text-white/25 tracking-widest uppercase mb-1">
+                                        목적지
+                                    </p>
+                                    <p className="text-[15px] font-semibold text-white/80 leading-tight">
+                                        {landResult.destination.name}
+                                    </p>
+                                    <p className="text-[12px] text-white/35 mt-0.5">
+                                        {landResult.destination.city} ·{" "}
+                                        {landResult.destination.country}
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Stats row */}
+                            <div className="flex gap-3 mb-5">
+                                <div className="flex-1 bg-white/[0.03] border border-white/[0.05] rounded-xl px-4 py-3 text-center">
+                                    <p className="text-lg font-bold text-white tabular-nums tracking-tight">
+                                        {formatElapsed(landResult.elapsed)}
+                                    </p>
+                                    <p className="text-[9px] text-white/25 mt-1 tracking-widest uppercase">
+                                        비행 시간
+                                    </p>
+                                </div>
+                                {landResult.subject && (
+                                    <div className="flex-1 bg-white/[0.03] border border-white/[0.05] rounded-xl px-4 py-3 text-center flex items-center justify-center">
+                                        <span className="text-[13px] font-medium text-sky-400/80">
+                                            {landResult.subject}
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* CTA */}
+                            <button
+                                onClick={() => router.push("/")}
+                                className="w-full py-3.5 bg-sky-600/80 hover:bg-sky-500 text-white rounded-2xl font-semibold text-[15px] transition-all duration-150 tracking-wide"
+                            >
+                                홈으로 돌아가기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Top-left: clock */}
-            <div className="absolute top-8 left-8 z-10">
+            <div
+                className={`absolute top-8 left-8 ${showMap ? "z-30" : "z-10"}`}
+            >
                 <button
                     className="flex items-center gap-3 group"
                     onClick={() => setClockOpen((o) => !o)}
@@ -428,12 +676,28 @@ export default function WindowView() {
             </div>
 
             {/* Top-right: flight stats */}
-            <div className="absolute top-8 right-8 z-10">
+            <div
+                className={`absolute top-8 right-8 ${showMap ? "z-30" : "z-10"}`}
+            >
                 <div className="bg-black/20 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/8 text-right">
                     {subject && (
                         <p className="text-[10px] text-sky-400/70 tracking-widest uppercase mb-2">
                             {subject}
                         </p>
+                    )}
+                    {preSelectedDestination && (
+                        <div className="mb-2">
+                            <p className="text-[10px] text-white/25 tracking-widest uppercase">
+                                목적지
+                            </p>
+                            <p className="text-base font-bold text-white/70 tracking-tight leading-tight mt-0.5">
+                                {preSelectedDestination.iata}
+                                <span className="text-[11px] font-normal text-white/35 ml-1.5">
+                                    {preSelectedDestination.city}
+                                </span>
+                            </p>
+                            <div className="h-px bg-white/8 mt-2 mb-2" />
+                        </div>
                     )}
                     <p
                         className={`text-2xl font-bold tabular-nums tracking-tight leading-none ${
@@ -467,7 +731,9 @@ export default function WindowView() {
             </div>
 
             {/* Right: controls pill */}
-            <div className="absolute right-8 top-1/2 -translate-y-1/2 z-10">
+            <div
+                className={`absolute right-8 top-1/2 -translate-y-1/2 ${showMap ? "z-30" : "z-10"}`}
+            >
                 <div className="bg-black/20 backdrop-blur-md rounded-2xl flex flex-col divide-y divide-white/8">
                     {/* Music / mute toggle */}
                     <div className="relative group">
@@ -518,29 +784,54 @@ export default function WindowView() {
                         </button>
                         <LeftTooltip label={muted ? "음소거 해제" : "음소거"} />
                     </div>
-                    {/* Globe */}
+                    {/* Globe / Window toggle */}
                     <div className="relative group">
-                        <button className={btnCls}>
-                            <svg
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="white"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeOpacity="0.65"
-                            >
-                                <circle cx="12" cy="12" r="10" />
-                                <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                            </svg>
+                        <button
+                            className={btnCls}
+                            onClick={() => setShowMap((s) => !s)}
+                        >
+                            {showMap ? (
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="white"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeOpacity="0.65"
+                                >
+                                    <rect
+                                        x="3"
+                                        y="3"
+                                        width="18"
+                                        height="18"
+                                        rx="4"
+                                    />
+                                    <path d="M3 9h18M9 9v12" />
+                                </svg>
+                            ) : (
+                                <svg
+                                    width="20"
+                                    height="20"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="white"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeOpacity="0.65"
+                                >
+                                    <circle cx="12" cy="12" r="10" />
+                                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                                </svg>
+                            )}
                         </button>
-                        <LeftTooltip label="지도" />
+                        <LeftTooltip label={showMap ? "창문 뷰" : "지도"} />
                     </div>
                     {/* Pause / Play */}
                     <div className="relative group">
                         <button
-                            className={btnCls}
+                            className={`${btnCls} ${showMap ? "rounded-b-2xl" : ""}`}
                             onClick={() => setRunning((r) => !r)}
                         >
                             {running ? (
@@ -581,137 +872,141 @@ export default function WindowView() {
                         <LeftTooltip label={running ? "일시정지" : "재생"} />
                     </div>
                     {/* Cabin light */}
-                    <div className="relative group">
-                        <button
-                            className={`${btnCls} rounded-b-2xl`}
-                            onClick={() => setCabinOpen((o) => !o)}
-                        >
-                            <svg
-                                width="18"
-                                height="18"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke={
-                                    cabinMode === "on"
-                                        ? "#fbbf24"
-                                        : cabinMode === "auto"
-                                          ? "#7dd3fc"
-                                          : "white"
-                                }
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeOpacity={cabinMode === "off" ? 0.3 : 0.85}
-                            >
-                                <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
-                                <path d="M9 18h6" />
-                                <path d="M10 22h4" />
-                            </svg>
-                        </button>
-                        {!cabinOpen && (
-                            <LeftTooltip
-                                label={
-                                    cabinMode === "on"
-                                        ? "캐빈 조명: 켜짐"
-                                        : cabinMode === "auto"
-                                          ? "캐빈 조명: 자동"
-                                          : "캐빈 조명: 꺼짐"
-                                }
-                            />
-                        )}
-                        <div
-                            className={`absolute right-full top-1/2 -translate-y-1/2 mr-3 flex flex-row gap-2 transition-all duration-200 ease-out ${
-                                cabinOpen
-                                    ? "translate-x-0 opacity-100"
-                                    : "translate-x-4 opacity-0 pointer-events-none"
-                            }`}
-                        >
+                    {!showMap && (
+                        <div className="relative group">
                             <button
-                                onClick={() => {
-                                    setCabinMode("on");
-                                    setCabinOpen(false);
-                                }}
-                                className={`w-12 h-12 rounded-full flex flex-col items-center justify-center gap-0.5 transition-all ${
-                                    cabinMode === "on"
-                                        ? "bg-amber-400/25 ring-1 ring-amber-400/50 text-amber-300"
-                                        : "bg-white/8 text-white/30 hover:bg-white/12 hover:text-white/55"
-                                }`}
+                                className={`${btnCls} rounded-b-2xl`}
+                                onClick={() => setCabinOpen((o) => !o)}
                             >
                                 <svg
-                                    width="15"
-                                    height="15"
+                                    width="18"
+                                    height="18"
                                     viewBox="0 0 24 24"
                                     fill="none"
-                                    stroke="currentColor"
+                                    stroke={
+                                        cabinMode === "on"
+                                            ? "#fbbf24"
+                                            : cabinMode === "auto"
+                                              ? "#7dd3fc"
+                                              : "white"
+                                    }
                                     strokeWidth="2"
                                     strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeOpacity={
+                                        cabinMode === "off" ? 0.3 : 0.85
+                                    }
                                 >
-                                    <circle
-                                        cx="12"
-                                        cy="12"
-                                        r="4"
+                                    <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" />
+                                    <path d="M9 18h6" />
+                                    <path d="M10 22h4" />
+                                </svg>
+                            </button>
+                            {!cabinOpen && (
+                                <LeftTooltip
+                                    label={
+                                        cabinMode === "on"
+                                            ? "캐빈 조명: 켜짐"
+                                            : cabinMode === "auto"
+                                              ? "캐빈 조명: 자동"
+                                              : "캐빈 조명: 꺼짐"
+                                    }
+                                />
+                            )}
+                            <div
+                                className={`absolute right-full top-1/2 -translate-y-1/2 mr-3 flex flex-row gap-2 transition-all duration-200 ease-out ${
+                                    cabinOpen
+                                        ? "translate-x-0 opacity-100"
+                                        : "translate-x-4 opacity-0 pointer-events-none"
+                                }`}
+                            >
+                                <button
+                                    onClick={() => {
+                                        setCabinMode("on");
+                                        setCabinOpen(false);
+                                    }}
+                                    className={`w-12 h-12 rounded-full flex flex-col items-center justify-center gap-0.5 transition-all ${
+                                        cabinMode === "on"
+                                            ? "bg-amber-400/25 ring-1 ring-amber-400/50 text-amber-300"
+                                            : "bg-white/8 text-white/30 hover:bg-white/12 hover:text-white/55"
+                                    }`}
+                                >
+                                    <svg
+                                        width="15"
+                                        height="15"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                    >
+                                        <circle
+                                            cx="12"
+                                            cy="12"
+                                            r="4"
+                                            fill="currentColor"
+                                            stroke="none"
+                                        />
+                                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                                    </svg>
+                                    <span className="text-[8px] font-bold tracking-wider">
+                                        ON
+                                    </span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setCabinMode("auto");
+                                        setCabinOpen(false);
+                                    }}
+                                    className={`w-12 h-12 rounded-full flex flex-col items-center justify-center gap-0.5 transition-all ${
+                                        cabinMode === "auto"
+                                            ? "bg-sky-400/20 ring-1 ring-sky-400/40 text-sky-200"
+                                            : "bg-white/8 text-white/30 hover:bg-white/12 hover:text-white/55"
+                                    }`}
+                                >
+                                    <svg
+                                        width="15"
+                                        height="15"
+                                        viewBox="0 0 24 24"
                                         fill="currentColor"
                                         stroke="none"
-                                    />
-                                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-                                </svg>
-                                <span className="text-[8px] font-bold tracking-wider">
-                                    ON
-                                </span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setCabinMode("auto");
-                                    setCabinOpen(false);
-                                }}
-                                className={`w-12 h-12 rounded-full flex flex-col items-center justify-center gap-0.5 transition-all ${
-                                    cabinMode === "auto"
-                                        ? "bg-sky-400/20 ring-1 ring-sky-400/40 text-sky-200"
-                                        : "bg-white/8 text-white/30 hover:bg-white/12 hover:text-white/55"
-                                }`}
-                            >
-                                <svg
-                                    width="15"
-                                    height="15"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                    stroke="none"
+                                    >
+                                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                                    </svg>
+                                    <span className="text-[8px] font-bold tracking-wider">
+                                        AUTO
+                                    </span>
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setCabinMode("off");
+                                        setCabinOpen(false);
+                                    }}
+                                    className={`w-12 h-12 rounded-full flex flex-col items-center justify-center gap-0.5 transition-all ${
+                                        cabinMode === "off"
+                                            ? "bg-white/12 ring-1 ring-white/20 text-white/55"
+                                            : "bg-white/8 text-white/30 hover:bg-white/12 hover:text-white/55"
+                                    }`}
                                 >
-                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                                </svg>
-                                <span className="text-[8px] font-bold tracking-wider">
-                                    AUTO
-                                </span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setCabinMode("off");
-                                    setCabinOpen(false);
-                                }}
-                                className={`w-12 h-12 rounded-full flex flex-col items-center justify-center gap-0.5 transition-all ${
-                                    cabinMode === "off"
-                                        ? "bg-white/12 ring-1 ring-white/20 text-white/55"
-                                        : "bg-white/8 text-white/30 hover:bg-white/12 hover:text-white/55"
-                                }`}
-                            >
-                                <svg
-                                    width="15"
-                                    height="15"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2.5"
-                                    strokeLinecap="round"
-                                >
-                                    <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-                                    <line x1="12" y1="2" x2="12" y2="12" />
-                                </svg>
-                                <span className="text-[8px] font-bold tracking-wider">
-                                    OFF
-                                </span>
-                            </button>
+                                    <svg
+                                        width="15"
+                                        height="15"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2.5"
+                                        strokeLinecap="round"
+                                    >
+                                        <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+                                        <line x1="12" y1="2" x2="12" y2="12" />
+                                    </svg>
+                                    <span className="text-[8px] font-bold tracking-wider">
+                                        OFF
+                                    </span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
