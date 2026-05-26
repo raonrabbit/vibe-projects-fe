@@ -110,11 +110,9 @@ export function createWorldMapProjection(
     width: number,
     height: number,
 ): d3.GeoProjection {
-    return d3
-        .geoEquirectangular()
-        .fitSize([width, height], {
-            type: "Sphere",
-        } as d3.GeoPermissibleObjects);
+    return d3.geoEquirectangular().fitSize([width, height], {
+        type: "Sphere",
+    } as d3.GeoPermissibleObjects);
 }
 
 /** 투명 배경 위에 국경선만 그림 (Blue Marble 텍스처와 분리해 업스케일 방지) */
