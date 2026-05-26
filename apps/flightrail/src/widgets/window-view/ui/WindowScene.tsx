@@ -113,7 +113,7 @@ function Scene({
 
     return (
         <>
-            <fog attach="fog" args={[fogColor, 100, 220]} />
+            <fog attach="fog" args={[fogColor, 300, 1200]} />
             <LayeredSky
                 sunPosition={sunPosition}
                 {...skyParams}
