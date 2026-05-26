@@ -43,7 +43,8 @@ export function HomePage() {
 
     const [keyword, setKeyword] = useState("");
     const [selectedKeywords, setSelectedKeywords] = useState<string[]>([]);
-    const [tab, setTab] = useState<Tab>("search");
+    const tab: Tab =
+        searchParams.get("tab") === "favorites" ? "favorites" : "search";
     const [showFilterPanel, setShowFilterPanel] = useState(false);
 
     // Applied filter state (mirrors URL params)
@@ -160,6 +161,16 @@ export function HomePage() {
         );
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
+
+    function handleTabChange(newTab: Tab) {
+        const params = new URLSearchParams(searchParams.toString());
+        if (newTab === "favorites") {
+            params.set("tab", "favorites");
+        } else {
+            params.delete("tab");
+        }
+        router.replace(params.toString() ? `/?${params.toString()}` : "/");
+    }
 
     function buildParams(
         keywords: string[],
@@ -313,7 +324,7 @@ export function HomePage() {
                     onToggleTheme={toggle}
                     onSignIn={signIn}
                     onSignOut={signOut}
-                    onTabChange={setTab}
+                    onTabChange={handleTabChange}
                 />
 
                 {tab === "search" && (
