@@ -28,9 +28,6 @@ interface AirplaneModelProps {
 export function AirplaneModel({
     orientation,
     size = 0.14,
-    lightColor: _lightColor = "#60a5fa",
-    lightIntensity: _lightIntensity = 0.4,
-    lightDistance: _lightDistance = 0.9,
 }: AirplaneModelProps) {
     const { scene } = useGLTF(AIRPLANE_GLB);
     const model = useMemo(() => scene.clone(true), [scene]);

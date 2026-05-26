@@ -185,8 +185,7 @@ export default function LiveMapCanvas({
     progress,
     progressRate,
     hour,
-    onClose: _onClose,
-}: Props) {
+}: Omit<Props, "onClose">) {
     return (
         <div className="absolute inset-0 z-20 bg-[#070e1a]">
             <Canvas
