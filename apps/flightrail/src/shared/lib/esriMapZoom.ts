@@ -13,11 +13,11 @@ export function esriZoomFromCameraDistance(
     dist: number,
     minDist: number,
     maxDist: number,
+    minZoom = MIN_ESRI_ZOOM,
 ): number {
     const d = THREE.MathUtils.clamp(dist, minDist, maxDist);
-    const span = maxDist - minDist;
-    if (span <= 0) return MAX_ESRI_ZOOM;
+    if (maxDist <= minDist) return MAX_ESRI_ZOOM;
     const t = Math.log(d / minDist) / Math.log(maxDist / minDist);
-    const z = MAX_ESRI_ZOOM - t * (MAX_ESRI_ZOOM - MIN_ESRI_ZOOM);
+    const z = MAX_ESRI_ZOOM - t * (MAX_ESRI_ZOOM - minZoom);
     return clampEsriZoom(z);
 }
