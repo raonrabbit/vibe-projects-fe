@@ -16,6 +16,10 @@ export default tseslint.config(
             ...nextPlugin.configs["core-web-vitals"].rules,
             "simple-import-sort/imports": "error",
             "simple-import-sort/exports": "error",
+            "@typescript-eslint/no-unused-vars": [
+                "error",
+                { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+            ],
         },
     },
     {
