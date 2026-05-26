@@ -1,7 +1,8 @@
 "use client";
 
 import { OrbitControls } from "@react-three/drei";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
 
 import { MAP_W, WORLD_MAP_SCALE } from "@/shared/lib/mapUtils";
 import { WorldMapPlane } from "@/shared/ui/WorldMapPlane";
@@ -50,7 +51,40 @@ const DEMO_ROUTES = [
     }, // ICN → SYD
 ];
 
+// Persists across page navigations (module is cached by Next.js)
+let savedMapCamPos: [number, number, number] | null = null;
+
+function CameraRestore({
+    controlsRef,
+}: {
+    controlsRef: React.MutableRefObject<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+}) {
+    const { camera } = useThree();
+    const restored = useRef(false);
+
+    useFrame(() => {
+        if (!restored.current && savedMapCamPos && controlsRef.current) {
+            camera.position.set(...savedMapCamPos);
+            controlsRef.current.update();
+            restored.current = true;
+        }
+    });
+
+    useEffect(() => {
+        return () => {
+            savedMapCamPos = [
+                camera.position.x,
+                camera.position.y,
+                camera.position.z,
+            ];
+        };
+    }, []);
+
+    return null;
+}
+
 export default function MapSceneCanvas() {
+    const controlsRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
     return (
         <Canvas
             camera={{
@@ -62,6 +96,7 @@ export default function MapSceneCanvas() {
             gl={{ antialias: true, alpha: true }}
             style={{ width: "100%", height: "100%" }}
         >
+            <CameraRestore controlsRef={controlsRef} />
             <ambientLight intensity={0.7} />
             <directionalLight position={[4, 8, 6]} intensity={0.5} />
 
@@ -72,6 +107,7 @@ export default function MapSceneCanvas() {
             ))}
 
             <OrbitControls
+                ref={controlsRef}
                 autoRotate
                 autoRotateSpeed={0.25}
                 enableDamping

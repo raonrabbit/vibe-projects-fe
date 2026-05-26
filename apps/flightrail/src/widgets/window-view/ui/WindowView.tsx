@@ -9,6 +9,7 @@ import { saveSession } from "@/entities/session";
 import { haversineKm } from "@/shared/lib/mapUtils";
 import BoardingTicket from "@/shared/ui/BoardingTicket";
 
+import type { CamOffset } from "./LiveMapCanvas";
 import { MiniMap } from "./MiniMap";
 import TimeBar, { type TimeMode } from "./TimeBar";
 import type { CabinLightMode } from "./WindowScene";
@@ -39,6 +40,28 @@ function formatElapsed(s: number) {
 function formatDistance(s: number) {
     const km = Math.round((s / 3600) * 900);
     return `${km.toLocaleString()} km`;
+}
+
+function destinationFromBearing(
+    lat: number,
+    lng: number,
+    bearingRad: number,
+    distKm: number,
+): { lat: number; lng: number } {
+    const R = 6371;
+    const lat1 = (lat * Math.PI) / 180;
+    const lng1 = (lng * Math.PI) / 180;
+    const lat2 = Math.asin(
+        Math.sin(lat1) * Math.cos(distKm / R) +
+            Math.cos(lat1) * Math.sin(distKm / R) * Math.cos(bearingRad),
+    );
+    const lng2 =
+        lng1 +
+        Math.atan2(
+            Math.sin(bearingRad) * Math.sin(distKm / R) * Math.cos(lat1),
+            Math.cos(distKm / R) - Math.sin(lat1) * Math.sin(lat2),
+        );
+    return { lat: (lat2 * 180) / Math.PI, lng: (lng2 * 180) / Math.PI };
 }
 
 function skyClockDisplay(hour: number) {
@@ -129,6 +152,7 @@ export default function WindowView() {
     const toIata = searchParams.get("to") ?? undefined;
     const preSelectedDestination = toIata ? getAirport(toIata) : undefined;
 
+    const freeBearingRad = useRef(Math.random() * 2 * Math.PI);
     const startedAt = useRef(new Date());
     const [ready, setReady] = useState(false);
     const [elapsed, setElapsed] = useState(0);
@@ -138,6 +162,7 @@ export default function WindowView() {
     const [landResult, setLandResult] = useState<LandResult | null>(null);
 
     const [showMap, setShowMap] = useState(false);
+    const liveCameraOffsetRef = useRef<CamOffset | null>(null);
 
     const [cabinMode, setCabinMode] = useState<CabinLightMode>("auto");
     const [cabinOpen, setCabinOpen] = useState(false);
@@ -150,6 +175,11 @@ export default function WindowView() {
     const [fromOffset, setFromOffset] = useState(0);
     const [fixedHour, setFixedHour] = useState(0);
     const [localHour, setLocalHour] = useState(0);
+
+    useEffect(() => {
+        const id = setTimeout(() => setReady(true), 3000);
+        return () => clearTimeout(id);
+    }, []);
 
     useEffect(() => {
         const ctx = new AudioContext();
@@ -271,11 +301,38 @@ export default function WindowView() {
 
     const fromAirportData = useMemo(() => getAirport(from), [from]);
 
+    const freeVirtualDest = useMemo(() => {
+        if (mode !== "free" || !fromAirportData) return null;
+        const { lat, lng } = destinationFromBearing(
+            fromAirportData.lat,
+            fromAirportData.lng,
+            freeBearingRad.current,
+            18000,
+        );
+        return {
+            lat,
+            lng,
+            iata: "",
+            city: "",
+            name: "",
+            country: "",
+            utcOffset: 0,
+        };
+    }, [mode, fromAirportData]);
+
     const mapDestination = useMemo(() => {
         if (mode === "planned" && preSelectedDestination)
             return preSelectedDestination;
+        if (mode === "free") return freeVirtualDest;
         return findDestination(from, elapsed) ?? fromAirportData ?? null;
-    }, [mode, preSelectedDestination, from, elapsed, fromAirportData]);
+    }, [
+        mode,
+        preSelectedDestination,
+        freeVirtualDest,
+        from,
+        elapsed,
+        fromAirportData,
+    ]);
 
     const routeTotalKm = useMemo(() => {
         if (!fromAirportData || !mapDestination) return 0;
@@ -435,6 +492,8 @@ export default function WindowView() {
                     progressRate={running ? mapProgressRate : 0}
                     hour={displayHour}
                     onClose={() => setShowMap(false)}
+                    cameraSnapshotRef={liveCameraOffsetRef}
+                    showRoute={mode === "planned"}
                 />
             )}
 
@@ -451,6 +510,7 @@ export default function WindowView() {
                         fromIata={fromAirportData.iata}
                         toIata={mapDestination.iata}
                         progress={mapProgress}
+                        showRoute={mode === "planned"}
                     />
                 </div>
             )}

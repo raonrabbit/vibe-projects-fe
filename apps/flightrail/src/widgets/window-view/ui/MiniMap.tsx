@@ -28,6 +28,7 @@ interface Props {
     fromIata: string;
     toIata: string;
     progress: number;
+    showRoute?: boolean;
 }
 
 const W = 220;
@@ -79,6 +80,7 @@ export function MiniMap({
     fromIata,
     toIata,
     progress,
+    showRoute = true,
 }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const bgRef = useRef<ImageData | null>(null);
@@ -131,19 +133,21 @@ export function MiniMap({
             ctx.lineWidth = 0.6;
             ctx.stroke();
 
-            // Full route — dashed
-            ctx.beginPath();
-            for (let i = 0; i <= 60; i++) {
-                const pt = projection(interp(i / 60) as [number, number]);
-                if (!pt) continue;
-                if (i === 0) ctx.moveTo(pt[0], pt[1]);
-                else ctx.lineTo(pt[0], pt[1]);
+            if (showRoute) {
+                // Full route — dashed
+                ctx.beginPath();
+                for (let i = 0; i <= 60; i++) {
+                    const pt = projection(interp(i / 60) as [number, number]);
+                    if (!pt) continue;
+                    if (i === 0) ctx.moveTo(pt[0], pt[1]);
+                    else ctx.lineTo(pt[0], pt[1]);
+                }
+                ctx.strokeStyle = "rgba(255,255,255,0.18)";
+                ctx.lineWidth = 1.2;
+                ctx.setLineDash([3, 5]);
+                ctx.stroke();
+                ctx.setLineDash([]);
             }
-            ctx.strokeStyle = "rgba(255,255,255,0.18)";
-            ctx.lineWidth = 1.2;
-            ctx.setLineDash([3, 5]);
-            ctx.stroke();
-            ctx.setLineDash([]);
 
             // Departure dot + label
             const fromPt = projection([fromLng, fromLat] as [number, number]);
@@ -158,17 +162,19 @@ export function MiniMap({
                 ctx.fillText(fromIata, fromPt[0], fromPt[1] + 12);
             }
 
-            // Destination dot + label
-            const toPt = projection([toLng, toLat] as [number, number]);
-            if (toPt) {
-                ctx.beginPath();
-                ctx.arc(toPt[0], toPt[1], 2.5, 0, Math.PI * 2);
-                ctx.fillStyle = "rgba(255,255,255,0.38)";
-                ctx.fill();
-                ctx.font = "bold 8px monospace";
-                ctx.textAlign = "center";
-                ctx.fillStyle = "rgba(255,255,255,0.32)";
-                ctx.fillText(toIata, toPt[0], toPt[1] + 12);
+            if (showRoute) {
+                // Destination dot + label
+                const toPt = projection([toLng, toLat] as [number, number]);
+                if (toPt) {
+                    ctx.beginPath();
+                    ctx.arc(toPt[0], toPt[1], 2.5, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(255,255,255,0.38)";
+                    ctx.fill();
+                    ctx.font = "bold 8px monospace";
+                    ctx.textAlign = "center";
+                    ctx.fillStyle = "rgba(255,255,255,0.32)";
+                    ctx.fillText(toIata, toPt[0], toPt[1] + 12);
+                }
             }
 
             bgRef.current = ctx.getImageData(0, 0, W, H);
