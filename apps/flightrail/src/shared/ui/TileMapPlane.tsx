@@ -1,41 +1,166 @@
 "use client";
 
 // Map tiles © Esri, DigitalGlobe, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN, and the GIS User Community
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import { clampEsriZoom } from "@/shared/lib/esriMapZoom";
 import { MAP_H, MAP_W } from "@/shared/lib/mapUtils";
 
-const TILE_SIZE = 256;
-/** 링당 최대 타일 수 */
-const MAX_TILES_PER_RING = 256;
-/** 안개 원 반경 배율 */
 const FOG_RADIUS_SCALE = 0.68;
-/** 타일 배치 크기 — 브라우저 동시 연결 수에 맞춤 */
-const FETCH_BATCH_SIZE = 6;
+const MAX_CACHED_TILES = 512;
+const MAX_TILES_PER_RING = 256;
 
-/**
- * LOD 3-ring: inner(고품질·좁은 범위) → outer(저품질·넓은 범위)
- * 각 ring은 현재 줌에서 zoomOffset을 뺀 레벨로 독립 fetch.
- * renderOrder: inner(3)가 가장 위에 렌더링되어 하위 ring이 투명 가장자리로 보임.
- */
 const LOD_TIERS_DESKTOP = [
-    { zoomOffset: 0, pad: 7, texMax: 2048, renderOrder: 3 }, // 비행기 직하방 고품질
-    { zoomOffset: -3, pad: 5, texMax: 1024, renderOrder: 2 }, // 중거리
-    { zoomOffset: -6, pad: 6, texMax: 1024, renderOrder: 1 }, // 광역
+    { zoomOffset: 0, pad: 7, renderOrder: 3 },
+    { zoomOffset: -3, pad: 5, renderOrder: 2 },
+    { zoomOffset: -6, pad: 6, renderOrder: 1 },
 ] as const;
 
-// 모바일: 타일 수(pad)와 텍스처 해상도(texMax)를 절반 수준으로 낮춰 네트워크·GPU 부하 감소
 const LOD_TIERS_MOBILE = [
-    { zoomOffset: 0, pad: 4, texMax: 1024, renderOrder: 3 },
-    { zoomOffset: -3, pad: 3, texMax: 512, renderOrder: 2 },
-    { zoomOffset: -6, pad: 4, texMax: 512, renderOrder: 1 },
+    { zoomOffset: 0, pad: 4, renderOrder: 3 },
+    { zoomOffset: -3, pad: 3, renderOrder: 2 },
+    { zoomOffset: -6, pad: 4, renderOrder: 1 },
 ] as const;
 
 const tileUrl = (z: number, y: number, x: number) =>
     `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
+
+// ─── LRU Tile Cache (module-level, all rings share one cache) ─────────────
+
+class TileLRUCache {
+    private readonly map = new Map<string, THREE.Texture>();
+
+    constructor(private readonly max: number) {}
+
+    get(key: string): THREE.Texture | undefined {
+        const val = this.map.get(key);
+        if (!val) return undefined;
+        this.map.delete(key);
+        this.map.set(key, val);
+        return val;
+    }
+
+    set(key: string, tex: THREE.Texture): void {
+        if (this.map.has(key)) {
+            this.map.delete(key);
+        } else if (this.map.size >= this.max) {
+            const lruKey = this.map.keys().next().value!;
+            this.map.get(lruKey)!.dispose();
+            this.map.delete(lruKey);
+        }
+        this.map.set(key, tex);
+    }
+}
+
+const tileCache = new TileLRUCache(MAX_CACHED_TILES);
+const activeFetches = new Map<string, AbortController>();
+
+async function getTileTexture(
+    z: number,
+    x: number,
+    y: number,
+    anisotropy = 1,
+): Promise<THREE.Texture | null> {
+    const key = `${z}/${x}/${y}`;
+    const cached = tileCache.get(key);
+    if (cached) return cached;
+    if (activeFetches.has(key)) return null;
+
+    const controller = new AbortController();
+    activeFetches.set(key, controller);
+    try {
+        const res = await fetch(tileUrl(z, y, x), {
+            signal: controller.signal,
+            mode: "cors",
+        });
+        if (!res.ok) return null;
+        const blob = await res.blob();
+        const objectURL = URL.createObjectURL(blob);
+        const tex = await new Promise<THREE.Texture | null>((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                URL.revokeObjectURL(objectURL);
+                const t = new THREE.Texture(img);
+                t.colorSpace = THREE.SRGBColorSpace;
+                t.anisotropy = anisotropy;
+                t.needsUpdate = true;
+                resolve(t);
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(objectURL);
+                resolve(null);
+            };
+            img.src = objectURL;
+        });
+        if (tex) tileCache.set(key, tex);
+        return tex;
+    } catch {
+        return null;
+    } finally {
+        activeFetches.delete(key);
+    }
+}
+
+function cancelTileFetch(z: number, x: number, y: number): void {
+    const key = `${z}/${x}/${y}`;
+    activeFetches.get(key)?.abort();
+    activeFetches.delete(key);
+}
+
+/** 로딩 중인 타일 위치에 캐시된 저해상도 부모 타일로 즉시 채우기 (Overzoom) */
+function findOverzoomTex(
+    z: number,
+    x: number,
+    y: number,
+): { tex: THREE.Texture; dz: number } | null {
+    for (let dz = 1; dz <= 4; dz++) {
+        const pz = z - dz;
+        if (pz < 0) break;
+        const tex = tileCache.get(`${pz}/${x >> dz}/${y >> dz}`);
+        if (tex) return { tex, dz };
+    }
+    return null;
+}
+
+/**
+ * PlaneGeometry UV 범위를 설정.
+ * PlaneGeometry 꼭짓점 순서 (Three.js 기본): 0=top-left, 1=top-right, 2=bottom-left, 3=bottom-right
+ */
+function setTileUV(
+    geo: THREE.BufferGeometry,
+    uMin: number,
+    vMin: number,
+    uMax: number,
+    vMax: number,
+): void {
+    const uv = geo.attributes.uv as THREE.BufferAttribute;
+    uv.setXY(0, uMin, vMax); // top-left
+    uv.setXY(1, uMax, vMax); // top-right
+    uv.setXY(2, uMin, vMin); // bottom-left
+    uv.setXY(3, uMax, vMin); // bottom-right
+    uv.needsUpdate = true;
+}
+
+/** 부모 타일에서 이 자식 타일에 해당하는 UV 부분 영역을 계산 */
+function overzoomUV(
+    dz: number,
+    x: number,
+    y: number,
+): [number, number, number, number] {
+    const scale = 1 / (1 << dz);
+    const colInParent = x & ((1 << dz) - 1);
+    const rowInParent = y & ((1 << dz) - 1);
+    const uMin = colInParent * scale;
+    const uMax = uMin + scale;
+    // flipY=true 기준: v=1 이 이미지 top(북쪽), 행 0 = 북쪽
+    const vMin = ((1 << dz) - rowInParent - 1) * scale;
+    const vMax = vMin + scale;
+    return [uMin, vMin, uMax, vMax];
+}
+
+// ─── Coordinate helpers ───────────────────────────────────────────────────
 
 function lng2tile(lng: number, z: number) {
     return Math.floor(((lng + 180) / 360) * 2 ** z);
@@ -54,192 +179,7 @@ function tile2lat(ty: number, zoom: number): number {
     return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
 }
 
-/**
- * 타일을 FETCH_BATCH_SIZE씩 순차 로드.
- * onProgress: 배치 완료마다 저해상도 preview 캔버스를 전달.
- * 반환값: 최종 full-quality 캔버스 (null = 범위 초과 등 실패).
- */
-async function fetchTileCanvas(
-    txMin: number,
-    txMax: number,
-    tyMin: number,
-    tyMax: number,
-    zoom: number,
-    lngMin: number,
-    lngMax: number,
-    latMin: number,
-    latMax: number,
-    texMax: number,
-    onProgress?: (canvas: HTMLCanvasElement) => void,
-): Promise<HTMLCanvasElement | null> {
-    const latSpan = latMax - latMin;
-    const lngSpan = lngMax - lngMin;
-    if (lngSpan <= 0 || latSpan <= 0 || lngSpan > 180) return null;
-
-    const cols = txMax - txMin + 1;
-    const rows = tyMax - tyMin + 1;
-    if (rows * cols > MAX_TILES_PER_RING) return null;
-
-    const tileN = 2 ** zoom;
-    const srcXStart =
-        ((lngMin + 180) / 360) * tileN * TILE_SIZE - txMin * TILE_SIZE;
-    const srcXEnd =
-        ((lngMax + 180) / 360) * tileN * TILE_SIZE - txMin * TILE_SIZE;
-    const srcW = srcXEnd - srcXStart;
-
-    const mercCanvas = document.createElement("canvas");
-    mercCanvas.width = cols * TILE_SIZE;
-    mercCanvas.height = rows * TILE_SIZE;
-    const mercCtx = mercCanvas.getContext("2d")!;
-
-    /** mercCanvas → equirectangular 재투영 */
-    function reprojectTo(
-        ctx: CanvasRenderingContext2D,
-        w: number,
-        h: number,
-        strips: number,
-    ) {
-        for (let s = 0; s < strips; s++) {
-            const t0 = s / strips;
-            const t1 = (s + 1) / strips;
-            const lat1 = latMax - t0 * latSpan;
-            const lat2 = latMax - t1 * latSpan;
-            const r1 = (lat1 * Math.PI) / 180;
-            const r2 = (lat2 * Math.PI) / 180;
-            const mercY1 =
-                ((1 - Math.log(Math.tan(r1) + 1 / Math.cos(r1)) / Math.PI) /
-                    2) *
-                    tileN *
-                    TILE_SIZE -
-                tyMin * TILE_SIZE;
-            const mercY2 =
-                ((1 - Math.log(Math.tan(r2) + 1 / Math.cos(r2)) / Math.PI) /
-                    2) *
-                    tileN *
-                    TILE_SIZE -
-                tyMin * TILE_SIZE;
-            ctx.drawImage(
-                mercCanvas,
-                srcXStart,
-                mercY1,
-                srcW,
-                mercY2 - mercY1,
-                0,
-                t0 * h,
-                w,
-                (t1 - t0) * h,
-            );
-        }
-    }
-
-    // 중간 preview 캔버스 — 작은 사이즈로 GPU 부하 최소화
-    let progCanvas: HTMLCanvasElement | null = null;
-    let progCtx: CanvasRenderingContext2D | null = null;
-    if (onProgress) {
-        const PROG_MAX = Math.min(512, texMax);
-        progCanvas = document.createElement("canvas");
-        progCanvas.width = PROG_MAX;
-        progCanvas.height = Math.max(
-            1,
-            Math.round((PROG_MAX * latSpan) / lngSpan),
-        );
-        progCtx = progCanvas.getContext("2d");
-    }
-
-    const IMG_TIMEOUT_MS = 8000;
-    const allTiles = Array.from({ length: rows * cols }, (_, i) => ({
-        row: Math.floor(i / cols),
-        col: i % cols,
-    }));
-
-    for (let b = 0; b < allTiles.length; b += FETCH_BATCH_SIZE) {
-        await Promise.all(
-            allTiles.slice(b, b + FETCH_BATCH_SIZE).map(
-                ({ row, col }) =>
-                    new Promise<void>((resolve) => {
-                        const img = new Image();
-                        img.crossOrigin = "anonymous";
-                        let settled = false;
-                        const timer = setTimeout(() => {
-                            if (!settled) {
-                                settled = true;
-                                resolve();
-                            }
-                        }, IMG_TIMEOUT_MS);
-                        img.onload = () => {
-                            if (!settled) {
-                                settled = true;
-                                clearTimeout(timer);
-                                mercCtx.drawImage(
-                                    img,
-                                    col * TILE_SIZE,
-                                    row * TILE_SIZE,
-                                );
-                            }
-                            resolve();
-                        };
-                        img.onerror = () => {
-                            if (!settled) {
-                                settled = true;
-                                clearTimeout(timer);
-                            }
-                            resolve();
-                        };
-                        img.src = tileUrl(zoom, tyMin + row, txMin + col);
-                    }),
-            ),
-        );
-
-        if (onProgress && progCanvas && progCtx) {
-            progCtx.clearRect(0, 0, progCanvas.width, progCanvas.height);
-            reprojectTo(progCtx, progCanvas.width, progCanvas.height, 32);
-            onProgress(progCanvas);
-        }
-    }
-
-    // 최종 full-quality 출력
-    const outW = Math.min(texMax, cols * TILE_SIZE);
-    const outH = Math.min(texMax, rows * TILE_SIZE);
-    const outCanvas = document.createElement("canvas");
-    outCanvas.width = outW;
-    outCanvas.height = outH;
-    const outCtx = outCanvas.getContext("2d")!;
-    reprojectTo(outCtx, outW, outH, 128);
-
-    mercCanvas.width = 0;
-    return outCanvas;
-}
-
-function tileBounds(
-    centerLng: number,
-    centerLat: number,
-    zoom: number,
-    pad: number,
-) {
-    const n = 2 ** zoom;
-    const txC = lng2tile(centerLng, zoom);
-    const tyC = lat2tile(centerLat, zoom);
-    const txMin = Math.max(txC - pad, 0);
-    const txMax = Math.min(txC + pad, n - 1);
-    const tyMin = Math.max(tyC - pad, 0);
-    const tyMax = Math.min(tyC + pad, n - 1);
-    const lngMin = (txMin / n) * 360 - 180;
-    const lngMax = ((txMax + 1) / n) * 360 - 180;
-    const latMin = tile2lat(tyMax + 1, zoom);
-    const latMax = tile2lat(tyMin, zoom);
-    return {
-        txC,
-        tyC,
-        txMin,
-        txMax,
-        tyMin,
-        tyMax,
-        lngMin,
-        lngMax,
-        latMin,
-        latMax,
-    };
-}
+// ─── Placeholder texture ──────────────────────────────────────────────────
 
 const PLACEHOLDER_TEX = (() => {
     const data = new Uint8Array([28, 42, 62, 255]);
@@ -249,13 +189,14 @@ const PLACEHOLDER_TEX = (() => {
     return tex;
 })();
 
+// ─── Fog shader (ring당 program 공유) ─────────────────────────────────────
+
 type MapFogUniforms = {
     airplanePos: { value: THREE.Vector3 };
     fadeRadius: { value: number };
     fogColor: { value: THREE.Color };
 };
 
-// cacheKeySuffix로 ring별 WebGL 프로그램을 분리 → 각 ring의 uniform이 독립 유지됨
 function attachMapFogShader(
     mat: THREE.MeshBasicMaterial,
     uniforms: MapFogUniforms,
@@ -291,227 +232,281 @@ function attachMapFogShader(
                 diffuseColor.rgb = mix(diffuseColor.rgb, uFogCol, edge * 0.92);`,
             );
     };
-    mat.customProgramCacheKey = () => `tile-map-plane-fog-v3-${cacheKeySuffix}`;
+    mat.customProgramCacheKey = () => `tile-map-plane-fog-v4-${cacheKeySuffix}`;
 }
 
-interface PendingTile {
-    canvas: HTMLCanvasElement;
-    lngMin: number;
-    lngMax: number;
-    latMin: number;
-    latMax: number;
-}
+// ─── TileRing ─────────────────────────────────────────────────────────────
 
 interface TileRingProps {
     centerRef: React.RefObject<THREE.Vector3>;
     zoomLevelRef: React.RefObject<number>;
+    headingRef?: React.RefObject<number>;
     scaleXZ: number;
     fogColor: string;
     zoomOffset: number;
     pad: number;
-    texMax: number;
     renderOrder: number;
     onFirstVisible?: () => void;
+}
+
+interface ActiveTile {
+    mesh: THREE.Mesh;
+    mat: THREE.MeshBasicMaterial;
+    hasFinalTex: boolean;
 }
 
 function TileRing({
     centerRef,
     zoomLevelRef,
+    headingRef,
     scaleXZ,
     fogColor,
     zoomOffset,
     pad,
-    texMax,
     renderOrder,
     onFirstVisible,
 }: TileRingProps) {
-    const meshRef = useRef<THREE.Mesh>(null);
+    const { gl } = useThree();
+    const anisotropy = gl.capabilities.getMaxAnisotropy();
+    const groupRef = useRef<THREE.Group>(null);
     const fogUniformsRef = useRef<MapFogUniforms>({
         airplanePos: { value: new THREE.Vector3() },
         fadeRadius: { value: 40 },
         fogColor: { value: new THREE.Color(fogColor) },
     });
-    const mapMaterial = useMemo(() => {
-        const mat = new THREE.MeshBasicMaterial({
-            map: PLACEHOLDER_TEX,
-            toneMapped: false,
-        });
-        attachMapFogShader(mat, fogUniformsRef.current, String(renderOrder));
-        return mat;
-    }, []);
-    const mapMetaRef = useRef({ cx: 0, cz: 0, w: 1, d: 1 });
-    const fetchIdRef = useRef(0);
-    /** 가장 최근 fetch를 시작한 key */
-    const fetchedKeyRef = useRef("");
-    /** useFrame에서 현재 관측된 key */
+    const activeTilesRef = useRef(new Map<string, ActiveTile>());
+    const committedKeyRef = useRef("");
     const seenKeyRef = useRef("");
-    /** seenKey가 처음 관측된 timestamp (ms) */
     const seenKeyAtRef = useRef(0);
-    const pendingRef = useRef<PendingTile | null>(null);
+    const committedZoomRef = useRef(-1);
     const firstVisibleFiredRef = useRef(false);
-    const xF = ((MAP_W / 2) * scaleXZ) / 180;
-    const zF = ((MAP_H / 2) * scaleXZ) / 90;
+
+    const xF = useMemo(() => ((MAP_W / 2) * scaleXZ) / 180, [scaleXZ]);
+    const zF = useMemo(() => ((MAP_H / 2) * scaleXZ) / 90, [scaleXZ]);
 
     useEffect(() => {
         fogUniformsRef.current.fogColor.value.set(fogColor);
     }, [fogColor]);
 
-    function updateFogRadius(center: THREE.Vector3) {
-        const { cx, cz, w, d } = mapMetaRef.current;
-        const hw = w / 2;
-        const hd = d / 2;
-        const dx = Math.abs(center.x - cx) + hw;
-        const dz = Math.abs(center.z - cz) + hd;
-        fogUniformsRef.current.fadeRadius.value =
-            Math.hypot(dx, dz) * FOG_RADIUS_SCALE;
-        fogUniformsRef.current.airplanePos.value.copy(center);
-    }
+    useEffect(() => {
+        const group = groupRef.current;
+        return () => {
+            for (const [key, { mesh, mat }] of activeTilesRef.current) {
+                group?.remove(mesh);
+                mesh.geometry.dispose();
+                mat.dispose();
+                const parts = key.split("/");
+                cancelTileFetch(
+                    Number(parts[0]),
+                    Number(parts[1]),
+                    Number(parts[2]),
+                );
+            }
+            activeTilesRef.current.clear();
+        };
+    }, []);
 
     useFrame(() => {
         const center = centerRef.current;
-        if (!center) return;
+        const group = groupRef.current;
+        if (!center || !group) return;
 
-        // 페치 완료된 타일을 프레임 시작 시점에 안전하게 적용
-        const pending = pendingRef.current;
-        if (pending) {
-            pendingRef.current = null;
-            const mesh = meshRef.current;
-            if (mesh) {
-                const planeW = (pending.lngMax - pending.lngMin) * xF;
-                const planeD = (pending.latMax - pending.latMin) * zF;
-                const cx = ((pending.lngMin + pending.lngMax) / 2) * xF;
-                const cz = -((pending.latMin + pending.latMax) / 2) * zF;
+        // 매 프레임 fog position 갱신
+        fogUniformsRef.current.airplanePos.value.copy(center);
 
-                // 범위가 바뀐 경우에만 geometry 재생성
-                const meta = mapMetaRef.current;
-                if (
-                    meta.cx !== cx ||
-                    meta.cz !== cz ||
-                    meta.w !== planeW ||
-                    meta.d !== planeD
-                ) {
-                    mapMetaRef.current = { cx, cz, w: planeW, d: planeD };
-                    mesh.position.set(cx, 0, cz);
-                    mesh.geometry.dispose();
-                    mesh.geometry = new THREE.PlaneGeometry(planeW, planeD);
-                }
-
-                const oldTex = mapMaterial.map;
-                const tex = new THREE.CanvasTexture(pending.canvas);
-                tex.colorSpace = THREE.SRGBColorSpace;
-                mapMaterial.map = tex;
-                mapMaterial.needsUpdate = true;
-                if (oldTex && oldTex !== PLACEHOLDER_TEX) oldTex.dispose();
-                updateFogRadius(center);
-                mesh.visible = true;
-                if (!firstVisibleFiredRef.current) {
-                    firstVisibleFiredRef.current = true;
-                    onFirstVisible?.();
-                }
-            }
-        }
-
-        updateFogRadius(center);
-
-        const currentZoom = clampEsriZoom(zoomLevelRef.current);
-        const zoom = clampEsriZoom(currentZoom + zoomOffset);
+        const zoom = clampEsriZoom(
+            clampEsriZoom(zoomLevelRef.current) + zoomOffset,
+        );
+        const n = 2 ** zoom;
 
         const centerLng = Math.max(-180, Math.min(180, center.x / xF));
         const centerLat = Math.max(-85, Math.min(85, -center.z / zF));
 
-        const b = tileBounds(centerLng, centerLat, zoom, pad);
-        const key = `${zoom}:${b.txC}:${b.tyC}`;
-        const now = performance.now();
+        const txC = lng2tile(centerLng, zoom);
+        const tyC = lat2tile(centerLat, zoom);
+        // heading이 0.5 초과인 방향으로 1타일 확장해 이동 방향 프리패치
+        const heading = headingRef?.current ?? 0;
+        const hdx = Math.cos(heading); // +: east(tx증가), -: west(tx감소)
+        const hdy = -Math.sin(heading); // +: south(ty증가), -: north(ty감소)
+        const txMin = Math.max(txC - pad + (hdx < -0.5 ? -1 : 0), 0);
+        const txMax = Math.min(txC + pad + (hdx > 0.5 ? 1 : 0), n - 1);
+        const tyMin = Math.max(tyC - pad + (hdy < -0.5 ? -1 : 0), 0);
+        const tyMax = Math.min(tyC + pad + (hdy > 0.5 ? 1 : 0), n - 1);
+        if ((txMax - txMin + 1) * (tyMax - tyMin + 1) > MAX_TILES_PER_RING)
+            return;
 
-        // 새 key 감지 시 안정화 타이머 리셋
-        if (key !== seenKeyRef.current) {
-            seenKeyRef.current = key;
+        // Ring 전체 범위로 fog radius 갱신
+        const lngMin = (txMin / n) * 360 - 180;
+        const lngMax = ((txMax + 1) / n) * 360 - 180;
+        const latMin = tile2lat(tyMax + 1, zoom);
+        const latMax = tile2lat(tyMin, zoom);
+        const totalW = (lngMax - lngMin) * xF;
+        const totalD = (latMax - latMin) * zF;
+        const totalCx = ((lngMin + lngMax) / 2) * xF;
+        const totalCz = -((latMin + latMax) / 2) * zF;
+        fogUniformsRef.current.fadeRadius.value =
+            Math.hypot(
+                Math.abs(center.x - totalCx) + totalW / 2,
+                Math.abs(center.z - totalCz) + totalD / 2,
+            ) * FOG_RADIUS_SCALE;
+
+        // 중심→외곽 정렬된 타일 목록
+        const tiles: Array<{ x: number; y: number }> = [];
+        for (let ty = tyMin; ty <= tyMax; ty++) {
+            for (let tx = txMin; tx <= txMax; tx++) {
+                tiles.push({ x: tx, y: ty });
+            }
+        }
+        tiles.sort(
+            (a, b) =>
+                Math.hypot(a.x - txC, a.y - tyC) -
+                Math.hypot(b.x - txC, b.y - tyC),
+        );
+
+        const targetKeySet = new Set(tiles.map((t) => `${zoom}/${t.x}/${t.y}`));
+        const tileSetKey = `${zoom}:${txC}:${tyC}`;
+
+        // 디바운스: 안정화 전까지 새 타일 추가 보류 (기존 타일은 계속 보임)
+        const now = performance.now();
+        if (tileSetKey !== seenKeyRef.current) {
+            seenKeyRef.current = tileSetKey;
             seenKeyAtRef.current = now;
         }
+        const debounceMs = committedZoomRef.current !== zoom ? 600 : 60;
+        const stable = now - seenKeyAtRef.current >= debounceMs;
 
-        if (key === fetchedKeyRef.current) return;
-
-        // 줌 변경: 600ms, 중심 이동만: 60ms 안정화 후 fetch
-        const prevZoom = fetchedKeyRef.current
-            ? Number(fetchedKeyRef.current.split(":")[0])
-            : zoom;
-        const debounceMs = prevZoom !== zoom ? 600 : 60;
-        if (now - seenKeyAtRef.current < debounceMs) return;
-
-        const isZoomChange = prevZoom !== zoom;
-        fetchedKeyRef.current = key;
-        const myId = ++fetchIdRef.current;
-        const bounds = {
-            lngMin: b.lngMin,
-            lngMax: b.lngMax,
-            latMin: b.latMin,
-            latMax: b.latMax,
-        };
-
-        fetchTileCanvas(
-            b.txMin,
-            b.txMax,
-            b.tyMin,
-            b.tyMax,
-            zoom,
-            b.lngMin,
-            b.lngMax,
-            b.latMin,
-            b.latMax,
-            texMax,
-            // 줌 변경 시에만 배치 완료마다 preview 업데이트, 이동은 전체 완성 후 교체
-            isZoomChange
-                ? (progressCanvas) => {
-                      if (myId !== fetchIdRef.current) return;
-                      pendingRef.current = {
-                          canvas: progressCanvas,
-                          ...bounds,
-                      };
-                  }
-                : undefined,
-        )
-            .then((canvas) => {
-                if (myId !== fetchIdRef.current) return;
-                if (!canvas) {
-                    fetchedKeyRef.current = "";
-                    return;
+        if (stable && tileSetKey !== committedKeyRef.current) {
+            // 뷰포트 밖 타일 제거 + fetch 취소
+            for (const [key, { mesh, mat }] of activeTilesRef.current) {
+                if (!targetKeySet.has(key)) {
+                    group.remove(mesh);
+                    mesh.geometry.dispose();
+                    mat.dispose();
+                    const parts = key.split("/");
+                    cancelTileFetch(
+                        Number(parts[0]),
+                        Number(parts[1]),
+                        Number(parts[2]),
+                    );
+                    activeTilesRef.current.delete(key);
                 }
-                pendingRef.current = { canvas, ...bounds };
-            })
-            .catch(() => {
-                if (myId === fetchIdRef.current) fetchedKeyRef.current = "";
-            });
+            }
+
+            committedKeyRef.current = tileSetKey;
+            committedZoomRef.current = zoom;
+
+            // 새 타일 추가 (중심→외곽 순)
+            for (const { x, y } of tiles) {
+                const key = `${zoom}/${x}/${y}`;
+                if (activeTilesRef.current.has(key)) continue;
+
+                // 타일 세계 좌표 — 재투영 없이 lat/lng 범위 직접 배치
+                const tileLngMin = (x / n) * 360 - 180;
+                const tileLngMax = ((x + 1) / n) * 360 - 180;
+                const tileLatMin = tile2lat(y + 1, zoom);
+                const tileLatMax = tile2lat(y, zoom);
+                const tw = (tileLngMax - tileLngMin) * xF;
+                const td = (tileLatMax - tileLatMin) * zF;
+                const cx = ((tileLngMin + tileLngMax) / 2) * xF;
+                const cz = -((tileLatMin + tileLatMax) / 2) * zF;
+
+                const geo = new THREE.PlaneGeometry(1, 1);
+                const mat = new THREE.MeshBasicMaterial({
+                    map: PLACEHOLDER_TEX,
+                    toneMapped: false,
+                });
+                attachMapFogShader(
+                    mat,
+                    fogUniformsRef.current,
+                    String(renderOrder),
+                );
+
+                // Overzoom: 캐시된 저해상도 부모 타일 즉시 표시 (올바른 UV 부분 영역만)
+                const overzoom = findOverzoomTex(zoom, x, y);
+                if (overzoom) {
+                    mat.map = overzoom.tex;
+                    const [uMin, vMin, uMax, vMax] = overzoomUV(
+                        overzoom.dz,
+                        x,
+                        y,
+                    );
+                    setTileUV(geo, uMin, vMin, uMax, vMax);
+                    mat.needsUpdate = true;
+                }
+
+                // ring별 미세 Y 오프셋 — 투명 mesh 간 z-fighting 방지
+                const yOffset = renderOrder * 0.0001;
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.rotation.x = -Math.PI / 2;
+                mesh.scale.set(tw, td, 1);
+                mesh.position.set(cx, yOffset, cz);
+                mesh.renderOrder = renderOrder;
+                group.add(mesh);
+
+                // 캐시 히트: 즉시 고품질 표시
+                const cached = tileCache.get(key);
+                if (cached) {
+                    mat.map = cached;
+                    mat.needsUpdate = true;
+                    activeTilesRef.current.set(key, {
+                        mesh,
+                        mat,
+                        hasFinalTex: true,
+                    });
+                    if (!firstVisibleFiredRef.current) {
+                        firstVisibleFiredRef.current = true;
+                        onFirstVisible?.();
+                    }
+                    continue;
+                }
+
+                activeTilesRef.current.set(key, {
+                    mesh,
+                    mat,
+                    hasFinalTex: false,
+                });
+
+                getTileTexture(zoom, x, y, anisotropy).then((tex) => {
+                    if (!tex) return;
+                    const active = activeTilesRef.current.get(key);
+                    if (!active || active.hasFinalTex) return;
+                    setTileUV(active.mesh.geometry, 0, 0, 1, 1); // overzoom UV 리셋
+                    active.mat.map = tex;
+                    active.mat.needsUpdate = true;
+                    active.hasFinalTex = true;
+                    if (!firstVisibleFiredRef.current) {
+                        firstVisibleFiredRef.current = true;
+                        onFirstVisible?.();
+                    }
+                });
+            }
+        }
     });
 
-    return (
-        <mesh
-            ref={meshRef}
-            rotation={[-Math.PI / 2, 0, 0]}
-            renderOrder={renderOrder}
-            visible={false}
-        >
-            <planeGeometry args={[1, 1]} />
-            <primitive object={mapMaterial} attach="material" />
-        </mesh>
-    );
+    return <group ref={groupRef} />;
 }
+
+// ─── TileMapPlane (interface unchanged) ──────────────────────────────────
 
 interface Props {
     centerRef: React.RefObject<THREE.Vector3>;
     /** Esri 줌 레벨 2~18 (LiveMapCanvas가 휠 줌에 맞춰 갱신) */
     zoomLevelRef: React.RefObject<number>;
+    /** Three.js yaw 라디안 — 이동 방향 앞쪽 타일 프리패치에 사용 */
+    headingRef?: React.RefObject<number>;
     scaleXZ?: number;
     /** 안개가 섞일 색 (기본: LiveMapCanvas 배경) */
     fogColor?: string;
     /** inner ring(최고 품질)의 첫 타일이 화면에 나타났을 때 호출 */
     onFirstTileReady?: () => void;
-    /** 모바일 등 저사양 환경: 타일 수와 해상도를 줄여 성능 확보 */
+    /** 모바일 등 저사양 환경: 타일 수를 줄여 성능 확보 */
     lowPower?: boolean;
 }
 
 export function TileMapPlane({
     centerRef,
     zoomLevelRef,
+    headingRef,
     scaleXZ = 1,
     fogColor = "#0a1628",
     onFirstTileReady,
@@ -525,11 +520,11 @@ export function TileMapPlane({
                     key={tier.renderOrder}
                     centerRef={centerRef}
                     zoomLevelRef={zoomLevelRef}
+                    headingRef={headingRef}
                     scaleXZ={scaleXZ}
                     fogColor={fogColor}
                     zoomOffset={tier.zoomOffset}
                     pad={tier.pad}
-                    texMax={tier.texMax}
                     renderOrder={tier.renderOrder}
                     onFirstVisible={
                         tier.renderOrder === 3 ? onFirstTileReady : undefined

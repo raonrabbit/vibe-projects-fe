@@ -175,6 +175,7 @@ function SceneContent({
             <TileMapPlane
                 centerRef={planePositionRef}
                 zoomLevelRef={mapZoomRef}
+                headingRef={planeHeadingRef}
                 scaleXZ={MAP_SCALE}
                 fogColor="#070e1a"
                 onFirstTileReady={onFirstTileReady}
