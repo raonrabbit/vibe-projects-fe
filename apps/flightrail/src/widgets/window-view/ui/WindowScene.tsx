@@ -10,7 +10,8 @@ import {
     useProgress,
 } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import {
+import React, {
+    Component,
     type ComponentProps,
     memo,
     type RefObject,
@@ -300,4 +301,49 @@ function WindowScene({
     );
 }
 
-export default memo(WindowScene);
+const MemoWindowScene = memo(WindowScene);
+
+// WebGL context 생성 실패(StrictMode 재마운트, GPU 블록 등)를 잡아 크래시 방지.
+// 실패 후 3초 대기 후 key 변경으로 캔버스 재시도.
+interface BoundaryState {
+    failed: boolean;
+    retryKey: number;
+}
+
+class WindowSceneBoundary extends Component<
+    React.ComponentProps<typeof WindowScene>,
+    BoundaryState
+> {
+    private retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+    constructor(props: React.ComponentProps<typeof WindowScene>) {
+        super(props);
+        this.state = { failed: false, retryKey: 0 };
+    }
+
+    static getDerivedStateFromError() {
+        return { failed: true };
+    }
+
+    componentDidUpdate(_: unknown, prev: BoundaryState) {
+        if (this.state.failed && !prev.failed) {
+            this.retryTimer = setTimeout(() => {
+                this.setState((s) => ({
+                    failed: false,
+                    retryKey: s.retryKey + 1,
+                }));
+            }, 3000);
+        }
+    }
+
+    componentWillUnmount() {
+        if (this.retryTimer !== null) clearTimeout(this.retryTimer);
+    }
+
+    render() {
+        if (this.state.failed) return null;
+        return <MemoWindowScene key={this.state.retryKey} {...this.props} />;
+    }
+}
+
+export default WindowSceneBoundary;

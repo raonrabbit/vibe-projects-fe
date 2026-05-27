@@ -162,12 +162,17 @@ export default function WindowView() {
     const [landResult, setLandResult] = useState<LandResult | null>(null);
 
     const [showMap, setShowMap] = useState(false);
+    // context 재생성 방지: 한 번 열리면 unmount하지 않고 CSS로만 숨김
+    const [liveMapMounted, setLiveMapMounted] = useState(false);
     const liveCameraOffsetRef = useRef<CamOffset | null>(null);
 
     const [cabinMode, setCabinMode] = useState<CabinLightMode>("auto");
     const [cabinOpen, setCabinOpen] = useState(false);
     const [clockOpen, setClockOpen] = useState(false);
-    const [muted, setMuted] = useState(false);
+    const [volume, setVolume] = useState(1);
+    const [showVolumeBar, setShowVolumeBar] = useState(false);
+    const isDraggingVolumeRef = useRef(false);
+    const volumeContainerRef = useRef<HTMLDivElement>(null);
     const audioCtxRef = useRef<AudioContext | null>(null);
     const gainRef = useRef<GainNode | null>(null);
 
@@ -180,6 +185,10 @@ export default function WindowView() {
         const id = setTimeout(() => setReady(true), 3000);
         return () => clearTimeout(id);
     }, []);
+
+    useEffect(() => {
+        if (showMap && !liveMapMounted) setLiveMapMounted(true);
+    }, [showMap, liveMapMounted]);
 
     useEffect(() => {
         const ctx = new AudioContext();
@@ -262,11 +271,26 @@ export default function WindowView() {
         if (!running) {
             gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1);
         } else {
-            const target = muted ? 0 : 0.4;
-            const dur = muted ? 0.15 : 0.5;
-            gain.gain.linearRampToValueAtTime(target, ctx.currentTime + dur);
+            gain.gain.linearRampToValueAtTime(
+                volume * 0.4,
+                ctx.currentTime + 0.1,
+            );
         }
-    }, [running, muted]);
+    }, [running, volume]);
+
+    useEffect(() => {
+        if (!showVolumeBar) return;
+        const handleClick = (e: MouseEvent) => {
+            if (
+                volumeContainerRef.current &&
+                !volumeContainerRef.current.contains(e.target as Node)
+            ) {
+                setShowVolumeBar(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, [showVolumeBar]);
 
     useEffect(() => {
         setLocalHour(getLocalHour());
@@ -470,31 +494,34 @@ export default function WindowView() {
 
     return (
         <div className="relative w-full h-screen overflow-hidden bg-[#0a0806]">
-            {/* 3D sky canvas — unmounted while map is open to avoid dual WebGL context */}
-            {!showMap && (
-                <div className="absolute inset-0">
-                    <WindowScene
+            {/* 3D sky canvas — WebGL context 재생성 방지를 위해 항상 마운트, CSS로 숨김 */}
+            <div
+                className="absolute inset-0"
+                style={showMap ? { display: "none" } : undefined}
+            >
+                <WindowScene
+                    hour={displayHour}
+                    cabinMode={cabinMode}
+                    onReady={() => setReady(true)}
+                />
+            </div>
+
+            {/* 3D map view — 한 번 열리면 unmount하지 않고 CSS로만 숨겨 context 유지 */}
+            {liveMapMounted && fromAirportData && mapDestination && (
+                <div style={showMap ? undefined : { display: "none" }}>
+                    <LiveMapCanvas
+                        fromLat={fromAirportData.lat}
+                        fromLng={fromAirportData.lng}
+                        toLat={mapDestination.lat}
+                        toLng={mapDestination.lng}
+                        progress={mapProgress}
+                        progressRate={running ? mapProgressRate : 0}
                         hour={displayHour}
-                        cabinMode={cabinMode}
-                        onReady={() => setReady(true)}
+                        onClose={() => setShowMap(false)}
+                        cameraSnapshotRef={liveCameraOffsetRef}
+                        showRoute={mode === "planned"}
                     />
                 </div>
-            )}
-
-            {/* 3D map view — rendered on top, shown when showMap is true */}
-            {showMap && fromAirportData && mapDestination && (
-                <LiveMapCanvas
-                    fromLat={fromAirportData.lat}
-                    fromLng={fromAirportData.lng}
-                    toLat={mapDestination.lat}
-                    toLng={mapDestination.lng}
-                    progress={mapProgress}
-                    progressRate={running ? mapProgressRate : 0}
-                    hour={displayHour}
-                    onClose={() => setShowMap(false)}
-                    cameraSnapshotRef={liveCameraOffsetRef}
-                    showRoute={mode === "planned"}
-                />
             )}
 
             {/* Mini-map overlay — bottom-left of window view */}
@@ -795,13 +822,13 @@ export default function WindowView() {
                 className={`absolute right-8 top-1/2 -translate-y-1/2 ${showMap ? "z-30" : "z-10"}`}
             >
                 <div className="bg-black/20 backdrop-blur-md rounded-2xl flex flex-col divide-y divide-white/8">
-                    {/* Music / mute toggle */}
-                    <div className="relative group">
+                    {/* Volume control */}
+                    <div className="relative group" ref={volumeContainerRef}>
                         <button
                             className={`${btnCls} rounded-t-2xl`}
-                            onClick={() => setMuted((m) => !m)}
+                            onClick={() => setShowVolumeBar((v) => !v)}
                         >
-                            {muted ? (
+                            {volume === 0 ? (
                                 <svg
                                     width="20"
                                     height="20"
@@ -834,7 +861,7 @@ export default function WindowView() {
                                     strokeWidth="2"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
-                                    strokeOpacity="0.65"
+                                    strokeOpacity={0.3 + volume * 0.55}
                                 >
                                     <path d="M9 18V5l12-2v13" />
                                     <circle cx="6" cy="18" r="3" />
@@ -842,7 +869,67 @@ export default function WindowView() {
                                 </svg>
                             )}
                         </button>
-                        <LeftTooltip label={muted ? "음소거 해제" : "음소거"} />
+                        {showVolumeBar && (
+                            <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 w-10 bg-black/60 backdrop-blur-sm rounded-xl py-3 flex flex-col items-center gap-2 select-none">
+                                <span className="text-white/50 text-xs tabular-nums w-full text-center">
+                                    {Math.round(volume * 100)}
+                                </span>
+                                <div
+                                    className="w-2 h-20 bg-white/20 rounded-full relative cursor-pointer"
+                                    onPointerDown={(e) => {
+                                        e.currentTarget.setPointerCapture(
+                                            e.pointerId,
+                                        );
+                                        isDraggingVolumeRef.current = true;
+                                        const rect =
+                                            e.currentTarget.getBoundingClientRect();
+                                        setVolume(
+                                            Math.max(
+                                                0,
+                                                Math.min(
+                                                    1,
+                                                    1 -
+                                                        (e.clientY - rect.top) /
+                                                            rect.height,
+                                                ),
+                                            ),
+                                        );
+                                    }}
+                                    onPointerMove={(e) => {
+                                        if (!isDraggingVolumeRef.current)
+                                            return;
+                                        const rect =
+                                            e.currentTarget.getBoundingClientRect();
+                                        setVolume(
+                                            Math.max(
+                                                0,
+                                                Math.min(
+                                                    1,
+                                                    1 -
+                                                        (e.clientY - rect.top) /
+                                                            rect.height,
+                                                ),
+                                            ),
+                                        );
+                                    }}
+                                    onPointerUp={() => {
+                                        isDraggingVolumeRef.current = false;
+                                    }}
+                                >
+                                    <div
+                                        className="absolute bottom-0 left-0 right-0 bg-white/70 rounded-full"
+                                        style={{ height: `${volume * 100}%` }}
+                                    />
+                                    <div
+                                        className="absolute left-1/2 -translate-x-1/2 w-3.5 h-3.5 bg-white rounded-full shadow"
+                                        style={{
+                                            bottom: `calc(${volume * 100}% - 7px)`,
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        <LeftTooltip label="볼륨" />
                     </div>
                     {/* Globe / Window toggle */}
                     <div className="relative group">
