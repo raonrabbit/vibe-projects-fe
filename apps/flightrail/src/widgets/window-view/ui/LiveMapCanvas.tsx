@@ -2,11 +2,12 @@
 
 import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 import { esriZoomFromCameraDistance } from "@/shared/lib/esriMapZoom";
 import { latLngToFloor, MAP_W, WORLD_MAP_SCALE } from "@/shared/lib/mapUtils";
+import { useIsMobile } from "@/shared/lib/mobilePerf";
 import { TileMapPlane } from "@/shared/ui/TileMapPlane";
 
 import { FlightSky } from "./FlightSky";
@@ -64,6 +65,7 @@ interface Props {
 type SceneContentProps = Omit<Props, "onClose"> & {
     initPlanePos: THREE.Vector3;
     onFirstTileReady?: () => void;
+    isMobile: boolean;
 };
 
 function SceneContent({
@@ -78,6 +80,7 @@ function SceneContent({
     cameraSnapshotRef,
     onFirstTileReady,
     showRoute = true,
+    isMobile,
 }: SceneContentProps) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const controlsRef = useRef<any>(null);
@@ -175,6 +178,7 @@ function SceneContent({
                 scaleXZ={MAP_SCALE}
                 fogColor="#070e1a"
                 onFirstTileReady={onFirstTileReady}
+                lowPower={isMobile}
             />
             <OrbitControls
                 ref={controlsRef}
@@ -204,7 +208,13 @@ export default function LiveMapCanvas({
     cameraSnapshotRef,
     showRoute,
 }: Props) {
+    const isMobile = useIsMobile();
     const [mapReady, setMapReady] = useState(false);
+
+    useEffect(() => {
+        const id = setTimeout(() => setMapReady(true), 3000);
+        return () => clearTimeout(id);
+    }, []);
 
     // 마운트 시점의 비행기 위치 — Canvas camera + OrbitControls target 초기화에 사용
     const initPlanePos = useMemo(
@@ -255,7 +265,11 @@ export default function LiveMapCanvas({
                         MAP_W * MAP_SCALE * 4,
                     ),
                 }}
-                gl={{ antialias: true }}
+                dpr={isMobile ? 1 : [1, 2]}
+                gl={{
+                    antialias: !isMobile,
+                    powerPreference: "high-performance",
+                }}
                 onCreated={({ gl }) => {
                     gl.toneMapping = THREE.ReinhardToneMapping;
                     gl.toneMappingExposure = 0.7;
@@ -275,6 +289,7 @@ export default function LiveMapCanvas({
                     cameraSnapshotRef={cameraSnapshotRef}
                     onFirstTileReady={() => setMapReady(true)}
                     showRoute={showRoute}
+                    isMobile={isMobile}
                 />
             </Canvas>
         </div>

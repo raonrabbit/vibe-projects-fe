@@ -21,10 +21,17 @@ const FETCH_BATCH_SIZE = 6;
  * 각 ring은 현재 줌에서 zoomOffset을 뺀 레벨로 독립 fetch.
  * renderOrder: inner(3)가 가장 위에 렌더링되어 하위 ring이 투명 가장자리로 보임.
  */
-const LOD_TIERS = [
+const LOD_TIERS_DESKTOP = [
     { zoomOffset: 0, pad: 7, texMax: 2048, renderOrder: 3 }, // 비행기 직하방 고품질
     { zoomOffset: -3, pad: 5, texMax: 1024, renderOrder: 2 }, // 중거리
     { zoomOffset: -6, pad: 6, texMax: 1024, renderOrder: 1 }, // 광역
+] as const;
+
+// 모바일: 타일 수(pad)와 텍스처 해상도(texMax)를 절반 수준으로 낮춰 네트워크·GPU 부하 감소
+const LOD_TIERS_MOBILE = [
+    { zoomOffset: 0, pad: 4, texMax: 1024, renderOrder: 3 },
+    { zoomOffset: -3, pad: 3, texMax: 512, renderOrder: 2 },
+    { zoomOffset: -6, pad: 4, texMax: 512, renderOrder: 1 },
 ] as const;
 
 const tileUrl = (z: number, y: number, x: number) =>
@@ -498,6 +505,8 @@ interface Props {
     fogColor?: string;
     /** inner ring(최고 품질)의 첫 타일이 화면에 나타났을 때 호출 */
     onFirstTileReady?: () => void;
+    /** 모바일 등 저사양 환경: 타일 수와 해상도를 줄여 성능 확보 */
+    lowPower?: boolean;
 }
 
 export function TileMapPlane({
@@ -506,7 +515,9 @@ export function TileMapPlane({
     scaleXZ = 1,
     fogColor = "#0a1628",
     onFirstTileReady,
+    lowPower = false,
 }: Props) {
+    const LOD_TIERS = lowPower ? LOD_TIERS_MOBILE : LOD_TIERS_DESKTOP;
     return (
         <>
             {LOD_TIERS.map((tier) => (
