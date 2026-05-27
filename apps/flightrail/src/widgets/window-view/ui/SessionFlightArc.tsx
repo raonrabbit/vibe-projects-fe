@@ -13,7 +13,7 @@ const AIRCRAFT_KM = 0.033;
 const TRAIL_SEGMENTS = 64;
 
 function clampProgress(p: number) {
-    return Math.min(Math.max(p, 0.001), 0.999);
+    return Math.min(Math.max(p, 0), 1);
 }
 
 interface Props {
@@ -48,15 +48,16 @@ export function SessionFlightArc({
 }: Props) {
     const { camera } = useThree();
 
+    // 실제(clamp 전) progress를 저장해야 1초 주기 snap-back이 발생하지 않음
     const progressSyncRef = useRef({
-        progress: clampProgress(progress),
+        progress: progress,
         at: performance.now(),
     });
     const yawRef = useRef(0);
 
     useEffect(() => {
         progressSyncRef.current = {
-            progress: clampProgress(progress),
+            progress: progress,
             at: performance.now(),
         };
     }, [progress]);
@@ -64,6 +65,8 @@ export function SessionFlightArc({
     const planeGroupRef = useRef<THREE.Group>(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const trailLineRef = useRef<any>(null);
+    // Pre-allocated buffer — reused every frame to avoid GC pressure from repeated array creation
+    const trailBufRef = useRef(new Float32Array((TRAIL_SEGMENTS + 1) * 3));
 
     const curve = useMemo(() => {
         const [x1, , z1] = latLngToFloor(fromLat, fromLng, 0, mapScale);
@@ -151,14 +154,16 @@ export function SessionFlightArc({
             headingRef.current = yawRef.current;
         }
 
-        // trail 포인트 업데이트 (drei Line 임페러티브 갱신)
+        // trail 포인트 업데이트 — 사전 할당된 Float32Array 재사용 (매 프레임 배열 생성 방지)
         if (trailLineRef.current) {
-            const flatPos: number[] = [];
+            const buf = trailBufRef.current;
             for (let i = 0; i <= TRAIL_SEGMENTS; i++) {
                 const pt = curve.getPoint((i / TRAIL_SEGMENTS) * p);
-                flatPos.push(pt.x, pt.y, pt.z);
+                buf[i * 3] = pt.x;
+                buf[i * 3 + 1] = pt.y;
+                buf[i * 3 + 2] = pt.z;
             }
-            trailLineRef.current.geometry.setPositions(flatPos);
+            trailLineRef.current.geometry.setPositions(buf);
         }
 
         // 위치 핑 — zoom 15 미만일 때 표시 (카메라 거리 비례 크기)
