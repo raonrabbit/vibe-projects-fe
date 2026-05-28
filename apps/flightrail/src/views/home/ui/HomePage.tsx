@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { findDestinationCandidates } from "@/entities/airport";
-import { AppHeader } from "@/shared/ui/AppHeader";
 import { DurationPicker } from "@/shared/ui/DurationPicker";
 import { LandingIcon, PlaneIcon } from "@/shared/ui/icons";
+import { AppHeader } from "@/widgets/app-header";
 import { CandidateList } from "@/widgets/candidate-list";
 import { DepartureMap } from "@/widgets/departure-map";
 import { RouteBar } from "@/widgets/route-bar";
@@ -45,7 +45,7 @@ export default function HomePage() {
             duration: String(durationSeconds),
             hardStop: String(hardStop),
         });
-        router.push(`/boarding?${params}`);
+        router.push(`/timer?${params}`);
     }
 
     return (

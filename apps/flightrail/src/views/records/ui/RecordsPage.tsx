@@ -3,35 +3,15 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getAirport } from "@/entities/airport";
-import { getSessions, type Session } from "@/entities/session";
-import { AppHeader } from "@/shared/ui/AppHeader";
-
-function formatHM(seconds: number) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds % 3600) / 60);
-    return `${h}h ${String(m).padStart(2, "0")}m`;
-}
-
-function formatDate(isoStr: string) {
-    return new Date(isoStr).toLocaleDateString("ko-KR", {
-        month: "short",
-        day: "numeric",
-    });
-}
-
-function sessionDuration(s: Session) {
-    const secs =
-        (new Date(s.ended_at).getTime() - new Date(s.started_at).getTime()) /
-        1000;
-    return formatHM(secs);
-}
-
-function sessionSeconds(s: Session) {
-    return (
-        (new Date(s.ended_at).getTime() - new Date(s.started_at).getTime()) /
-        1000
-    );
-}
+import {
+    formatDate,
+    formatHM,
+    getSessions,
+    type Session,
+    sessionDuration,
+    sessionSeconds,
+} from "@/entities/session";
+import { AppHeader } from "@/widgets/app-header";
 
 function heatOpacity(seconds: number, isFuture: boolean) {
     if (isFuture || seconds === 0) return 0.04;

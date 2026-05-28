@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+body {
+    background-color: #0a0806;
+}
+
 /* ─── FlightRail Design System ────────────────────────────────────────────
  * Token naming: fr-* prefix scopes all tokens to this app.
  * Architecture: Tailwind v4 @theme → CSS custom properties → utility classes.
