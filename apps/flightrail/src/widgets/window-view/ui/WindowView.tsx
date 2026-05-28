@@ -7,7 +7,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type Airport, findDestination, getAirport } from "@/entities/airport";
 import { saveSession } from "@/entities/session";
 import { haversineKm } from "@/shared/lib/mapUtils";
-import BoardingTicket from "@/shared/ui/BoardingTicket";
 
 import type { CamOffset } from "./LiveMapCanvas";
 import { MiniMap } from "./MiniMap";
@@ -122,6 +121,7 @@ export default function WindowView() {
 
     const subject = searchParams.get("subject") ?? "";
     const from = searchParams.get("from") ?? "ICN";
+    const to = searchParams.get("to");
     const plannedDuration = Number(searchParams.get("duration") ?? 7200);
     const hardStop = searchParams.get("hardStop") === "true";
 
@@ -152,11 +152,6 @@ export default function WindowView() {
     const [fromOffset, setFromOffset] = useState(0);
     const [fixedHour, setFixedHour] = useState(0);
     const [localHour, setLocalHour] = useState(0);
-
-    useEffect(() => {
-        const id = setTimeout(() => setReady(true), 3000);
-        return () => clearTimeout(id);
-    }, []);
 
     useEffect(() => {
         if (showMap && !liveMapMounted) setLiveMapMounted(true);
@@ -289,10 +284,15 @@ export default function WindowView() {
               : fixedHour;
 
     const fromAirportData = useMemo(() => getAirport(from), [from]);
+    const toAirportData = useMemo(() => (to ? getAirport(to) : null), [to]);
 
     const mapDestination = useMemo(
-        () => findDestination(from, elapsed) ?? fromAirportData ?? null,
-        [from, elapsed, fromAirportData],
+        () =>
+            toAirportData ??
+            findDestination(from, elapsed) ??
+            fromAirportData ??
+            null,
+        [toAirportData, from, elapsed, fromAirportData],
     );
 
     const routeTotalKm = useMemo(() => {
@@ -519,14 +519,6 @@ export default function WindowView() {
                     />
                 </div>
             )}
-
-            {/* Boarding ticket loading overlay */}
-            <BoardingTicket
-                ready={ready}
-                from={from}
-                subject={subject || undefined}
-                plannedDuration={plannedDuration}
-            />
 
             {/* Pause overlay */}
             {!running && !saving && !landResult && (
