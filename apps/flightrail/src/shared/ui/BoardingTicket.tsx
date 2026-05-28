@@ -2,22 +2,43 @@
 
 import { useEffect, useState } from "react";
 
-// Fixed "barcode" pattern so it doesn't change on re-render
+import { getAirport } from "@/entities/airport";
+
 const BARCODE = [
     1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1,
     0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1,
     0, 0, 1, 0, 1, 1, 0, 1, 0, 0,
 ];
 
-interface BoardingTicketProps {
-    ready: boolean;
+function formatDuration(seconds: number) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (h === 0) return `${m}m`;
+    if (m === 0) return `${h}h`;
+    return `${h}h ${m}m`;
 }
 
-export default function BoardingTicket({ ready }: BoardingTicketProps) {
+interface BoardingTicketProps {
+    ready: boolean;
+    from?: string;
+    subject?: string;
+    plannedDuration?: number;
+}
+
+export default function BoardingTicket({
+    ready,
+    from = "ICN",
+    subject,
+    plannedDuration,
+}: BoardingTicketProps) {
     const [progress, setProgress] = useState(0);
     const [mounted, setMounted] = useState(true);
 
-    // Fake progress: fill to 82% over ~2s, then jump to 100 when ready
+    const fromAirport = getAirport(from);
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}`;
+    const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
     useEffect(() => {
         let p = 0;
         const id = setInterval(() => {
@@ -43,7 +64,6 @@ export default function BoardingTicket({ ready }: BoardingTicketProps) {
                 ready ? "opacity-0" : "opacity-100"
             }`}
         >
-            {/* Ticket */}
             <div className="flex h-[190px] w-[680px] overflow-hidden rounded-2xl shadow-2xl shadow-black/60 select-none">
                 {/* Main section */}
                 <div className="flex-1 bg-[#f5f0e8] px-7 py-5 flex flex-col justify-between">
@@ -65,20 +85,30 @@ export default function BoardingTicket({ ready }: BoardingTicketProps) {
                                 Flightrail
                             </span>
                         </div>
-                        <span className="text-[9px] tracking-[0.2em] uppercase text-[#9a9080]">
-                            Boarding Pass
-                        </span>
+                        <div className="text-right">
+                            <p className="text-[9px] tracking-[0.2em] uppercase text-[#9a9080]">
+                                Boarding Pass
+                            </p>
+                            <p className="text-[9px] text-[#b0a898] mt-0.5">
+                                {dateStr}
+                            </p>
+                        </div>
                     </div>
 
                     {/* Route */}
                     <div className="flex items-center gap-4">
                         <div>
                             <p className="text-[42px] font-bold text-[#1a1410] tracking-tight leading-none">
-                                ICN
+                                {from}
                             </p>
-                            <p className="text-[10px] text-[#9a9080] mt-1">
-                                Incheon Intl
+                            <p className="text-[10px] text-[#9a9080] mt-1 leading-none">
+                                {fromAirport?.name ?? from}
                             </p>
+                            {subject && (
+                                <p className="text-[9px] text-[#2a6eb0] mt-1.5 tracking-wide">
+                                    {subject}
+                                </p>
+                            )}
                         </div>
                         <div className="flex-1 flex items-center gap-2 pb-4">
                             <div className="flex-1 border-t border-dashed border-[#cdc5b5]" />
@@ -114,7 +144,7 @@ export default function BoardingTicket({ ready }: BoardingTicketProps) {
                             <p className="text-[9px] text-[#9a9080] tracking-wide">
                                 {ready
                                     ? "탑승 준비 완료"
-                                    : "비행 시스템 로딩 중..."}
+                                    : "비행 시스템 초기화 중..."}
                             </p>
                             <p className="text-[9px] font-mono text-[#9a9080]">
                                 {Math.round(progress)}%
@@ -146,18 +176,20 @@ export default function BoardingTicket({ ready }: BoardingTicketProps) {
                     </div>
                     <div className="text-center">
                         <p className="text-[8px] tracking-widest uppercase text-[#9a9080] mb-0.5">
-                            Gate
+                            Duration
                         </p>
-                        <p className="font-bold text-[#1a1410] text-[16px]">
-                            —
+                        <p className="font-bold text-[#1a1410] text-[13px]">
+                            {plannedDuration
+                                ? formatDuration(plannedDuration)
+                                : "—"}
                         </p>
                     </div>
                     <div className="text-center">
-                        <p className="text-[8px] tracking-widest uppercase text-[#9a9080] mb-1">
-                            Seat
+                        <p className="text-[8px] tracking-widest uppercase text-[#9a9080] mb-0.5">
+                            Departs
                         </p>
-                        <p className="font-bold text-[#1a1410] text-[18px] tracking-wider">
-                            —A
+                        <p className="font-bold text-[#1a1410] text-[14px] tracking-wider">
+                            {timeStr}
                         </p>
                     </div>
                     {/* Barcode */}

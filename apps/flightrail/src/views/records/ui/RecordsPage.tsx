@@ -62,9 +62,12 @@ function StatusBadge({ status }: { status: Session["arrival_status"] }) {
     const map = {
         ontime: { label: "정시", cls: "bg-sky-500/20 text-sky-400" },
         delayed: { label: "연착", cls: "bg-amber-500/20 text-amber-400" },
-        abandoned: { label: "포기", cls: "bg-rose-500/20 text-rose-400" },
+        emergency_landing: {
+            label: "비상착륙",
+            cls: "bg-rose-500/20 text-rose-400",
+        },
     };
-    const { label, cls } = map[status];
+    const { label, cls } = map[status] ?? map.emergency_landing;
     return (
         <span
             className={`text-[9px] font-bold tracking-[0.15em] uppercase px-2 py-0.5 rounded-full ${cls}`}
