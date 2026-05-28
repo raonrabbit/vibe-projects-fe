@@ -1,10 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { getAirport } from "@/entities/airport";
 import { getSessions, type Session } from "@/entities/session";
+import { AppHeader } from "@/shared/ui/AppHeader";
 
 function formatHM(seconds: number) {
     const h = Math.floor(seconds / 3600);
@@ -39,23 +39,6 @@ function heatOpacity(seconds: number, isFuture: boolean) {
     if (seconds < 3600) return 0.3;
     if (seconds < 7200) return 0.55;
     return 0.85;
-}
-
-function PlaneIcon({ size = 18 }: { size?: number }) {
-    return (
-        <svg
-            width={size}
-            height={size}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
-        </svg>
-    );
 }
 
 function StatusBadge({ status }: { status: Session["arrival_status"] }) {
@@ -276,27 +259,13 @@ export default function RecordsPage() {
     ];
 
     return (
-        <main className="relative w-full min-h-screen bg-[#0a0806] overflow-hidden flex flex-col">
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#080d18] via-[#0a0806] to-[#060608]" />
+        <main className="relative w-full min-h-screen bg-fr-base overflow-hidden flex flex-col">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-fr-surface via-fr-base to-fr-deep" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_45%_at_50%_-10%,rgba(56,189,248,0.05),transparent)]" />
 
-            <header className="relative z-10 flex items-center justify-between px-10 pt-8">
-                <div className="flex items-center gap-2.5 text-white">
-                    <PlaneIcon size={18} />
-                    <Link
-                        href="/"
-                        className="font-semibold tracking-[0.25em] text-[13px] uppercase text-white/80 hover:text-white transition-colors"
-                    >
-                        Flightrail
-                    </Link>
-                </div>
-                <nav className="flex items-center gap-3">
-                    <span className="px-4 py-2 text-white/70 text-[13px] tracking-wide rounded-xl bg-white/[0.06]">
-                        기록
-                    </span>
-                </nav>
-            </header>
+            <AppHeader active="records" />
 
-            <div className="relative z-10 px-10 py-10 space-y-4 flex-1">
+            <div className="relative z-10 px-5 sm:px-10 py-10 space-y-4 flex-1">
                 <div className="mb-2">
                     <h2 className="text-white text-2xl font-bold tracking-tight">
                         비행 기록
