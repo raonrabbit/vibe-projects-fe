@@ -1,13 +1,234 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import type { Airport, AirportCandidate } from "@/entities/airport";
 import { AIRPORTS, findDestinationCandidates } from "@/entities/airport";
+import { createWorldMapProjection, drawWorldMap } from "@/shared/lib/mapUtils";
 
-type Mode = "free" | "planned";
+type Step = "subject" | "airport" | "duration" | "hard_stop";
 
-type Step = "mode" | "subject" | "airport" | "duration" | "destination";
+const CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+function SplitFlapText({
+    value,
+    className,
+}: {
+    value: string;
+    className?: string;
+}) {
+    const [display, setDisplay] = useState(() =>
+        Array.from(
+            { length: value.length },
+            () => CHARS[Math.floor(Math.random() * CHARS.length)],
+        ).join(""),
+    );
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    useEffect(() => {
+        let frame = 0;
+        const FRAMES_PER_CHAR = 5;
+        const total = value.length * FRAMES_PER_CHAR + 4;
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = setInterval(() => {
+            const settled = Math.floor(frame / FRAMES_PER_CHAR);
+            setDisplay(
+                Array.from({ length: value.length }, (_, i) =>
+                    i < settled
+                        ? value[i]
+                        : CHARS[Math.floor(Math.random() * CHARS.length)],
+                ).join(""),
+            );
+            frame++;
+            if (frame > total) {
+                setDisplay(value);
+                if (timerRef.current) clearInterval(timerRef.current);
+            }
+        }, 45);
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, [value]);
+
+    return <span className={className}>{display}</span>;
+}
+
+function WorldMapMini({
+    selectedLat,
+    selectedLng,
+    candidates,
+}: {
+    selectedLat: number;
+    selectedLng: number;
+    candidates?: AirportCandidate[];
+}) {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        let cancelled = false;
+
+        drawWorldMap(canvas)
+            .then(() => {
+                if (cancelled) return;
+                const ctx = canvas.getContext("2d");
+                if (!ctx) return;
+
+                const { width, height } = canvas;
+                const proj = createWorldMapProjection(width, height);
+
+                // 모든 공항 점
+                for (const a of AIRPORTS) {
+                    const p = proj([a.lng, a.lat]);
+                    if (!p) continue;
+                    ctx.beginPath();
+                    ctx.arc(p[0], p[1], 1.8, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(255,255,255,0.22)";
+                    ctx.fill();
+                }
+
+                // 목적지 후보
+                if (candidates) {
+                    for (const { airport: a } of candidates) {
+                        const p = proj([a.lng, a.lat]);
+                        if (!p) continue;
+                        ctx.beginPath();
+                        ctx.arc(p[0], p[1], 7, 0, Math.PI * 2);
+                        ctx.fillStyle = "rgba(251,191,36,0.12)";
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(p[0], p[1], 3.5, 0, Math.PI * 2);
+                        ctx.fillStyle = "rgba(251,191,36,0.8)";
+                        ctx.fill();
+                    }
+                }
+
+                // 선택된 출발 공항
+                const sp = proj([selectedLng, selectedLat]);
+                if (sp) {
+                    ctx.beginPath();
+                    ctx.arc(sp[0], sp[1], 14, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(56,189,248,0.08)";
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(sp[0], sp[1], 7, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(56,189,248,0.22)";
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(sp[0], sp[1], 3.5, 0, Math.PI * 2);
+                    ctx.fillStyle = "rgba(56,189,248,1)";
+                    ctx.fill();
+                }
+            })
+            .catch(() => {});
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedLat, selectedLng, candidates]);
+
+    return (
+        <div className="relative w-full h-44 rounded-xl overflow-hidden border border-white/[0.05] mb-4 bg-[#0c1a2e]">
+            <canvas
+                ref={canvasRef}
+                width={900}
+                height={450}
+                className="w-full h-full"
+            />
+        </div>
+    );
+}
+
+function FlipCard({
+    airport,
+    selected,
+    onClick,
+    index,
+}: {
+    airport: Airport;
+    selected: boolean;
+    onClick: () => void;
+    index: number;
+}) {
+    const [visible, setVisible] = useState(false);
+    useEffect(() => {
+        const id = setTimeout(() => setVisible(true), Math.min(index, 20) * 28);
+        return () => clearTimeout(id);
+    }, []);
+
+    return (
+        <button
+            onClick={onClick}
+            style={{
+                transition: "transform 0.22s ease-out, opacity 0.22s ease-out",
+                transitionDelay: `${Math.min(index, 20) * 22}ms`,
+                transform: visible
+                    ? "perspective(300px) rotateX(0deg)"
+                    : "perspective(300px) rotateX(-65deg)",
+                opacity: visible ? 1 : 0,
+                transformOrigin: "top center",
+            }}
+            className={`flex flex-col items-center py-3 px-2 rounded-xl border text-center ${
+                selected
+                    ? "border-sky-500/50 bg-sky-500/10"
+                    : "border-white/[0.06] bg-white/[0.02] hover:bg-white/5 hover:border-white/15"
+            }`}
+        >
+            <span
+                className={`text-[14px] font-bold tracking-wider font-mono ${
+                    selected ? "text-sky-400" : "text-white"
+                }`}
+            >
+                {airport.iata}
+            </span>
+            <p className="text-[9px] text-white/35 mt-0.5 truncate w-full leading-tight">
+                {airport.city}
+            </p>
+        </button>
+    );
+}
+
+function DestinationCard({
+    candidate,
+    index,
+}: {
+    candidate: AirportCandidate;
+    index: number;
+}) {
+    const [visible, setVisible] = useState(false);
+    useEffect(() => {
+        const id = setTimeout(() => setVisible(true), index * 38);
+        return () => clearTimeout(id);
+    }, []);
+
+    return (
+        <div
+            style={{
+                transition: "transform 0.28s ease-out, opacity 0.28s ease-out",
+                transitionDelay: `${index * 32}ms`,
+                transform: visible
+                    ? "perspective(300px) rotateX(0deg)"
+                    : "perspective(300px) rotateX(-70deg)",
+                opacity: visible ? 1 : 0,
+                transformOrigin: "top center",
+            }}
+            className="flex flex-col items-center py-3 px-2 rounded-xl border border-white/[0.06] bg-white/[0.02] text-center"
+        >
+            <SplitFlapText
+                value={candidate.airport.iata}
+                className="text-[14px] font-bold tracking-wider font-mono text-amber-400/80"
+            />
+            <p className="text-[9px] text-white/30 mt-0.5 truncate w-full leading-tight">
+                {candidate.airport.city}
+            </p>
+            <p className="text-[8px] text-white/20 mt-0.5 tabular-nums">
+                {candidate.flightMinutes}min
+            </p>
+        </div>
+    );
+}
 
 interface DepartureModalProps {
     onClose: () => void;
@@ -15,8 +236,10 @@ interface DepartureModalProps {
 
 export default function DepartureModal({ onClose }: DepartureModalProps) {
     const router = useRouter();
-    const [step, setStep] = useState<Step>("mode");
-    const [mode, setMode] = useState<Mode | null>(null);
+    const [flightNum] = useState(
+        () => `FR-${String(Math.floor(Math.random() * 900) + 100)}`,
+    );
+    const [step, setStep] = useState<Step>("subject");
     const [subject, setSubject] = useState("");
     const [airport, setAirport] = useState("ICN");
     const [airportSearch, setAirportSearch] = useState("");
@@ -24,21 +247,9 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
     const [minutes, setMinutes] = useState(0);
     const [hoursText, setHoursText] = useState<string | null>(null);
     const [minutesText, setMinutesText] = useState<string | null>(null);
-    const [destination, setDestination] = useState<string>("");
+    const [hardStop, setHardStop] = useState(false);
 
-    const steps: Step[] = [
-        "mode",
-        "subject",
-        "airport",
-        ...(mode === "planned" ? (["duration", "destination"] as Step[]) : []),
-    ];
-
-    const destinationCandidates = useMemo(() => {
-        if (mode !== "planned") return [];
-        const totalSec = hours * 3600 + minutes * 60;
-        if (totalSec === 0) return [];
-        return findDestinationCandidates(airport, totalSec);
-    }, [mode, airport, hours, minutes]);
+    const steps: Step[] = ["subject", "airport", "duration", "hard_stop"];
     const stepIndex = steps.indexOf(step);
     const isLast = stepIndex === steps.length - 1;
 
@@ -48,6 +259,13 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
             a.name.includes(airportSearch) ||
             a.city.includes(airportSearch),
     );
+
+    const selectedAirportData = AIRPORTS.find((a) => a.iata === airport);
+    const durationSeconds = hours * 3600 + minutes * 60;
+    const destinationCandidates =
+        durationSeconds > 0
+            ? findDestinationCandidates(airport, durationSeconds).slice(0, 8)
+            : [];
 
     function next() {
         if (isLast) {
@@ -67,43 +285,44 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
 
     function board() {
         const params = new URLSearchParams({
-            mode: mode ?? "free",
             subject,
             from: airport,
+            duration: String(durationSeconds),
+            hardStop: String(hardStop),
         });
-        if (mode === "planned") {
-            params.set("duration", String(hours * 3600 + minutes * 60));
-            params.set("to", destination);
-        }
         router.push(`/timer?${params}`);
     }
 
     const canProceed =
-        (step === "mode" && mode !== null) ||
         step === "subject" ||
         step === "airport" ||
-        step === "duration" ||
-        (step === "destination" && destination !== "");
+        (step === "duration" && durationSeconds > 0) ||
+        step === "hard_stop";
 
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
             onClick={(e) => e.target === e.currentTarget && onClose()}
         >
-            <div className="w-[480px] bg-[#111210] border border-white/[0.08] rounded-3xl shadow-2xl shadow-black/60 overflow-hidden">
+            <div className="w-[560px] max-w-[95vw] max-h-[90vh] flex flex-col bg-[#111210] border border-white/[0.08] rounded-3xl shadow-2xl shadow-black/60 overflow-hidden">
                 {/* Header */}
-                <div className="flex items-center justify-between px-8 pt-7 pb-5">
-                    <div className="flex gap-1.5">
-                        {steps.map((s, i) => (
-                            <div
-                                key={s}
-                                className={`h-1 rounded-full transition-all duration-300 ${
-                                    i <= stepIndex
-                                        ? "bg-sky-500 w-6"
-                                        : "bg-white/15 w-4"
-                                }`}
-                            />
-                        ))}
+                <div className="flex-shrink-0 flex items-center justify-between px-8 pt-7 pb-5">
+                    <div className="flex items-center gap-3">
+                        <div className="flex gap-1.5">
+                            {steps.map((s, i) => (
+                                <div
+                                    key={s}
+                                    className={`h-1 rounded-full transition-all duration-300 ${
+                                        i <= stepIndex
+                                            ? "bg-sky-500 w-6"
+                                            : "bg-white/15 w-4"
+                                    }`}
+                                />
+                            ))}
+                        </div>
+                        <span className="text-[9px] text-white/20 tracking-[0.25em] uppercase">
+                            {flightNum}
+                        </span>
                     </div>
                     <button
                         onClick={onClose}
@@ -123,109 +342,11 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="px-8 pb-8">
-                    {/* Step: Mode */}
-                    {step === "mode" && (
-                        <div>
-                            <h2 className="text-[22px] font-bold text-white mb-1.5">
-                                어떤 여행을 떠나시나요?
-                            </h2>
-                            <p className="text-[13px] text-white/40 mb-6">
-                                여행 방식을 선택하세요
-                            </p>
-                            <div className="grid grid-cols-2 gap-3">
-                                {(
-                                    [
-                                        {
-                                            value: "free" as Mode,
-                                            icon: (
-                                                <svg
-                                                    width="28"
-                                                    height="28"
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="1.5"
-                                                    strokeLinecap="round"
-                                                >
-                                                    <circle
-                                                        cx="12"
-                                                        cy="12"
-                                                        r="10"
-                                                    />
-                                                    <polyline points="12 6 12 12 16 14" />
-                                                </svg>
-                                            ),
-                                            label: "자유 여행",
-                                            desc: "목표 없이 자유롭게",
-                                            sub: "스톱워치",
-                                        },
-                                        {
-                                            value: "planned" as Mode,
-                                            icon: (
-                                                <svg
-                                                    width="28"
-                                                    height="28"
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="1.5"
-                                                    strokeLinecap="round"
-                                                >
-                                                    <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
-                                                </svg>
-                                            ),
-                                            label: "정해진 여행",
-                                            desc: "목표 시간을 정하고",
-                                            sub: "카운트다운",
-                                        },
-                                    ] as const
-                                ).map((opt) => (
-                                    <button
-                                        key={opt.value}
-                                        onClick={() => setMode(opt.value)}
-                                        className={`flex flex-col gap-3 p-5 rounded-2xl border text-left transition-all duration-150 ${
-                                            mode === opt.value
-                                                ? "border-sky-500/60 bg-sky-500/10 text-white"
-                                                : "border-white/[0.07] bg-white/[0.03] text-white/60 hover:border-white/20 hover:text-white/80"
-                                        }`}
-                                    >
-                                        <span
-                                            className={
-                                                mode === opt.value
-                                                    ? "text-sky-400"
-                                                    : ""
-                                            }
-                                        >
-                                            {opt.icon}
-                                        </span>
-                                        <div>
-                                            <p className="font-semibold text-[15px] leading-tight">
-                                                {opt.label}
-                                            </p>
-                                            <p className="text-[12px] mt-0.5 opacity-60">
-                                                {opt.desc}
-                                            </p>
-                                        </div>
-                                        <span
-                                            className={`text-[10px] tracking-widest uppercase px-2 py-0.5 rounded-full w-fit ${
-                                                mode === opt.value
-                                                    ? "bg-sky-500/20 text-sky-400"
-                                                    : "bg-white/8 text-white/40"
-                                            }`}
-                                        >
-                                            {opt.sub}
-                                        </span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
+                {/* Scrollable content */}
+                <div className="flex-1 overflow-y-auto px-8">
                     {/* Step: Subject */}
                     {step === "subject" && (
-                        <div>
+                        <div className="pb-2">
                             <h2 className="text-[22px] font-bold text-white mb-1.5">
                                 무엇을 공부하나요?
                             </h2>
@@ -267,13 +388,38 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
 
                     {/* Step: Airport */}
                     {step === "airport" && (
-                        <div>
+                        <div className="pb-2">
                             <h2 className="text-[22px] font-bold text-white mb-1.5">
                                 출발지를 선택하세요
                             </h2>
                             <p className="text-[13px] text-white/40 mb-4">
                                 공항을 검색하거나 선택하세요
                             </p>
+
+                            {selectedAirportData && (
+                                <WorldMapMini
+                                    selectedLat={selectedAirportData.lat}
+                                    selectedLng={selectedAirportData.lng}
+                                />
+                            )}
+
+                            {/* Selected airport display */}
+                            <div className="flex items-center gap-4 bg-white/[0.03] border border-white/[0.05] rounded-2xl px-5 py-3 mb-3">
+                                <SplitFlapText
+                                    value={airport}
+                                    className="text-[26px] font-bold text-white tracking-[0.2em] font-mono tabular-nums"
+                                />
+                                <div className="min-w-0">
+                                    <p className="text-[12px] text-white/55 leading-tight truncate">
+                                        {selectedAirportData?.name ?? ""}
+                                    </p>
+                                    <p className="text-[10px] text-white/25 mt-0.5">
+                                        {selectedAirportData?.city} ·{" "}
+                                        {selectedAirportData?.country}
+                                    </p>
+                                </div>
+                            </div>
+
                             <input
                                 autoFocus
                                 type="text"
@@ -284,46 +430,32 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
                                 placeholder="공항명, 도시, IATA 코드..."
                                 className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-3 text-white placeholder:text-white/25 text-[13px] outline-none focus:border-sky-500/40 transition-colors mb-3"
                             />
-                            <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-                                {filteredAirports.map((a) => (
-                                    <button
+
+                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 max-h-44 overflow-y-auto pr-0.5">
+                                {filteredAirports.map((a, i) => (
+                                    <FlipCard
                                         key={a.iata}
+                                        airport={a}
+                                        selected={airport === a.iata}
                                         onClick={() => setAirport(a.iata)}
-                                        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-all ${
-                                            airport === a.iata
-                                                ? "border-sky-500/50 bg-sky-500/10"
-                                                : "border-transparent hover:bg-white/5"
-                                        }`}
-                                    >
-                                        <div>
-                                            <span
-                                                className={`font-bold text-[15px] mr-2 ${airport === a.iata ? "text-sky-400" : "text-white"}`}
-                                            >
-                                                {a.iata}
-                                            </span>
-                                            <span className="text-[13px] text-white/50">
-                                                {a.city}
-                                            </span>
-                                        </div>
-                                        <span className="text-[12px] text-white/30">
-                                            {a.name}
-                                        </span>
-                                    </button>
+                                        index={i}
+                                    />
                                 ))}
                             </div>
                         </div>
                     )}
 
-                    {/* Step: Duration (planned only) */}
+                    {/* Step: Duration */}
                     {step === "duration" && (
-                        <div>
+                        <div className="pb-2">
                             <h2 className="text-[22px] font-bold text-white mb-1.5">
-                                목표 비행 시간
+                                비행 계획
                             </h2>
-                            <p className="text-[13px] text-white/40 mb-8">
-                                공부할 목표 시간을 설정하세요
+                            <p className="text-[13px] text-white/40 mb-6">
+                                이번 비행의 목표 시간을 설정하세요
                             </p>
-                            <div className="flex items-center justify-center gap-6">
+
+                            <div className="flex items-center justify-center gap-6 mb-7">
                                 {/* Hours */}
                                 <div className="flex flex-col items-center gap-3">
                                     <button
@@ -506,120 +638,144 @@ export default function DepartureModal({ onClose }: DepartureModalProps) {
                                     </span>
                                 </div>
                             </div>
-                        </div>
-                    )}
 
-                    {/* Step: Destination (planned only) */}
-                    {step === "destination" && (
-                        <div>
-                            <h2 className="text-[22px] font-bold text-white mb-1">
-                                목적지를 선택하세요
-                            </h2>
-                            <p className="text-[13px] text-white/40 mb-4">
-                                {hours}시간{minutes > 0 ? ` ${minutes}분` : ""}{" "}
-                                기준 ±30분 후보
-                            </p>
-                            {destinationCandidates.length === 0 ? (
-                                <p className="text-white/30 text-[13px] text-center py-6">
-                                    해당 시간대 후보 공항이 없습니다
-                                </p>
-                            ) : (
-                                <div className="max-h-64 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/[0.15] [&::-webkit-scrollbar-thumb:hover]:bg-white/30">
-                                    <div className="grid grid-cols-2 gap-2 pr-2">
-                                        {[...destinationCandidates]
-                                            .sort((a, b) =>
-                                                a.airport.country.localeCompare(
-                                                    b.airport.country,
-                                                    "ko",
-                                                ),
-                                            )
-                                            .map(
-                                                ({
-                                                    airport: a,
-                                                    distKm,
-                                                    flightMinutes,
-                                                }) => {
-                                                    const fh = Math.floor(
-                                                        flightMinutes / 60,
-                                                    );
-                                                    const fm =
-                                                        flightMinutes % 60;
-                                                    const timeStr =
-                                                        fh > 0
-                                                            ? `${fh}h${fm > 0 ? ` ${fm}m` : ""}`
-                                                            : `${fm}m`;
-                                                    const selected =
-                                                        destination === a.iata;
-                                                    return (
-                                                        <button
-                                                            key={a.iata}
-                                                            onClick={() =>
-                                                                setDestination(
-                                                                    a.iata,
-                                                                )
-                                                            }
-                                                            className={`flex flex-col p-4 rounded-2xl border text-left transition-all duration-150 ${
-                                                                selected
-                                                                    ? "border-sky-500/50 bg-sky-500/10"
-                                                                    : "border-white/[0.07] bg-white/[0.03] hover:border-white/20 hover:bg-white/[0.06]"
-                                                            }`}
-                                                        >
-                                                            <div className="flex items-start justify-between mb-2">
-                                                                <span
-                                                                    className={`text-[22px] font-bold tracking-tight leading-none ${selected ? "text-sky-400" : "text-white"}`}
-                                                                >
-                                                                    {a.iata}
-                                                                </span>
-                                                                <span
-                                                                    className={`text-[11px] font-semibold tabular-nums mt-0.5 ${selected ? "text-sky-400/80" : "text-white/35"}`}
-                                                                >
-                                                                    ≈ {timeStr}
-                                                                </span>
-                                                            </div>
-                                                            <p className="text-[12px] text-white/60 leading-tight">
-                                                                {a.city}
-                                                            </p>
-                                                            <p className="text-[11px] text-white/30 leading-tight mt-0.5">
-                                                                {a.country}
-                                                            </p>
-                                                            <p
-                                                                className={`text-[10px] mt-1.5 tabular-nums ${selected ? "text-sky-500/50" : "text-white/20"}`}
-                                                            >
-                                                                {distKm.toLocaleString()}{" "}
-                                                                km
-                                                            </p>
-                                                        </button>
-                                                    );
-                                                },
-                                            )}
+                            {/* Destination candidates */}
+                            {destinationCandidates.length > 0 && (
+                                <div>
+                                    {selectedAirportData && (
+                                        <WorldMapMini
+                                            selectedLat={
+                                                selectedAirportData.lat
+                                            }
+                                            selectedLng={
+                                                selectedAirportData.lng
+                                            }
+                                            candidates={destinationCandidates}
+                                        />
+                                    )}
+                                    <p className="text-[9px] text-white/25 tracking-widest uppercase mb-3">
+                                        도달 가능한 공항 · {airport} 출발 ·
+                                        ±30분
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                                        {destinationCandidates.map((c, i) => (
+                                            <DestinationCard
+                                                key={`${c.airport.iata}-${durationSeconds}`}
+                                                candidate={c}
+                                                index={i}
+                                            />
+                                        ))}
                                     </div>
                                 </div>
                             )}
                         </div>
                     )}
 
-                    {/* Footer buttons */}
-                    <div className="flex gap-3 mt-8">
-                        <button
-                            onClick={back}
-                            className="px-5 py-3 rounded-2xl text-white/40 hover:text-white/70 hover:bg-white/5 text-[14px] font-medium transition-colors"
-                        >
-                            {stepIndex === 0 ? "취소" : "이전"}
-                        </button>
-                        <button
-                            onClick={next}
-                            disabled={!canProceed}
-                            className={`flex-1 py-3 rounded-2xl text-[15px] font-semibold transition-all duration-150 ${
-                                canProceed
-                                    ? isLast
-                                        ? "bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-900/30"
-                                        : "bg-white/10 hover:bg-white/15 text-white"
-                                    : "bg-white/5 text-white/25 cursor-not-allowed"
-                            }`}
-                        >
-                            {isLast ? "탑승 ✈" : "다음"}
-                        </button>
-                    </div>
+                    {/* Step: Hard Stop */}
+                    {step === "hard_stop" && (
+                        <div className="pb-2">
+                            <h2 className="text-[22px] font-bold text-white mb-1.5">
+                                자동 착륙 설정
+                            </h2>
+                            <p className="text-[13px] text-white/40 mb-6">
+                                목표 시간 도달 시 어떻게 할까요?
+                            </p>
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => setHardStop(false)}
+                                    className={`flex flex-col gap-3 p-5 rounded-2xl border text-left transition-all duration-150 ${
+                                        !hardStop
+                                            ? "border-sky-500/60 bg-sky-500/10 text-white"
+                                            : "border-white/[0.07] bg-white/[0.03] text-white/60 hover:border-white/20 hover:text-white/80"
+                                    }`}
+                                >
+                                    <svg
+                                        width="28"
+                                        height="28"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                        className={
+                                            !hardStop ? "text-sky-400" : ""
+                                        }
+                                    >
+                                        <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
+                                        <path
+                                            d="M5 19l14 0"
+                                            strokeDasharray="2 2"
+                                            strokeOpacity="0.4"
+                                        />
+                                    </svg>
+                                    <div>
+                                        <p className="font-semibold text-[15px] leading-tight">
+                                            계속 비행
+                                        </p>
+                                        <p className="text-[12px] mt-0.5 opacity-60">
+                                            목표 후에도 계속 날아요
+                                        </p>
+                                    </div>
+                                </button>
+                                <button
+                                    onClick={() => setHardStop(true)}
+                                    className={`flex flex-col gap-3 p-5 rounded-2xl border text-left transition-all duration-150 ${
+                                        hardStop
+                                            ? "border-sky-500/60 bg-sky-500/10 text-white"
+                                            : "border-white/[0.07] bg-white/[0.03] text-white/60 hover:border-white/20 hover:text-white/80"
+                                    }`}
+                                >
+                                    <svg
+                                        width="28"
+                                        height="28"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.5"
+                                        strokeLinecap="round"
+                                        className={
+                                            hardStop ? "text-sky-400" : ""
+                                        }
+                                    >
+                                        <path d="M12 2L12 12" />
+                                        <path d="M5 9l7 7 7-7" />
+                                        <path d="M3 19h18" />
+                                    </svg>
+                                    <div>
+                                        <p className="font-semibold text-[15px] leading-tight">
+                                            자동 착륙
+                                        </p>
+                                        <p className="text-[12px] mt-0.5 opacity-60">
+                                            목표 시간에 딱 맞춰 착륙
+                                        </p>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex-shrink-0 flex gap-3 px-8 py-6 border-t border-white/[0.05]">
+                    <button
+                        onClick={back}
+                        className="px-5 py-3 rounded-2xl text-white/40 hover:text-white/70 hover:bg-white/5 text-[14px] font-medium transition-colors"
+                    >
+                        {stepIndex === 0 ? "취소" : "이전"}
+                    </button>
+                    <button
+                        onClick={next}
+                        disabled={!canProceed}
+                        className={`flex-1 py-3 rounded-2xl text-[15px] font-semibold transition-all duration-150 ${
+                            canProceed
+                                ? isLast
+                                    ? "bg-sky-600 hover:bg-sky-500 text-white shadow-lg shadow-sky-900/30"
+                                    : "bg-white/10 hover:bg-white/15 text-white"
+                                : "bg-white/5 text-white/25 cursor-not-allowed"
+                        }`}
+                    >
+                        {isLast ? "탑승 ✈" : "다음"}
+                    </button>
                 </div>
             </div>
         </div>

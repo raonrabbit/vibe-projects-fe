@@ -1,14 +1,14 @@
 import { supabase } from "@/shared/lib/supabase";
 
 interface SaveSessionInput {
-    mode: "free" | "planned";
     subject: string;
     departureAirport: string;
     destinationAirport: string;
     startedAt: Date;
     endedAt: Date;
-    plannedDuration?: number;
-    arrivalStatus: "ontime" | "delayed" | "abandoned";
+    plannedDuration: number;
+    hardStop: boolean;
+    arrivalStatus: "ontime" | "delayed" | "emergency_landing";
 }
 
 export async function saveSession(input: SaveSessionInput): Promise<boolean> {
@@ -20,13 +20,13 @@ export async function saveSession(input: SaveSessionInput): Promise<boolean> {
 
     const { error } = await supabase.from("sessions").insert({
         user_id: user.id,
-        mode: input.mode,
         subject: input.subject,
         departure_airport: input.departureAirport,
         destination_airport: input.destinationAirport,
         started_at: input.startedAt.toISOString(),
         ended_at: input.endedAt.toISOString(),
-        planned_duration: input.plannedDuration ?? null,
+        planned_duration: input.plannedDuration,
+        hard_stop: input.hardStop,
         arrival_status: input.arrivalStatus,
     });
 

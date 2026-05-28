@@ -20,7 +20,7 @@ const LiveMapCanvas = dynamic(() => import("./LiveMapCanvas"), { ssr: false });
 interface LandResult {
     destination: Airport | null;
     fromAirport: Airport | undefined;
-    arrivalStatus: "ontime" | "delayed" | "abandoned";
+    arrivalStatus: "ontime" | "delayed" | "emergency_landing";
     elapsed: number;
     subject: string;
 }
@@ -40,28 +40,6 @@ function formatElapsed(s: number) {
 function formatDistance(s: number) {
     const km = Math.round((s / 3600) * 900);
     return `${km.toLocaleString()} km`;
-}
-
-function destinationFromBearing(
-    lat: number,
-    lng: number,
-    bearingRad: number,
-    distKm: number,
-): { lat: number; lng: number } {
-    const R = 6371;
-    const lat1 = (lat * Math.PI) / 180;
-    const lng1 = (lng * Math.PI) / 180;
-    const lat2 = Math.asin(
-        Math.sin(lat1) * Math.cos(distKm / R) +
-            Math.cos(lat1) * Math.sin(distKm / R) * Math.cos(bearingRad),
-    );
-    const lng2 =
-        lng1 +
-        Math.atan2(
-            Math.sin(bearingRad) * Math.sin(distKm / R) * Math.cos(lat1),
-            Math.cos(distKm / R) - Math.sin(lat1) * Math.sin(lat2),
-        );
-    return { lat: (lat2 * 180) / Math.PI, lng: (lng2 * 180) / Math.PI };
 }
 
 function skyClockDisplay(hour: number) {
@@ -142,17 +120,11 @@ export default function WindowView() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    const mode = (searchParams.get("mode") ?? "free") as "free" | "planned";
     const subject = searchParams.get("subject") ?? "";
     const from = searchParams.get("from") ?? "ICN";
-    const plannedDuration =
-        mode === "planned"
-            ? Number(searchParams.get("duration") ?? 7200)
-            : undefined;
-    const toIata = searchParams.get("to") ?? undefined;
-    const preSelectedDestination = toIata ? getAirport(toIata) : undefined;
+    const plannedDuration = Number(searchParams.get("duration") ?? 7200);
+    const hardStop = searchParams.get("hardStop") === "true";
 
-    const freeBearingRad = useRef(Math.random() * 2 * Math.PI);
     const startedAt = useRef(new Date());
     const [ready, setReady] = useState(false);
     const [elapsed, setElapsed] = useState(0);
@@ -160,9 +132,9 @@ export default function WindowView() {
     const [reachedGoal, setReachedGoal] = useState(false);
     const [saving, setSaving] = useState(false);
     const [landResult, setLandResult] = useState<LandResult | null>(null);
+    const autoLandedRef = useRef(false);
 
     const [showMap, setShowMap] = useState(false);
-    // context 재생성 방지: 한 번 열리면 unmount하지 않고 CSS로만 숨김
     const [liveMapMounted, setLiveMapMounted] = useState(false);
     const liveCameraOffsetRef = useRef<CamOffset | null>(null);
 
@@ -198,8 +170,7 @@ export default function WindowView() {
         audioCtxRef.current = ctx;
         gainRef.current = masterGain;
 
-        const CROSSFADE = 3; // seconds of overlap between loop iterations
-
+        const CROSSFADE = 3;
         let timerId: ReturnType<typeof setTimeout> | null = null;
 
         const schedule = (
@@ -238,7 +209,6 @@ export default function WindowView() {
             .then((buf) => ctx.decodeAudioData(buf))
             .then((decoded) => {
                 if (ctx.state === "suspended") {
-                    // 새로고침 등으로 제스처 없이 로드된 경우 — 첫 인터랙션에 재개
                     const resume = () => {
                         ctx.resume().then(() => startAudio(decoded));
                         window.removeEventListener("pointerdown", resume);
@@ -304,17 +274,12 @@ export default function WindowView() {
         return () => clearInterval(id);
     }, [running]);
 
-    // Mark goal reached for planned mode
+    // Mark goal reached
     useEffect(() => {
-        if (
-            mode === "planned" &&
-            plannedDuration &&
-            elapsed >= plannedDuration &&
-            !reachedGoal
-        ) {
+        if (elapsed >= plannedDuration && !reachedGoal) {
             setReachedGoal(true);
         }
-    }, [elapsed, mode, plannedDuration, reachedGoal]);
+    }, [elapsed, plannedDuration, reachedGoal]);
 
     const displayHour =
         timeMode === "local"
@@ -325,38 +290,10 @@ export default function WindowView() {
 
     const fromAirportData = useMemo(() => getAirport(from), [from]);
 
-    const freeVirtualDest = useMemo(() => {
-        if (mode !== "free" || !fromAirportData) return null;
-        const { lat, lng } = destinationFromBearing(
-            fromAirportData.lat,
-            fromAirportData.lng,
-            freeBearingRad.current,
-            18000,
-        );
-        return {
-            lat,
-            lng,
-            iata: "",
-            city: "",
-            name: "",
-            country: "",
-            utcOffset: 0,
-        };
-    }, [mode, fromAirportData]);
-
-    const mapDestination = useMemo(() => {
-        if (mode === "planned" && preSelectedDestination)
-            return preSelectedDestination;
-        if (mode === "free") return freeVirtualDest;
-        return findDestination(from, elapsed) ?? fromAirportData ?? null;
-    }, [
-        mode,
-        preSelectedDestination,
-        freeVirtualDest,
-        from,
-        elapsed,
-        fromAirportData,
-    ]);
+    const mapDestination = useMemo(
+        () => findDestination(from, elapsed) ?? fromAirportData ?? null,
+        [from, elapsed, fromAirportData],
+    );
 
     const routeTotalKm = useMemo(() => {
         if (!fromAirportData || !mapDestination) return 0;
@@ -374,7 +311,6 @@ export default function WindowView() {
         return Math.min(traveledKm / routeTotalKm, 1);
     }, [routeTotalKm, elapsed]);
 
-    /** 초당 route progress 증가량 — 3D 비행기 연속 이동용 (elapsed는 1초마다만 갱신) */
     const mapProgressRate = useMemo(() => {
         if (!routeTotalKm) return 0;
         return 900 / 3600 / routeTotalKm;
@@ -414,35 +350,28 @@ export default function WindowView() {
         setSaving(true);
         setRunning(false);
 
-        let destination: ReturnType<typeof findDestination>;
-        let arrivalStatus: "ontime" | "delayed" | "abandoned";
+        const destination = findDestination(from, elapsed);
 
-        if (mode === "planned" && plannedDuration !== undefined) {
-            if (elapsed >= plannedDuration - 1800) {
-                // 목표 30분 전 ~ 초과: 선택한 목적지 유지
-                arrivalStatus =
-                    elapsed > plannedDuration ? "delayed" : "ontime";
-                destination =
-                    preSelectedDestination ?? findDestination(from, elapsed);
-            } else {
-                // 30분 이상 일찍 포기: 실제 비행 거리 공항
-                arrivalStatus = "abandoned";
-                destination = findDestination(from, elapsed);
-            }
-        } else {
+        // 도착 상태: 실제 시간이 계획의 80~120% = ontime, >120% = delayed, <80% = emergency_landing
+        const ratio = elapsed / plannedDuration;
+        let arrivalStatus: "ontime" | "delayed" | "emergency_landing";
+        if (ratio >= 0.8 && ratio <= 1.2) {
             arrivalStatus = "ontime";
-            destination = findDestination(from, elapsed);
+        } else if (ratio > 1.2) {
+            arrivalStatus = "delayed";
+        } else {
+            arrivalStatus = "emergency_landing";
         }
 
         try {
             await saveSession({
-                mode,
                 subject,
                 departureAirport: from,
                 destinationAirport: destination?.iata ?? from,
                 startedAt: startedAt.current,
                 endedAt: new Date(),
                 plannedDuration,
+                hardStop,
                 arrivalStatus,
             });
         } catch {
@@ -459,28 +388,77 @@ export default function WindowView() {
         });
     }
 
-    // Timer display values
+    // hard_stop 자동 착륙
+    useEffect(() => {
+        if (
+            hardStop &&
+            elapsed >= plannedDuration &&
+            !autoLandedRef.current &&
+            !saving &&
+            !landResult
+        ) {
+            autoLandedRef.current = true;
+            handleLand();
+        }
+    }, [elapsed]);
+
+    // Timer display
     const timerMain = (() => {
-        if (mode === "planned" && plannedDuration !== undefined) {
-            if (elapsed < plannedDuration) {
-                return {
-                    value: formatElapsed(plannedDuration - elapsed),
-                    label: "남은 시간",
-                    delayed: false,
-                };
-            }
+        if (elapsed < plannedDuration) {
             return {
-                value: formatElapsed(elapsed - plannedDuration),
-                label: "연착 중",
-                delayed: true,
+                value: formatElapsed(plannedDuration - elapsed),
+                label: "착륙까지",
+                delayed: false,
             };
         }
         return {
-            value: formatElapsed(elapsed),
-            label: "비행 시간",
-            delayed: false,
+            value: formatElapsed(elapsed - plannedDuration),
+            label: "연착 중",
+            delayed: true,
         };
     })();
+
+    // Flight phase
+    type FlightPhase = "takeoff" | "climb" | "cruise" | "descent";
+    const flightPhase: FlightPhase = (() => {
+        if (elapsed < 60) return "takeoff";
+        if (elapsed < 300) return "climb";
+        if (
+            !reachedGoal &&
+            plannedDuration - elapsed > 0 &&
+            plannedDuration - elapsed <= 300
+        )
+            return "descent";
+        return "cruise";
+    })();
+    const PHASE_LABELS: Record<FlightPhase, { label: string; color: string }> =
+        {
+            takeoff: { label: "이륙 중", color: "text-amber-400/70" },
+            climb: { label: "상승 중", color: "text-sky-400/70" },
+            cruise: { label: "순항 중", color: "text-white/35" },
+            descent: { label: "착륙 준비", color: "text-amber-400/70" },
+        };
+
+    // Altitude
+    const altitudeFt = (() => {
+        const CRUISE = 35000;
+        const RAMP = 180;
+        if (elapsed < RAMP)
+            return Math.round(((elapsed / RAMP) * CRUISE) / 1000) * 1000;
+        const remaining = plannedDuration - elapsed;
+        if (remaining > 0 && remaining < RAMP)
+            return Math.round(((remaining / RAMP) * CRUISE) / 1000) * 1000;
+        return elapsed >= plannedDuration ? 0 : CRUISE;
+    })();
+    const altLabel =
+        altitudeFt === 0 ? "지상" : `FL${Math.round(altitudeFt / 100)}`;
+
+    function getDestinationLocalTime(utcOffset: number): string {
+        const now = new Date();
+        const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+        const dest = new Date(utcMs + utcOffset * 3600000);
+        return `${String(dest.getHours()).padStart(2, "0")}:${String(dest.getMinutes()).padStart(2, "0")}`;
+    }
 
     const modeLabel =
         timeMode === "local"
@@ -494,7 +472,7 @@ export default function WindowView() {
 
     return (
         <div className="relative w-full h-screen overflow-hidden bg-[#0a0806]">
-            {/* 3D sky canvas — WebGL context 재생성 방지를 위해 항상 마운트, CSS로 숨김 */}
+            {/* 3D sky canvas */}
             <div
                 className="absolute inset-0"
                 style={showMap ? { display: "none" } : undefined}
@@ -506,7 +484,7 @@ export default function WindowView() {
                 />
             </div>
 
-            {/* 3D map view — 한 번 열리면 unmount하지 않고 CSS로만 숨겨 context 유지 */}
+            {/* 3D map view */}
             {liveMapMounted && fromAirportData && mapDestination && (
                 <div style={showMap ? undefined : { display: "none" }}>
                     <LiveMapCanvas
@@ -519,12 +497,12 @@ export default function WindowView() {
                         hour={displayHour}
                         onClose={() => setShowMap(false)}
                         cameraSnapshotRef={liveCameraOffsetRef}
-                        showRoute={mode === "planned"}
+                        showRoute={true}
                     />
                 </div>
             )}
 
-            {/* Mini-map overlay — bottom-left of window view */}
+            {/* Mini-map overlay */}
             {ready && !landResult && fromAirportData && mapDestination && (
                 <div
                     className={`absolute bottom-8 left-8 ${showMap ? "z-30" : "z-10"}`}
@@ -537,31 +515,43 @@ export default function WindowView() {
                         fromIata={fromAirportData.iata}
                         toIata={mapDestination.iata}
                         progress={mapProgress}
-                        showRoute={mode === "planned"}
+                        showRoute={true}
                     />
                 </div>
             )}
 
             {/* Boarding ticket loading overlay */}
-            <BoardingTicket ready={ready} />
+            <BoardingTicket
+                ready={ready}
+                from={from}
+                subject={subject || undefined}
+                plannedDuration={plannedDuration}
+            />
 
             {/* Pause overlay */}
             {!running && !saving && !landResult && (
                 <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/50 backdrop-blur-md">
-                    <p className="text-white/40 text-[11px] tracking-widest uppercase mb-5">
-                        일시정지
+                    <p className="text-white/20 text-[9px] tracking-[0.5em] uppercase mb-1">
+                        FLIGHT HOLD
+                    </p>
+                    <p className="text-white/50 text-[13px] tracking-widest uppercase mb-3">
+                        비행 일시정지
+                    </p>
+                    <p className="text-white/25 text-[12px] mb-8 tabular-nums">
+                        {altLabel} &nbsp;·&nbsp; {formatElapsed(elapsed)} 비행
+                        중
                     </p>
                     <button
                         onClick={() => setRunning(true)}
                         className="px-8 py-3.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl text-white font-semibold text-[15px] transition-all"
                     >
-                        재개하기
+                        비행 재개
                     </button>
                     <button
                         onClick={handleLand}
                         className="mt-3 px-6 py-2.5 text-white/40 hover:text-white/70 text-[13px] transition-colors"
                     >
-                        착륙 (세션 종료)
+                        착륙하기 (세션 종료)
                     </button>
                 </div>
             )}
@@ -605,7 +595,7 @@ export default function WindowView() {
                                     ? "정시 도착"
                                     : landResult.arrivalStatus === "delayed"
                                       ? "연착 도착"
-                                      : "중도 포기"}
+                                      : "비상착륙"}
                             </span>
                         </div>
 
@@ -666,16 +656,31 @@ export default function WindowView() {
                             {/* Destination detail */}
                             {landResult.destination && (
                                 <div className="bg-white/[0.04] border border-white/[0.06] rounded-2xl px-4 py-3.5 mb-5">
-                                    <p className="text-[11px] text-white/25 tracking-widest uppercase mb-1">
-                                        목적지
-                                    </p>
-                                    <p className="text-[15px] font-semibold text-white/80 leading-tight">
-                                        {landResult.destination.name}
-                                    </p>
-                                    <p className="text-[12px] text-white/35 mt-0.5">
-                                        {landResult.destination.city} ·{" "}
-                                        {landResult.destination.country}
-                                    </p>
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <p className="text-[11px] text-white/25 tracking-widest uppercase mb-1">
+                                                목적지
+                                            </p>
+                                            <p className="text-[15px] font-semibold text-white/80 leading-tight">
+                                                {landResult.destination.name}
+                                            </p>
+                                            <p className="text-[12px] text-white/35 mt-0.5">
+                                                {landResult.destination.city} ·{" "}
+                                                {landResult.destination.country}
+                                            </p>
+                                        </div>
+                                        <div className="text-right flex-shrink-0 ml-4">
+                                            <p className="text-[9px] text-white/20 tracking-widest uppercase mb-1">
+                                                현지 시각
+                                            </p>
+                                            <p className="text-[17px] font-mono font-semibold text-white/55 tabular-nums">
+                                                {getDestinationLocalTime(
+                                                    landResult.destination
+                                                        .utcOffset,
+                                                )}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
@@ -772,15 +777,15 @@ export default function WindowView() {
                             {subject}
                         </p>
                     )}
-                    {preSelectedDestination && (
+                    {mapDestination?.iata && (
                         <div className="mb-2">
                             <p className="text-[10px] text-white/25 tracking-widest uppercase">
-                                목적지
+                                예상 목적지
                             </p>
                             <p className="text-base font-bold text-white/70 tracking-tight leading-tight mt-0.5">
-                                {preSelectedDestination.iata}
+                                {mapDestination.iata}
                                 <span className="text-[11px] font-normal text-white/35 ml-1.5">
-                                    {preSelectedDestination.city}
+                                    {mapDestination.city}
                                 </span>
                             </p>
                             <div className="h-px bg-white/8 mt-2 mb-2" />
@@ -796,17 +801,13 @@ export default function WindowView() {
                     <p className="text-[10px] text-white/35 mt-0.5 tracking-widest uppercase">
                         {timerMain.label}
                     </p>
-                    {mode === "planned" && (
-                        <>
-                            <div className="h-px bg-white/8 my-2" />
-                            <p className="text-sm font-medium text-white/50 tabular-nums tracking-tight leading-none">
-                                {formatElapsed(elapsed)}
-                            </p>
-                            <p className="text-[10px] text-white/25 mt-0.5 tracking-widest uppercase">
-                                총 비행 시간
-                            </p>
-                        </>
-                    )}
+                    <div className="h-px bg-white/8 my-2" />
+                    <p className="text-sm font-medium text-white/50 tabular-nums tracking-tight leading-none">
+                        {formatElapsed(elapsed)}
+                    </p>
+                    <p className="text-[10px] text-white/25 mt-0.5 tracking-widest uppercase">
+                        총 비행 시간
+                    </p>
                     <div className="h-px bg-white/8 my-2" />
                     <p className="text-lg font-semibold text-white/70 tabular-nums tracking-tight leading-none">
                         {formatDistance(elapsed)}
@@ -814,6 +815,18 @@ export default function WindowView() {
                     <p className="text-[10px] text-white/35 mt-0.5 tracking-widest uppercase">
                         비행 거리
                     </p>
+                    <div className="h-px bg-white/8 my-2" />
+                    <div className="flex items-center justify-end gap-1.5">
+                        <p
+                            className={`text-[10px] tracking-widest ${PHASE_LABELS[flightPhase].color}`}
+                        >
+                            {PHASE_LABELS[flightPhase].label}
+                        </p>
+                        <span className="text-white/15 text-[10px]">·</span>
+                        <p className="text-[10px] text-white/30 tabular-nums">
+                            {altLabel}
+                        </p>
+                    </div>
                 </div>
             </div>
 
