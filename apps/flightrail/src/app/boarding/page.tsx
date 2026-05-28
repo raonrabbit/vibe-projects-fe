@@ -1,11 +1,11 @@
-import { Suspense } from "react";
+import { redirect } from "next/navigation";
 
-import { BoardingPage } from "@/views/boarding";
-
-export default function BoardingRoute() {
-    return (
-        <Suspense>
-            <BoardingPage />
-        </Suspense>
-    );
+export default async function BoardingRoute({
+    searchParams,
+}: {
+    searchParams: Promise<Record<string, string>>;
+}) {
+    const params = await searchParams;
+    const qs = new URLSearchParams(params).toString();
+    redirect(qs ? `/timer?${qs}` : "/");
 }
