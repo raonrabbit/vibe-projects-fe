@@ -156,7 +156,6 @@ function FlipCard({
     useEffect(() => {
         const id = setTimeout(() => setVisible(true), Math.min(index, 20) * 28);
         return () => clearTimeout(id);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
@@ -202,7 +201,6 @@ function DestinationCard({
     useEffect(() => {
         const id = setTimeout(() => setVisible(true), index * 38);
         return () => clearTimeout(id);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (

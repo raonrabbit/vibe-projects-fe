@@ -3,14 +3,10 @@
 import * as d3 from "d3";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import * as topojson from "topojson-client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import * as topojson from "topojson-client";
 
-import {
-    AIRPORTS,
-    findDestinationCandidates,
-    getAirport,
-} from "@/entities/airport";
+import { AIRPORTS, findDestinationCandidates } from "@/entities/airport";
 import type { Airport, AirportCandidate } from "@/entities/airport";
 import { PassportButton } from "@/features/auth";
 
@@ -90,7 +86,6 @@ function FlapIata({ value, className }: { value: string; className?: string }) {
             }
         }, 45);
         return () => clearInterval(id);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     return <span className={className}>{display}</span>;
 }
@@ -156,7 +151,6 @@ function CandidateChip({
             30 + Math.min(index, 18) * 35,
         );
         return () => clearTimeout(id);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
     return (
         <button

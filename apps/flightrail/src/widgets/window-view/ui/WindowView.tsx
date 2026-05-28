@@ -400,7 +400,6 @@ export default function WindowView() {
             autoLandedRef.current = true;
             handleLand();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [elapsed]);
 
     // Timer display
