@@ -90,10 +90,13 @@ export default function PassportPage() {
     );
 
     return (
-        <div className="min-h-screen bg-[#0a0806] flex flex-col items-center justify-center gap-6">
+        <div className="relative min-h-screen bg-fr-base flex flex-col items-center justify-center gap-6">
+            <div className="pointer-events-none fixed inset-0 bg-gradient-to-b from-fr-surface via-fr-base to-fr-deep" />
+            <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_80%_45%_at_50%_-10%,rgba(56,189,248,0.05),transparent)]" />
+
             <Link
                 href="/"
-                className="flex items-center gap-2 text-white/30 hover:text-white/60 text-[13px] transition-colors"
+                className="relative z-10 flex items-center gap-2 text-white/30 hover:text-white/60 text-[13px] transition-colors"
             >
                 <svg
                     width="16"
@@ -110,9 +113,9 @@ export default function PassportPage() {
             </Link>
 
             {/* Passport book */}
-            <div className="flex shadow-2xl shadow-black/80 rounded-2xl overflow-hidden">
-                {/* Left page — cover */}
-                <div className="w-72 bg-[#0e2318] px-8 py-10 flex flex-col items-center justify-between text-[#c8a040] select-none relative overflow-hidden">
+            <div className="relative z-10 flex flex-col md:flex-row shadow-2xl shadow-black/80 rounded-2xl overflow-hidden w-full max-w-sm md:max-w-none md:w-auto mx-4 md:mx-0">
+                {/* Top page (mobile) / Left page (desktop) — cover */}
+                <div className="w-full md:w-72 bg-fr-passport-cover px-8 py-8 md:py-10 flex flex-col items-center justify-between text-fr-gold select-none relative overflow-hidden">
                     {/* background pattern */}
                     <div className="absolute inset-0 opacity-[0.04]">
                         {Array.from({ length: 8 }).map((_, r) =>
@@ -129,8 +132,9 @@ export default function PassportPage() {
                         )}
                     </div>
 
-                    {/* Spine line */}
-                    <div className="absolute right-0 top-0 bottom-0 w-px bg-black/30" />
+                    {/* Spine line — right on desktop, bottom on mobile */}
+                    <div className="absolute right-0 top-0 bottom-0 w-px bg-black/30 hidden md:block" />
+                    <div className="absolute bottom-0 left-0 right-0 h-px bg-black/30 md:hidden" />
 
                     <div className="text-[9px] tracking-[0.3em] uppercase opacity-50">
                         Study Travel Document
@@ -156,11 +160,11 @@ export default function PassportPage() {
                     </div>
                 </div>
 
-                {/* Right page — data page */}
-                <div className="w-80 bg-[#f8f3ec] px-7 py-7 flex flex-col">
+                {/* Bottom page (mobile) / Right page (desktop) — data page */}
+                <div className="w-full md:w-80 bg-fr-parchment px-7 py-7 flex flex-col">
                     {/* Photo + basic info */}
                     <div className="flex gap-4 mb-5">
-                        <div className="w-24 h-28 bg-[#e4ddd0] border border-[#cdc5b5] flex items-center justify-center overflow-hidden flex-shrink-0 rounded-sm">
+                        <div className="w-24 h-28 bg-fr-parchment-dim border border-fr-parchment-border flex items-center justify-center overflow-hidden flex-shrink-0 rounded-sm">
                             {avatarUrl ? (
                                 <Image
                                     src={avatarUrl}
@@ -190,26 +194,26 @@ export default function PassportPage() {
                             )}
                         </div>
                         <div className="flex-1 pt-0.5 min-w-0">
-                            <p className="text-[8px] text-[#9a9080] tracking-widest uppercase mb-0.5">
+                            <p className="text-[8px] text-fr-ink-dim tracking-widest uppercase mb-0.5">
                                 Surname / Given Name
                             </p>
-                            <p className="font-bold text-[#1e1810] text-[13px] leading-snug truncate">
+                            <p className="font-bold text-fr-ink text-[13px] leading-snug truncate">
                                 {displayName ?? "— / —"}
                             </p>
-                            <p className="text-[8px] text-[#9a9080] tracking-widest uppercase mt-3 mb-0.5">
+                            <p className="text-[8px] text-fr-ink-dim tracking-widest uppercase mt-3 mb-0.5">
                                 Nationality
                             </p>
-                            <p className="font-semibold text-[#1e1810] text-[12px]">
+                            <p className="font-semibold text-fr-ink text-[12px]">
                                 FLIGHTRAIL
                             </p>
-                            <p className="text-[8px] text-[#9a9080] tracking-widest uppercase mt-3 mb-0.5">
+                            <p className="text-[8px] text-fr-ink-dim tracking-widest uppercase mt-3 mb-0.5">
                                 Status
                             </p>
                             <span
                                 className={`text-[10px] font-bold tracking-widest px-2 py-0.5 rounded ${
                                     user
                                         ? "bg-emerald-100 text-emerald-700"
-                                        : "bg-[#e8e0d0] text-[#9a9080]"
+                                        : "bg-[#e8e0d0] text-fr-ink-dim"
                                 }`}
                             >
                                 {user ? "ACTIVE" : "NOT ISSUED"}
@@ -236,10 +240,10 @@ export default function PassportPage() {
                             { label: "Provider", value: user ? "Google" : "—" },
                         ].map(({ label, value }) => (
                             <div key={label}>
-                                <p className="text-[8px] text-[#9a9080] tracking-widest uppercase mb-0.5">
+                                <p className="text-[8px] text-fr-ink-dim tracking-widest uppercase mb-0.5">
                                     {label}
                                 </p>
-                                <p className="text-[12px] font-semibold text-[#1e1810]">
+                                <p className="text-[12px] font-semibold text-fr-ink">
                                     {value}
                                 </p>
                             </div>
@@ -247,8 +251,8 @@ export default function PassportPage() {
                     </div>
 
                     {/* MRZ */}
-                    <div className="border-t border-dashed border-[#cdc5b5] pt-3 mb-4">
-                        <p className="font-mono text-[8px] text-[#9a9080] tracking-[0.08em] leading-relaxed break-all">
+                    <div className="border-t border-dashed border-fr-parchment-border pt-3 mb-4">
+                        <p className="font-mono text-[8px] text-fr-ink-dim tracking-[0.08em] leading-relaxed break-all">
                             {mrz1}
                             <br />
                             {mrz2}
@@ -258,18 +262,18 @@ export default function PassportPage() {
                     {/* Auth button */}
                     <div className="mt-auto">
                         {loading ? (
-                            <div className="h-10 bg-[#e8e0d0] rounded-xl animate-pulse" />
+                            <div className="h-10 bg-fr-parchment-muted rounded-xl animate-pulse" />
                         ) : user ? (
                             <button
                                 onClick={signOut}
-                                className="w-full py-2.5 border border-[#cdc5b5] rounded-xl text-[13px] font-medium text-[#4a4030] hover:bg-[#ede8de] transition-colors"
+                                className="w-full py-2.5 border border-fr-parchment-border rounded-xl text-[13px] font-medium text-fr-ink-mid hover:bg-fr-parchment-dim transition-colors"
                             >
                                 로그아웃
                             </button>
                         ) : (
                             <button
                                 onClick={signIn}
-                                className="w-full py-2.5 bg-white border border-[#d0c8b8] rounded-xl text-[13px] font-medium text-[#2a2018] hover:bg-[#f4f0e8] transition-colors flex items-center justify-center gap-2.5 shadow-sm"
+                                className="w-full py-2.5 bg-white border border-fr-parchment-border rounded-xl text-[13px] font-medium text-fr-ink hover:bg-fr-parchment-mid transition-colors flex items-center justify-center gap-2.5 shadow-sm"
                             >
                                 <GoogleIcon />
                                 Google로 계속하기
@@ -279,7 +283,7 @@ export default function PassportPage() {
                 </div>
             </div>
 
-            <p className="text-[11px] text-white/20">
+            <p className="relative z-10 text-[11px] text-white/20">
                 로그인하면 비행 기록이 저장됩니다
             </p>
         </div>

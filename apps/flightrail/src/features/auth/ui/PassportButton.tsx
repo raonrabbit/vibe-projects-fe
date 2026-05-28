@@ -11,18 +11,18 @@ export default function PassportButton() {
     return (
         <Link href="/auth" className="relative group">
             {/* Passport book shape */}
-            <div className="relative w-11 h-8 bg-[#0e2318] border border-[#1e4030] rounded-md flex items-center justify-center transition-all duration-150 group-hover:border-[#2e6048] group-hover:bg-[#102a1e]">
+            <div className="relative w-11 h-8 bg-fr-passport-cover border border-fr-passport-border rounded-md flex items-center justify-center transition-all duration-150 group-hover:border-[#1e4060] group-hover:bg-[#0c2035]">
                 {/* Spine */}
-                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#0a1a10] rounded-l-md border-r border-black/20" />
+                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-fr-passport-spine rounded-l-md border-r border-black/20" />
                 {/* Emblem */}
-                <span className="text-[#c8a040] text-[11px] font-bold tracking-wider ml-0.5">
+                <span className="text-fr-gold text-[11px] font-bold tracking-wider ml-0.5">
                     P
                 </span>
             </div>
 
             {/* Profile photo badge (logged in) */}
             {!loading && user?.user_metadata?.avatar_url && (
-                <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full overflow-hidden border-2 border-[#0a0806] shadow">
+                <div className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full overflow-hidden border-2 border-fr-base shadow">
                     <Image
                         src={user.user_metadata.avatar_url as string}
                         alt="profile"
@@ -35,7 +35,7 @@ export default function PassportButton() {
 
             {/* Not logged in dot */}
             {!loading && !user && (
-                <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#0a0806] border border-[#9a9080]/40 flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-[#060c18] border border-white/20 flex items-center justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-white/30" />
                 </div>
             )}
