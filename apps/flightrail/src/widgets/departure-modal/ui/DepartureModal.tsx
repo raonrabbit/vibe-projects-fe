@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { AIRPORTS, findDestinationCandidates } from "@/entities/airport";
 import type { Airport, AirportCandidate } from "@/entities/airport";
+import { AIRPORTS, findDestinationCandidates } from "@/entities/airport";
 import { createWorldMapProjection, drawWorldMap } from "@/shared/lib/mapUtils";
 
 type Step = "subject" | "airport" | "duration" | "hard_stop";

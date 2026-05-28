@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as topojson from "topojson-client";
 
-import { AIRPORTS, findDestinationCandidates } from "@/entities/airport";
 import type { Airport, AirportCandidate } from "@/entities/airport";
+import { AIRPORTS, findDestinationCandidates } from "@/entities/airport";
 import { PassportButton } from "@/features/auth";
 
 /* ─── Icons ──────────────────────────────────────────────────────────── */
