@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { TimeMode } from "../ui/TimeBar";
 import { getLocalHour } from "./flightUtils";
 
-export function useSkyTime(elapsed: number) {
-    const [timeMode, setTimeMode] = useState<TimeMode>("local");
-    const [fromOffset, setFromOffset] = useState(0);
+export function useSkyTime() {
+    const [isFixed, setIsFixed] = useState(false);
     const [fixedHour, setFixedHour] = useState(0);
+    const [offset, setOffset] = useState(0); // hours offset from localHour when not fixed
     const [localHour, setLocalHour] = useState(getLocalHour);
 
     useEffect(() => {
@@ -14,54 +13,49 @@ export function useSkyTime(elapsed: number) {
         return () => clearInterval(id);
     }, []);
 
-    const displayHour =
-        timeMode === "local"
-            ? localHour
-            : timeMode === "from"
-              ? (((fromOffset + elapsed / 3600) % 24) + 24) % 24
-              : fixedHour;
+    const shiftedHour = (((localHour + offset) % 24) + 24) % 24;
+    const displayHour = isFixed ? fixedHour : shiftedHour;
+    const isAdjusted = isFixed || offset !== 0;
+    const modeLabel = isFixed ? "고정 시각" : "현재 시각";
 
-    const modeLabel =
-        timeMode === "local"
-            ? "현재 시각"
-            : timeMode === "from"
-              ? "출발 기준"
-              : "고정 시각";
+    // Toggle fixed: freeze at current displayed hour, or unfreeze
+    const handleToggleFixed = useCallback(() => {
+        if (isFixed) {
+            setIsFixed(false);
+        } else {
+            const sh = (((localHour + offset) % 24) + 24) % 24;
+            setFixedHour(Math.floor(sh));
+            setIsFixed(true);
+        }
+    }, [isFixed, localHour, offset]);
 
-    const handleModeChange = useCallback(
-        (m: TimeMode) => {
-            if (m === "from" && timeMode !== "from") {
-                const cur = timeMode === "local" ? localHour : fixedHour;
-                setFromOffset(cur - elapsed / 3600);
-            } else if (m === "fixed" && timeMode !== "fixed") {
-                const cur =
-                    timeMode === "local"
-                        ? localHour
-                        : (((fromOffset + elapsed / 3600) % 24) + 24) % 24;
-                setFixedHour(Math.floor(((cur % 24) + 24) % 24));
-            }
-            setTimeMode(m);
-        },
-        [timeMode, localHour, fixedHour, fromOffset, elapsed],
-    );
+    // Snap to current local time without touching isFixed
+    const handleResetToLocal = useCallback(() => {
+        setOffset(0);
+        if (isFixed) {
+            setFixedHour(Math.floor(((localHour % 24) + 24) % 24));
+        }
+    }, [isFixed, localHour]);
 
+    // Drag: adjust position without changing isFixed
     const handleBarDrag = useCallback(
         (hour: number) => {
-            const effectiveMode = timeMode === "local" ? "from" : timeMode;
-            if (effectiveMode === "from") {
-                setFromOffset(hour - elapsed / 3600);
-            } else {
+            if (isFixed) {
                 setFixedHour(hour);
+            } else {
+                setOffset(hour - localHour);
             }
         },
-        [timeMode, elapsed],
+        [isFixed, localHour],
     );
 
     return {
         displayHour,
-        timeMode,
+        isFixed,
+        isAdjusted,
         modeLabel,
-        handleModeChange,
+        handleToggleFixed,
+        handleResetToLocal,
         handleBarDrag,
     };
 }

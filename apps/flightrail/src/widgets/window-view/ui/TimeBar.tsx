@@ -2,34 +2,22 @@
 
 import { useCallback, useRef } from "react";
 
-export type TimeMode = "local" | "from" | "fixed";
-
 interface TimeBarProps {
     indicatorHour: number;
-    mode: TimeMode;
+    isFixed: boolean;
+    isAdjusted: boolean;
     onDrag: (hour: number) => void;
-    onModeChange: (m: TimeMode) => void;
+    onToggleFixed: () => void;
+    onResetToLocal: () => void;
 }
-
-const MODE_LABELS: Record<TimeMode, string> = {
-    local: "현재",
-    from: "출발",
-    fixed: "고정",
-};
-
-const MODE_TOOLTIPS: Record<TimeMode, string> = {
-    local: "현재 로컬 시각 기준",
-    from: "선택한 시각부터 흘러가기",
-    fixed: "선택한 시각에 고정",
-};
-
-const MODES: TimeMode[] = ["local", "from", "fixed"];
 
 export default function TimeBar({
     indicatorHour,
-    mode,
+    isFixed,
+    isAdjusted,
     onDrag,
-    onModeChange,
+    onToggleFixed,
+    onResetToLocal,
 }: TimeBarProps) {
     const barRef = useRef<HTMLDivElement>(null);
     const dragging = useRef(false);
@@ -48,10 +36,9 @@ export default function TimeBar({
         (e: React.PointerEvent) => {
             dragging.current = true;
             (e.currentTarget as Element).setPointerCapture(e.pointerId);
-            if (mode === "local") onModeChange("from");
             onDrag(hourFromX(e.clientX));
         },
-        [mode, hourFromX, onDrag, onModeChange],
+        [hourFromX, onDrag],
     );
 
     const handlePointerMove = useCallback(
@@ -69,35 +56,68 @@ export default function TimeBar({
     const activeIdx = Math.floor(((indicatorHour % 24) + 24) % 24);
 
     return (
-        <div className="flex flex-col items-center gap-2">
-            {/* Mode toggle */}
-            <div className="flex gap-0.5 bg-black/25 backdrop-blur-sm rounded-full px-1 py-1">
-                {MODES.map((m) => (
-                    <div key={m} className="relative group">
-                        <button
-                            onClick={() => onModeChange(m)}
-                            className={`px-3 py-0.5 rounded-full text-[11px] font-semibold tracking-wider transition-colors ${
-                                mode === m
-                                    ? "bg-white/20 text-white"
-                                    : "text-white/35 hover:text-white/60"
-                            }`}
-                        >
-                            {MODE_LABELS[m]}
-                        </button>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/60 backdrop-blur-sm rounded text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                            {MODE_TOOLTIPS[m]}
-                        </div>
-                    </div>
-                ))}
+        <div className="flex items-center gap-2 h-full bg-black/25 backdrop-blur-sm rounded-2xl px-2.5 py-2 w-[clamp(160px,calc(100vw-12rem),260px)]">
+            {/* Left controls */}
+            <div className="flex flex-col gap-0.5 shrink-0">
+                {/* 현재로 — action: snap back to real local time */}
+                <button
+                    onClick={onResetToLocal}
+                    title="현재 시각으로"
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-semibold tracking-wider transition-all ${
+                        isAdjusted
+                            ? "text-white/70 hover:text-white hover:bg-white/10"
+                            : "text-white/20 pointer-events-none"
+                    }`}
+                >
+                    <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                    >
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 7v5l3 2" />
+                    </svg>
+                    현재
+                </button>
+
+                {/* 고정 — toggle: freeze at current displayed hour */}
+                <button
+                    onClick={onToggleFixed}
+                    title={isFixed ? "고정 해제" : "시각 고정"}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-semibold tracking-wider transition-all ${
+                        isFixed
+                            ? "bg-white/20 text-white"
+                            : "text-white/30 hover:text-white/60 hover:bg-white/8"
+                    }`}
+                >
+                    <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                    >
+                        <rect x="3" y="11" width="18" height="11" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    고정
+                </button>
             </div>
 
-            {/* Tick bar */}
+            {/* Divider */}
+            <div className="w-px self-stretch bg-white/10 shrink-0" />
+
+            {/* Tick bar — fills remaining space */}
             <div
                 ref={barRef}
-                className={`relative select-none touch-none ${
-                    mode === "local" ? "cursor-pointer" : "cursor-ew-resize"
-                }`}
-                style={{ width: 288, height: 32 }}
+                className="relative select-none touch-none cursor-ew-resize flex-1 min-w-0"
+                style={{ height: 32 }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
@@ -123,13 +143,13 @@ export default function TimeBar({
                     })}
                 </div>
 
-                {/* Hour labels at 0, 6, 12, 18 */}
+                {/* Hour labels — centered on each tick */}
                 <div className="absolute bottom-0 left-0 right-0">
                     {([0, 6, 12, 18] as const).map((h) => (
                         <span
                             key={h}
                             className="absolute text-[9px] text-white/30 tabular-nums -translate-x-1/2"
-                            style={{ left: `${(h / 24) * 100}%` }}
+                            style={{ left: `${((h + 0.5) / 24) * 100}%` }}
                         >
                             {String(h).padStart(2, "0")}
                         </span>
