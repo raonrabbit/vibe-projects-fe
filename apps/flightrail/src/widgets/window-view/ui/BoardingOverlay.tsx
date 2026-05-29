@@ -156,7 +156,7 @@ export function BoardingOverlay({
 
     return (
         <div
-            className="absolute inset-0 z-50 bg-fr-base overflow-hidden"
+            className="absolute inset-0 z-50 bg-fr-base overflow-y-auto"
             style={{
                 animation: takingOff
                     ? "frFadeOut 900ms ease-in forwards"
@@ -187,8 +187,8 @@ export function BoardingOverlay({
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_60%_at_50%_110%,rgba(255,255,255,0.06),transparent)]" />
             </div>
 
-            <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
-                <div className="w-full max-w-[420px]">
+            <div className="relative z-10 min-h-full flex items-start justify-center px-4 py-10">
+                <div className="w-full max-w-[420px] my-auto">
                     <div
                         className="rounded-3xl overflow-hidden shadow-2xl shadow-black/70 select-none transition-opacity duration-600"
                         style={{ opacity: seatFading ? 0 : 1 }}

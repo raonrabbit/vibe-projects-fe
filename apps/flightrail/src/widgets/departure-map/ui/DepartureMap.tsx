@@ -94,9 +94,7 @@ export function DepartureMap({
             } as unknown as d3.GeoPermissibleObjects);
             ctx.strokeStyle = "rgba(56,189,248,0.45)";
             ctx.lineWidth = 1.5 / t.k;
-            ctx.setLineDash([5 / t.k, 5 / t.k]);
             ctx.stroke();
-            ctx.setLineDash([]);
         }
 
         for (const c of candidates) {

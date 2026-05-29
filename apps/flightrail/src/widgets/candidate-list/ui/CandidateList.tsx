@@ -5,6 +5,11 @@ import { useEffect, useState } from "react";
 import type { AirportCandidate } from "@/entities/airport";
 import { FlapIata } from "@/shared/ui/FlapIata";
 
+function formatFlightTime(minutes: number): string {
+    if (minutes < 60) return `${minutes}m`;
+    return `${Math.floor(minutes / 60)}h ${minutes % 60}m`;
+}
+
 function CandidateChip({
     candidate,
     index,
@@ -52,7 +57,7 @@ function CandidateChip({
             <span
                 className={`text-[9px] ${selected ? "text-amber-400/50" : "text-white/22"}`}
             >
-                {candidate.flightMinutes}m
+                {formatFlightTime(candidate.flightMinutes)}
             </span>
         </button>
     );
@@ -82,11 +87,14 @@ export function CandidateList({
 
     return (
         <div className="mt-5">
-            <p className="text-[9px] text-white/22 tracking-widest uppercase mb-2.5">
+            <p className="text-[9px] text-white/22 tracking-widest uppercase mb-1">
                 도달 가능 공항
                 <span className="text-amber-500/55 ml-1.5">
                     {candidates.length}개
                 </span>
+            </p>
+            <p className="text-[8px] text-white/18 mb-2.5">
+                비행 시간 ±30분 이내 도착 가능한 공항
             </p>
             <div className="space-y-2.5">
                 {Object.entries(grouped).map(([country, group]) => (
