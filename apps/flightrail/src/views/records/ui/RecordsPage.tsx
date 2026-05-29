@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getAirport } from "@/entities/airport";
 import {
+    deleteSession,
     formatDate,
     formatHM,
     getSessions,
@@ -12,6 +13,8 @@ import {
     sessionSeconds,
 } from "@/entities/session";
 import { AppHeader } from "@/widgets/app-header";
+
+import { FlightHistoryMap } from "./FlightHistoryMap";
 
 function heatOpacity(seconds: number, isFuture: boolean) {
     if (isFuture || seconds === 0) return 0.04;
@@ -74,6 +77,13 @@ function HeatmapCalendar({ sessions }: { sessions: Session[] }) {
         );
     }, [sessions, today]);
 
+    const scrollRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+        }
+    }, []);
+
     return (
         <div className="bg-black/20 backdrop-blur-sm border border-white/[0.06] rounded-2xl px-6 py-5">
             <div className="flex items-center justify-between mb-4">
@@ -82,28 +92,33 @@ function HeatmapCalendar({ sessions }: { sessions: Session[] }) {
                 </p>
                 <p className="text-[10px] text-white/20">최근 1년</p>
             </div>
-            <div className="flex gap-[3px]">
-                {weeks.map((week, w) => (
-                    <div key={w} className="flex flex-col gap-[3px]">
-                        {week.map((cell) => (
-                            <div
-                                key={cell.key}
-                                title={
-                                    cell.seconds > 0
-                                        ? `${cell.key}: ${formatHM(cell.seconds)}`
-                                        : cell.key
-                                }
-                                className="w-[10px] h-[10px] rounded-[2px] bg-sky-400"
-                                style={{
-                                    opacity: heatOpacity(
-                                        cell.seconds,
-                                        cell.isFuture,
-                                    ),
-                                }}
-                            />
-                        ))}
-                    </div>
-                ))}
+            <div ref={scrollRef} className="overflow-x-auto">
+                <div
+                    className="flex gap-[3px]"
+                    style={{ minWidth: "max-content" }}
+                >
+                    {weeks.map((week, w) => (
+                        <div key={w} className="flex flex-col gap-[3px]">
+                            {week.map((cell) => (
+                                <div
+                                    key={cell.key}
+                                    title={
+                                        cell.seconds > 0
+                                            ? `${cell.key}: ${formatHM(cell.seconds)}`
+                                            : cell.key
+                                    }
+                                    className="w-[10px] h-[10px] rounded-[2px] bg-sky-400"
+                                    style={{
+                                        opacity: heatOpacity(
+                                            cell.seconds,
+                                            cell.isFuture,
+                                        ),
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    ))}
+                </div>
             </div>
             <div className="flex items-center gap-1.5 mt-3 justify-end">
                 <span className="text-[9px] text-white/20">적음</span>
@@ -120,12 +135,18 @@ function HeatmapCalendar({ sessions }: { sessions: Session[] }) {
     );
 }
 
-function TripRow({ session }: { session: Session }) {
+function TripRow({
+    session,
+    onDelete,
+}: {
+    session: Session;
+    onDelete: () => void;
+}) {
     const from = getAirport(session.departure_airport);
     const to = getAirport(session.destination_airport);
 
     return (
-        <div className="flex items-center gap-4 py-3 border-b border-white/[0.04] last:border-0">
+        <div className="flex items-center gap-3 py-3 border-b border-white/[0.04] last:border-0">
             <div className="text-[11px] text-white/25 w-14 flex-shrink-0">
                 {formatDate(session.started_at)}
             </div>
@@ -180,6 +201,23 @@ function TripRow({ session }: { session: Session }) {
                     {sessionDuration(session)}
                 </span>
                 <StatusBadge status={session.arrival_status} />
+                <button
+                    onClick={onDelete}
+                    className="p-1 text-white/20 hover:text-rose-400 transition-colors"
+                    aria-label="삭제"
+                >
+                    <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 12 12"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                    >
+                        <path d="M2 2L10 10M10 2L2 10" />
+                    </svg>
+                </button>
             </div>
         </div>
     );
@@ -195,6 +233,13 @@ export default function RecordsPage() {
             setLoading(false);
         });
     }, []);
+
+    const handleDelete = (id: string) => {
+        setSessions((prev) => prev.filter((s) => s.id !== id));
+        deleteSession(id).catch(() => {
+            getSessions().then(setSessions);
+        });
+    };
 
     const totalSeconds = useMemo(
         () => sessions.reduce((sum, s) => sum + sessionSeconds(s), 0),
@@ -256,7 +301,7 @@ export default function RecordsPage() {
                 </div>
 
                 {/* Stats grid */}
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     {stats.map(({ label, value }) => (
                         <div
                             key={label}
@@ -271,6 +316,9 @@ export default function RecordsPage() {
                         </div>
                     ))}
                 </div>
+
+                {/* Flight history map */}
+                <FlightHistoryMap sessions={sessions} />
 
                 {/* Heatmap calendar */}
                 <HeatmapCalendar sessions={sessions} />
@@ -290,14 +338,13 @@ export default function RecordsPage() {
                         </p>
                     ) : (
                         <div>
-                            {sessions.slice(0, 20).map((s) => (
-                                <TripRow key={s.id} session={s} />
+                            {sessions.map((s) => (
+                                <TripRow
+                                    key={s.id}
+                                    session={s}
+                                    onDelete={() => handleDelete(s.id)}
+                                />
                             ))}
-                            {sessions.length > 20 && (
-                                <p className="text-[11px] text-white/20 text-center mt-3">
-                                    총 {sessions.length}개 중 최근 20개 표시
-                                </p>
-                            )}
                         </div>
                     )}
                 </div>
