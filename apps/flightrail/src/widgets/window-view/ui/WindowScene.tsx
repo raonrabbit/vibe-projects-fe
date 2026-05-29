@@ -16,7 +16,6 @@ import React, {
     memo,
     type RefObject,
     Suspense,
-    useCallback,
     useEffect,
     useLayoutEffect,
     useRef,
@@ -196,9 +195,6 @@ function ReadySignal({ onReady }: { onReady?: () => void }) {
 
 type OrbitControlsRef = React.ElementRef<typeof OrbitControls>;
 
-const DEFAULT_CAM_POS = new THREE.Vector3(0, 0, 10);
-const DEFAULT_TARGET = new THREE.Vector3(0, 0, 0);
-
 function WindowScene({
     hour,
     cabinMode,
@@ -227,16 +223,6 @@ function WindowScene({
             orbitRef.current?.saveState();
         });
         return () => cancelAnimationFrame(id);
-    }, []);
-
-    const resetView = useCallback(() => {
-        const controls = orbitRef.current;
-        if (!controls) return;
-        setFreeOrbit(false);
-        controls.object.position.copy(DEFAULT_CAM_POS);
-        controls.target.copy(DEFAULT_TARGET);
-        controls.update();
-        controls.saveState();
     }, []);
 
     return (
@@ -275,28 +261,6 @@ function WindowScene({
                 />
                 <Scene hour={hour} cabinMode={cabinMode} orbitRef={orbitRef} />
             </Canvas>
-            <button
-                type="button"
-                onClick={resetView}
-                className="absolute bottom-8 left-8 z-10 flex h-11 items-center gap-2 rounded-2xl border border-white/10 bg-black/25 px-3.5 text-[12px] font-medium text-white/80 backdrop-blur-md transition-colors hover:bg-white/10"
-                aria-label="화면 기본 보기"
-            >
-                <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                >
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                    <path d="M3 3v5h5" />
-                </svg>
-                기본 보기
-            </button>
         </div>
     );
 }

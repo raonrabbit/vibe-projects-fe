@@ -1,4 +1,10 @@
-export function AnalogClock({ hour }: { hour: number }) {
+export function AnalogClock({
+    hour,
+    size = 56,
+}: {
+    hour: number;
+    size?: number;
+}) {
     const n = ((hour % 24) + 24) % 24;
     const h12 = n % 12;
     const mins = (n % 1) * 60;
@@ -11,7 +17,7 @@ export function AnalogClock({ hour }: { hour: number }) {
         28 - len * Math.cos((deg * Math.PI) / 180);
 
     return (
-        <svg width="56" height="56" viewBox="0 0 56 56">
+        <svg width={size} height={size} viewBox="0 0 56 56">
             <circle
                 cx="28"
                 cy="28"

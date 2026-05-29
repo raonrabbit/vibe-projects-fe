@@ -11,7 +11,7 @@ interface Props {
 }
 
 const BTN_CLS =
-    "w-12 h-12 flex items-center justify-center hover:bg-white/10 transition-colors";
+    "w-10 h-10 md:w-12 md:h-12 flex items-center justify-center hover:bg-white/10 transition-colors";
 
 export function CabinLightControl({ cabinMode, onCabinModeChange }: Props) {
     const [cabinOpen, setCabinOpen] = useState(false);
@@ -24,7 +24,7 @@ export function CabinLightControl({ cabinMode, onCabinModeChange }: Props) {
     return (
         <div className="relative group">
             <button
-                className={`${BTN_CLS} rounded-b-2xl`}
+                className={`${BTN_CLS} rounded-full bg-black/20 backdrop-blur-md`}
                 onClick={() => setCabinOpen((o) => !o)}
             >
                 <svg
@@ -63,15 +63,13 @@ export function CabinLightControl({ cabinMode, onCabinModeChange }: Props) {
             )}
 
             <div
-                className={`absolute right-full top-1/2 -translate-y-1/2 mr-3 flex flex-row gap-2 transition-all duration-200 ease-out ${
-                    cabinOpen
-                        ? "translate-x-0 opacity-100"
-                        : "translate-x-4 opacity-0 pointer-events-none"
+                className={`absolute top-full right-0 mt-2 flex flex-col gap-2 transition-all duration-200 ease-out ${
+                    cabinOpen ? "opacity-100" : "opacity-0 pointer-events-none"
                 }`}
             >
                 <button
                     onClick={() => select("on")}
-                    className={`w-12 h-12 rounded-full flex flex-col items-center justify-center gap-0.5 transition-all ${
+                    className={`${BTN_CLS} rounded-full flex-col gap-0.5 transition-all ${
                         cabinMode === "on"
                             ? "bg-amber-400/25 ring-1 ring-amber-400/50 text-amber-300"
                             : "bg-white/8 text-white/30 hover:bg-white/12 hover:text-white/55"
@@ -102,7 +100,7 @@ export function CabinLightControl({ cabinMode, onCabinModeChange }: Props) {
 
                 <button
                     onClick={() => select("auto")}
-                    className={`w-12 h-12 rounded-full flex flex-col items-center justify-center gap-0.5 transition-all ${
+                    className={`${BTN_CLS} rounded-full flex-col gap-0.5 transition-all ${
                         cabinMode === "auto"
                             ? "bg-sky-400/20 ring-1 ring-sky-400/40 text-sky-200"
                             : "bg-white/8 text-white/30 hover:bg-white/12 hover:text-white/55"
@@ -124,7 +122,7 @@ export function CabinLightControl({ cabinMode, onCabinModeChange }: Props) {
 
                 <button
                     onClick={() => select("off")}
-                    className={`w-12 h-12 rounded-full flex flex-col items-center justify-center gap-0.5 transition-all ${
+                    className={`${BTN_CLS} rounded-full flex-col gap-0.5 transition-all ${
                         cabinMode === "off"
                             ? "bg-white/12 ring-1 ring-white/20 text-white/55"
                             : "bg-white/8 text-white/30 hover:bg-white/12 hover:text-white/55"
