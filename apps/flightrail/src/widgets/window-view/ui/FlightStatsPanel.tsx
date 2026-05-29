@@ -46,14 +46,14 @@ export function FlightStatsPanel({
               };
 
     return (
-        <div className="bg-black/20 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/8 text-right">
+        <div className="bg-black/20 backdrop-blur-sm rounded-xl md:rounded-2xl px-3 py-2 md:px-4 md:py-3 border border-white/8 text-right">
             {subject && (
-                <p className="text-[10px] text-sky-400/70 tracking-widest uppercase mb-2">
+                <p className="hidden md:block text-[10px] text-sky-400/70 tracking-widest uppercase mb-2">
                     {subject}
                 </p>
             )}
             {mapDestination?.iata && (
-                <div className="mb-2">
+                <div className="hidden md:block mb-2">
                     <p className="text-[10px] text-white/25 tracking-widest uppercase">
                         예상 목적지
                     </p>
@@ -67,7 +67,7 @@ export function FlightStatsPanel({
                 </div>
             )}
             <p
-                className={`text-2xl font-bold tabular-nums tracking-tight leading-none ${
+                className={`text-xl md:text-2xl font-bold tabular-nums tracking-tight leading-none ${
                     timerMain.delayed ? "text-amber-400" : "text-white"
                 }`}
             >
@@ -76,31 +76,33 @@ export function FlightStatsPanel({
             <p className="text-[10px] text-white/35 mt-0.5 tracking-widest uppercase">
                 {timerMain.label}
             </p>
-            <div className="h-px bg-white/8 my-2" />
-            <p className="text-sm font-medium text-white/50 tabular-nums tracking-tight leading-none">
-                {formatElapsed(elapsed)}
-            </p>
-            <p className="text-[10px] text-white/25 mt-0.5 tracking-widest uppercase">
-                총 비행 시간
-            </p>
-            <div className="h-px bg-white/8 my-2" />
-            <p className="text-lg font-semibold text-white/70 tabular-nums tracking-tight leading-none">
-                {formatDistance(elapsed)}
-            </p>
-            <p className="text-[10px] text-white/35 mt-0.5 tracking-widest uppercase">
-                비행 거리
-            </p>
-            <div className="h-px bg-white/8 my-2" />
-            <div className="flex items-center justify-end gap-1.5">
-                <p
-                    className={`text-[10px] tracking-widest ${PHASE_LABELS[flightPhase].color}`}
-                >
-                    {PHASE_LABELS[flightPhase].label}
+            <div className="hidden md:block">
+                <div className="h-px bg-white/8 my-2" />
+                <p className="text-sm font-medium text-white/50 tabular-nums tracking-tight leading-none">
+                    {formatElapsed(elapsed)}
                 </p>
-                <span className="text-white/15 text-[10px]">·</span>
-                <p className="text-[10px] text-white/30 tabular-nums">
-                    {altLabel}
+                <p className="text-[10px] text-white/25 mt-0.5 tracking-widest uppercase">
+                    총 비행 시간
                 </p>
+                <div className="h-px bg-white/8 my-2" />
+                <p className="text-lg font-semibold text-white/70 tabular-nums tracking-tight leading-none">
+                    {formatDistance(elapsed)}
+                </p>
+                <p className="text-[10px] text-white/35 mt-0.5 tracking-widest uppercase">
+                    비행 거리
+                </p>
+                <div className="h-px bg-white/8 my-2" />
+                <div className="flex items-center justify-end gap-1.5">
+                    <p
+                        className={`text-[10px] tracking-widest ${PHASE_LABELS[flightPhase].color}`}
+                    >
+                        {PHASE_LABELS[flightPhase].label}
+                    </p>
+                    <span className="text-white/15 text-[10px]">·</span>
+                    <p className="text-[10px] text-white/30 tabular-nums">
+                        {altLabel}
+                    </p>
+                </div>
             </div>
         </div>
     );

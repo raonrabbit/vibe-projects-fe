@@ -4,49 +4,66 @@ import { useState } from "react";
 
 import { skyClockDisplay } from "../model/flightUtils";
 import { AnalogClock } from "./AnalogClock";
-import TimeBar, { type TimeMode } from "./TimeBar";
+import TimeBar from "./TimeBar";
 
 interface Props {
     displayHour: number;
-    timeMode: TimeMode;
+    isFixed: boolean;
+    isAdjusted: boolean;
     modeLabel: string;
-    onModeChange: (m: TimeMode) => void;
+    onToggleFixed: () => void;
+    onResetToLocal: () => void;
     onDrag: (hour: number) => void;
 }
 
 export function ClockPanel({
     displayHour,
-    timeMode,
+    isFixed,
+    isAdjusted,
     modeLabel,
-    onModeChange,
+    onToggleFixed,
+    onResetToLocal,
     onDrag,
 }: Props) {
     const [clockOpen, setClockOpen] = useState(false);
 
     return (
-        <div>
+        <div className="flex items-stretch gap-3">
+            {/* Clock button */}
             <button
-                className="flex items-center gap-3 group"
+                className="flex flex-col items-center gap-0.5 md:flex-row md:items-center md:gap-3 group"
                 onClick={() => setClockOpen((o) => !o)}
             >
                 <div className="relative">
-                    <AnalogClock hour={displayHour} />
+                    <span className="md:hidden">
+                        <AnalogClock hour={displayHour} size={36} />
+                    </span>
+                    <span className="hidden md:inline">
+                        <AnalogClock hour={displayHour} size={56} />
+                    </span>
                     <div className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/0 group-hover:ring-white/25 transition-all duration-200" />
                 </div>
-                <div className="text-left">
+
+                {/* Mobile: digital time below clock */}
+                <p className="md:hidden text-sm font-bold text-white tabular-nums tracking-tight leading-none">
+                    {skyClockDisplay(displayHour)}
+                </p>
+
+                {/* Desktop: digital time + mode label + arrow */}
+                <div className="hidden md:block text-left">
                     <p className="text-2xl font-bold text-white tabular-nums tracking-tight leading-none">
                         {skyClockDisplay(displayHour)}
                     </p>
-                    <p className="text-[10px] text-white/35 mt-1 tracking-widest uppercase flex items-center gap-1">
+                    <p className="flex text-[10px] text-white/35 mt-1 tracking-widest uppercase items-center gap-1">
                         {modeLabel}
                         <svg
-                            width="8"
-                            height="5"
-                            viewBox="0 0 8 5"
+                            width="5"
+                            height="8"
+                            viewBox="0 0 5 8"
                             className={`transition-transform duration-200 ${clockOpen ? "rotate-180" : ""}`}
                         >
                             <path
-                                d="M0.5 0.5L4 4L7.5 0.5"
+                                d="M0.5 0.5L4.5 4L0.5 7.5"
                                 stroke="currentColor"
                                 strokeWidth="1.2"
                                 fill="none"
@@ -57,18 +74,15 @@ export function ClockPanel({
                 </div>
             </button>
 
-            <div
-                className={`mt-3 transition-all duration-200 origin-top ${
-                    clockOpen
-                        ? "opacity-100 translate-y-0 pointer-events-auto"
-                        : "opacity-0 -translate-y-1 pointer-events-none"
-                }`}
-            >
+            {/* TimeBar — always rendered to hold height; visibility:hidden when closed */}
+            <div className={clockOpen ? "" : "invisible pointer-events-none"}>
                 <TimeBar
                     indicatorHour={displayHour}
-                    mode={timeMode}
+                    isFixed={isFixed}
+                    isAdjusted={isAdjusted}
                     onDrag={onDrag}
-                    onModeChange={onModeChange}
+                    onToggleFixed={onToggleFixed}
+                    onResetToLocal={onResetToLocal}
                 />
             </div>
         </div>
