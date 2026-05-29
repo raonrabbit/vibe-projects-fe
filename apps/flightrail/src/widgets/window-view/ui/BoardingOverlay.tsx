@@ -47,6 +47,7 @@ interface Props {
     sceneReady: boolean;
     onDepart: () => void;
     onCancel: () => void;
+    onTakeoff?: () => void;
 }
 
 export function BoardingOverlay({
@@ -58,6 +59,7 @@ export function BoardingOverlay({
     sceneReady,
     onDepart,
     onCancel,
+    onTakeoff,
 }: Props) {
     const fromAirport = useMemo(() => getAirport(from), [from]);
     const toAirport = useMemo(() => getAirport(to), [to]);
@@ -75,9 +77,10 @@ export function BoardingOverlay({
     const [seatFading, setSeatFading] = useState(false);
     const [takingOff, setTakingOff] = useState(false);
     const startedAtRef = useRef<number | null>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
     const onDepartRef = useRef(onDepart);
     onDepartRef.current = onDepart;
+    const onTakeoffRef = useRef(onTakeoff);
+    onTakeoffRef.current = onTakeoff;
 
     useEffect(() => {
         startedAtRef.current = performance.now();
@@ -104,34 +107,14 @@ export function BoardingOverlay({
 
     useEffect(() => {
         if (!takingOff) return;
-        const a = audioRef.current;
-        if (!a) return;
 
-        a.currentTime = 0;
-        a.volume = 0.05;
-
-        const p = a.play();
-        if (p) p.catch(() => {});
-
-        const fadeMs = 900;
-        const start = performance.now();
-        let raf = 0;
-        const tick = () => {
-            const t = clamp01((performance.now() - start) / fadeMs);
-            a.volume = 0.05 + 0.95 * t;
-            if (t >= 1) return;
-            raf = requestAnimationFrame(tick);
-        };
-        raf = requestAnimationFrame(tick);
+        onTakeoffRef.current?.();
 
         const departTimer = setTimeout(() => {
             onDepartRef.current();
         }, 1100);
 
-        return () => {
-            cancelAnimationFrame(raf);
-            clearTimeout(departTimer);
-        };
+        return () => clearTimeout(departTimer);
     }, [takingOff]);
 
     const now = useMemo(() => new Date(), []);
@@ -198,8 +181,6 @@ export function BoardingOverlay({
                     100% { transform: scale(1); }
                 }
             `}</style>
-
-            <audio ref={audioRef} src="/audios/cabin.mp3" preload="auto" />
 
             <div className="absolute inset-0">
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_55%_at_50%_-10%,rgba(56,189,248,0.10),transparent)]" />
