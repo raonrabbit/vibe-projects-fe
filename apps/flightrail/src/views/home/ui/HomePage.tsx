@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import { AIRPORTS, findDestinationCandidates } from "@/entities/airport";
 import { DurationPicker } from "@/shared/ui/DurationPicker";
@@ -199,7 +199,7 @@ function DepartureSelector({
                         취소
                     </button>
                 </div>
-                <div className="max-h-[45vh] overflow-y-auto space-y-3 pr-0.5">
+                <div className="fr-scrollbar max-h-[45vh] overflow-y-auto space-y-3 pr-0.5">
                     {Object.entries(grouped).map(([country, airports]) => (
                         <div key={country}>
                             <p className="text-[9px] text-white/28 tracking-[0.15em] uppercase mb-1.5">
@@ -274,9 +274,39 @@ function DepartureSelector({
     );
 }
 
+type ResumedFlight = {
+    from: string;
+    to: string | null;
+    subject: string;
+    duration: number;
+    hardStop: boolean;
+    elapsed: number;
+    savedAt: number;
+};
+
+function formatElapsed(seconds: number) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (h === 0) return `${m}분`;
+    if (m === 0) return `${h}시간`;
+    return `${h}시간 ${m}분`;
+}
+
 export default function HomePage() {
     const router = useRouter();
     const [tab, setTab] = useState<"new" | "active">("new");
+    const [resumedFlight, setResumedFlight] = useState<ResumedFlight | null>(
+        null,
+    );
+
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem("flightrail:resumeFlight");
+            if (raw) setResumedFlight(JSON.parse(raw));
+        } catch {
+            // ignore
+        }
+    }, []);
     const [from, setFrom] = useState("ICN");
     const [to, setTo] = useState<string | null>(null);
     const [hours, setHours] = useState(2);
@@ -362,20 +392,108 @@ export default function HomePage() {
                     {/* Card */}
                     <div className="bg-fr-overlay/60 backdrop-blur-sm border border-t-0 border-white/[0.07] rounded-b-3xl rounded-tr-3xl">
                         {tab === "active" ? (
-                            <div className="flex flex-col items-center justify-center py-14 gap-4 px-6">
-                                <div className="w-12 h-12 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-white/25">
-                                    <PlaneIcon size={22} />
+                            resumedFlight ? (
+                                <div className="px-5 sm:px-8 py-6">
+                                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5 flex flex-col gap-4">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <p className="text-[9px] text-white/28 tracking-widest uppercase mb-2">
+                                                    저장된 여행
+                                                </p>
+                                                <p className="text-[22px] font-bold text-white tracking-tight leading-none">
+                                                    {resumedFlight.from}
+                                                    <span className="text-white/30 mx-2 font-light">
+                                                        →
+                                                    </span>
+                                                    {resumedFlight.to ?? "—"}
+                                                </p>
+                                                {resumedFlight.subject && (
+                                                    <p className="text-[12px] text-sky-400/70 mt-1">
+                                                        {resumedFlight.subject}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    localStorage.removeItem(
+                                                        "flightrail:resumeFlight",
+                                                    );
+                                                    setResumedFlight(null);
+                                                }}
+                                                className="text-white/20 hover:text-white/50 transition-colors text-[18px] leading-none mt-0.5"
+                                                aria-label="저장 삭제"
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                        <div className="flex gap-3 text-[11px] text-white/35">
+                                            <span>
+                                                {formatElapsed(
+                                                    resumedFlight.elapsed,
+                                                )}{" "}
+                                                비행 완료
+                                            </span>
+                                            <span className="text-white/15">
+                                                ·
+                                            </span>
+                                            <span>
+                                                목표{" "}
+                                                {formatElapsed(
+                                                    resumedFlight.duration,
+                                                )}
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                const {
+                                                    from,
+                                                    to,
+                                                    subject,
+                                                    duration,
+                                                    hardStop,
+                                                    elapsed,
+                                                } = resumedFlight;
+                                                if (!to) return;
+                                                const params =
+                                                    new URLSearchParams({
+                                                        from,
+                                                        to,
+                                                        subject,
+                                                        duration:
+                                                            String(duration),
+                                                        hardStop:
+                                                            String(hardStop),
+                                                        elapsed:
+                                                            String(elapsed),
+                                                    });
+                                                localStorage.removeItem(
+                                                    "flightrail:resumeFlight",
+                                                );
+                                                router.push(`/timer?${params}`);
+                                            }}
+                                            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-fr-sky-deep hover:bg-fr-sky-deep/90 text-white text-[13px] font-semibold transition-colors"
+                                        >
+                                            <PlaneIcon size={14} />
+                                            이어서 비행하기
+                                        </button>
+                                    </div>
                                 </div>
-                                <p className="text-[13px] text-white/35">
-                                    진행중인 여행이 없습니다
-                                </p>
-                                <Link
-                                    href="/timer"
-                                    className="px-5 py-2.5 text-[13px] text-white/50 hover:text-white/80 border border-white/[0.08] hover:border-white/20 rounded-xl transition-colors"
-                                >
-                                    타이머로 이동
-                                </Link>
-                            </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-14 gap-4 px-6">
+                                    <div className="w-12 h-12 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-white/25">
+                                        <PlaneIcon size={22} />
+                                    </div>
+                                    <p className="text-[13px] text-white/35">
+                                        저장된 여행이 없습니다
+                                    </p>
+                                    <Link
+                                        href="/timer"
+                                        className="px-5 py-2.5 text-[13px] text-white/50 hover:text-white/80 border border-white/[0.08] hover:border-white/20 rounded-xl transition-colors"
+                                    >
+                                        타이머로 이동
+                                    </Link>
+                                </div>
+                            )
                         ) : (
                             <div className="flex flex-col">
                                 {/* Step 1: 출발지 */}

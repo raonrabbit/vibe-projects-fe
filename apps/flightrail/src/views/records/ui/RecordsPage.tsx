@@ -92,7 +92,7 @@ function HeatmapCalendar({ sessions }: { sessions: Session[] }) {
                 </p>
                 <p className="text-[10px] text-white/20">최근 1년</p>
             </div>
-            <div ref={scrollRef} className="overflow-x-auto">
+            <div ref={scrollRef} className="fr-scrollbar overflow-x-auto">
                 <div
                     className="flex gap-[3px]"
                     style={{ minWidth: "max-content" }}

@@ -5,6 +5,7 @@ interface Props {
     plannedDuration: number;
     onResume: () => void;
     onLand: () => void;
+    onSaveLater: () => void;
 }
 
 export function PauseOverlay({
@@ -12,6 +13,7 @@ export function PauseOverlay({
     plannedDuration,
     onResume,
     onLand,
+    onSaveLater,
 }: Props) {
     const altLabel = getAltitudeLabel(elapsed, plannedDuration);
 
@@ -37,6 +39,12 @@ export function PauseOverlay({
                 className="mt-3 px-6 py-2.5 text-white/40 hover:text-white/70 text-[13px] transition-colors"
             >
                 착륙하기 (세션 종료)
+            </button>
+            <button
+                onClick={onSaveLater}
+                className="mt-1 px-6 py-2.5 text-white/30 hover:text-white/55 text-[12px] transition-colors"
+            >
+                나중에 이어서 하기
             </button>
         </div>
     );

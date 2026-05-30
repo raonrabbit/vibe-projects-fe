@@ -129,3 +129,27 @@ body {
         transform: translateY(10px);
     }
 }
+
+/* ── Custom scrollbar ───────────────────────────────────────────────────── */
+
+.fr-scrollbar::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+}
+
+.fr-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.fr-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(56, 189, 248, 0.2);
+    border-radius: 9999px;
+}
+
+.fr-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(56, 189, 248, 0.45);
+}
+
+.fr-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+}
