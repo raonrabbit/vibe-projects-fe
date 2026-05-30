@@ -32,8 +32,12 @@ export default function WindowView() {
     const to = searchParams.get("to");
     const plannedDuration = Number(searchParams.get("duration") ?? 7200);
     const hardStop = searchParams.get("hardStop") === "true";
+    const resumeElapsed = Number(searchParams.get("elapsed") ?? 0);
+    const isResuming = resumeElapsed > 0;
 
-    const [phase, setPhase] = useState<"boarding" | "flying">("boarding");
+    const [phase, setPhase] = useState<"boarding" | "flying">(
+        isResuming ? "flying" : "boarding",
+    );
     const [departing, setDeparting] = useState(false);
     const [ready, setReady] = useState(false);
     const [showMap, setShowMap] = useState(false);
@@ -61,7 +65,7 @@ export default function WindowView() {
         running,
         reachedGoal: _reachedGoal,
         setRunning,
-    } = useFlightTimer(plannedDuration, false);
+    } = useFlightTimer(plannedDuration, isResuming, resumeElapsed);
     const {
         displayHour,
         isFixed,
@@ -72,7 +76,7 @@ export default function WindowView() {
         handleBarDrag,
     } = useSkyTime();
     const { fromAirportData, mapDestination, mapProgress, mapProgressRate } =
-        useFlightMap(from, to, elapsed);
+        useFlightMap(from, to, elapsed, plannedDuration, hardStop);
     const { saving, landResult, handleLand } = useLanding({
         from,
         subject,
@@ -81,6 +85,23 @@ export default function WindowView() {
         elapsed,
         onPause: () => setRunning(false),
     });
+
+    const handleSaveLater = () => {
+        setRunning(false);
+        localStorage.setItem(
+            "flightrail:resumeFlight",
+            JSON.stringify({
+                from,
+                to,
+                subject,
+                duration: plannedDuration,
+                hardStop,
+                elapsed,
+                savedAt: Date.now(),
+            }),
+        );
+        router.push("/");
+    };
 
     useAmbientAudio(running, departing, volume);
 
@@ -173,6 +194,7 @@ export default function WindowView() {
                     plannedDuration={plannedDuration}
                     onResume={() => setRunning(true)}
                     onLand={handleLand}
+                    onSaveLater={handleSaveLater}
                 />
             )}
 

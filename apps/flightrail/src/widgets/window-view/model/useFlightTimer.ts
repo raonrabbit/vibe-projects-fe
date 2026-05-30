@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 
-export function useFlightTimer(plannedDuration: number, initialRunning = true) {
-    const [elapsed, setElapsed] = useState(0);
+export function useFlightTimer(
+    plannedDuration: number,
+    initialRunning = true,
+    initialElapsed = 0,
+) {
+    const [elapsed, setElapsed] = useState(initialElapsed);
     const [running, setRunning] = useState(initialRunning);
     const [reachedGoal, setReachedGoal] = useState(false);
 
