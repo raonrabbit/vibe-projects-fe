@@ -51,35 +51,21 @@ export function AwardsSection() {
             <motion.div
               key={award.id}
               variants={item}
-              className="group rounded-2xl border border-black/8 bg-black/3 p-6 transition-colors hover:bg-black/6 dark:border-white/8 dark:bg-white/3 dark:hover:bg-white/6"
+              className="group flex flex-col gap-3 rounded-2xl bg-black/[0.03] p-5 transition-colors hover:bg-black/[0.05] sm:p-6 dark:bg-white/[0.04] dark:hover:bg-white/[0.06]"
             >
-              <div className="mb-4 flex items-start justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black/8 dark:bg-white/8">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="text-black/60 dark:text-white/60"
-                  >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </div>
-                <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                  {award.date}
-                </span>
+              <span className="w-fit rounded-full bg-amber-400/15 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 dark:bg-amber-400/10 dark:text-amber-400">
+                {award.date}
+              </span>
+              <div>
+                <h3 className="text-[15px] font-bold text-black dark:text-white">
+                  {award.title}
+                </h3>
+                <p className="mt-1 text-xs text-zinc-400 dark:text-zinc-500">
+                  {award.organizer}
+                </p>
               </div>
-              <h3 className="text-base font-semibold text-black dark:text-white">
-                {award.title}
-              </h3>
-              <p className="mt-1 text-xs font-medium text-zinc-400 dark:text-zinc-500">
-                {award.organizer}
-              </p>
-              <p className="mt-3 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+              <div className="h-px bg-black/[0.06] dark:bg-white/[0.06]" />
+              <p className="text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
                 {award.description}
               </p>
             </motion.div>

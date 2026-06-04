@@ -123,7 +123,7 @@ export function HeroSection() {
 
           <motion.div
             variants={item}
-            className="mt-2 flex items-center justify-center gap-5 md:justify-start"
+            className="mt-2 flex flex-col items-center gap-3 sm:flex-row sm:gap-5 md:items-start md:justify-start"
           >
             <button
               onClick={copyEmail}

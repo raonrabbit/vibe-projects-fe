@@ -86,10 +86,10 @@ export function ProjectsSection() {
   return (
     <section
       ref={containerRef}
-      className={`relative flex w-full flex-col overflow-hidden ${PROJECTS_SECTION_MIN_H_CLASS}`}
+      className={`relative flex w-full flex-col justify-center gap-8 overflow-hidden ${PROJECTS_SECTION_MIN_H_CLASS}`}
     >
       {/* 섹션 타이틀 */}
-      <div className="flex w-full items-center justify-center pt-12">
+      <div className="flex w-full items-center justify-center">
         <h2 className="text-4xl font-bold text-black dark:text-white">
           Projects
         </h2>
@@ -97,7 +97,7 @@ export function ProjectsSection() {
 
       {/* 슬라이더 */}
       <motion.div
-        className="flex min-h-112 flex-1 items-center"
+        className="flex min-h-112 items-center"
         style={{ width: `${total * 100}%` }}
         animate={{ x: `-${(current * 100) / total}%` }}
         transition={{
@@ -110,9 +110,9 @@ export function ProjectsSection() {
           <div
             key={project.id}
             style={{ width: `${100 / total}%` }}
-            className="flex shrink-0 items-center justify-center px-8"
+            className="flex shrink-0 items-center justify-center px-4 sm:px-8"
           >
-            <div className="flex w-full max-w-3xl flex-col items-center gap-8 sm:flex-row">
+            <div className="flex w-full max-w-3xl flex-col items-center gap-4 sm:flex-row sm:gap-8">
               {/* 썸네일 */}
               <div
                 className="relative h-52 w-full shrink-0 cursor-pointer overflow-hidden rounded-2xl sm:h-64 sm:w-96"
@@ -218,8 +218,8 @@ export function ProjectsSection() {
       </motion.div>
 
       {/* 하단 컨트롤 바 — 슬라이더 아래 */}
-      <div className="flex w-full items-center justify-center px-8 pt-4 pb-8">
-        <div className="flex w-full max-w-3xl items-center justify-between">
+      <div className="flex w-full items-center justify-center px-4 sm:px-8">
+        <div className="flex w-full max-w-3xl items-center justify-center gap-4 sm:justify-between">
           {/* 인디케이터 (좌) */}
           <div className="flex items-center gap-1">
             {PROJECTS.map((_, i) => (
