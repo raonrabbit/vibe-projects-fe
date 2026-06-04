@@ -2,4 +2,4 @@
 export const HERO_SECTION_MIN_H_CLASS = "min-h-[max(100svh,34rem)]";
 export const SKILLS_SECTION_MIN_H_CLASS = "min-h-[max(100svh,46rem)]";
 export const AWARDS_SECTION_MIN_H_CLASS = "min-h-[max(100svh,42rem)]";
-export const PROJECTS_SECTION_MIN_H_CLASS = "h-[max(100svh,44rem)]";
+export const PROJECTS_SECTION_MIN_H_CLASS = "min-h-[max(100svh,44rem)]";
