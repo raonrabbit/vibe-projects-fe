@@ -1,12 +1,18 @@
-@import "@vibe/ui/styles";
+@import "tailwindcss";
 
-/* Scan packages/ui source for utility class detection */
-@source "../../../../packages/ui/src";
+@custom-variant dark (&:where(.dark, .dark *));
 
-/* Override font to Geist (set via next/font in layout.tsx) */
 @theme {
   --font-sans: var(--font-geist-sans), Arial, sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
+
+  --color-bg: #ffffff;
+  --color-text-primary: #111827;
+}
+
+.dark {
+  --color-bg: #030712;
+  --color-text-primary: #f9fafb;
 }
 
 body {

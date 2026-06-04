@@ -1,5 +1,5 @@
-import { SimpleIcon } from "@vibe/ui";
 import { Label } from "@/shared";
+import { SimpleIcon } from "@/shared/ui/SimpleIcon";
 
 import type { Skill } from "../model/skills";
 
