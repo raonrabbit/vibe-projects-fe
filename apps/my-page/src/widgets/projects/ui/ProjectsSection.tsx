@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { cn } from "@/shared/lib/cn";
 import { PROJECTS } from "@/entities/project";
+import { PROJECTS_SECTION_MIN_H_CLASS } from "@/shared/config/sectionMinHeights";
 
 export function ProjectsSection() {
   const [current, setCurrent] = useState(() => {
@@ -84,7 +86,7 @@ export function ProjectsSection() {
   return (
     <section
       ref={containerRef}
-      className="relative flex h-screen w-full flex-col overflow-hidden"
+      className={`relative flex w-full flex-col overflow-hidden ${PROJECTS_SECTION_MIN_H_CLASS}`}
     >
       {/* 섹션 타이틀 */}
       <div className="flex w-full items-center justify-center pt-12">
@@ -95,8 +97,8 @@ export function ProjectsSection() {
 
       {/* 슬라이더 */}
       <motion.div
-        className="flex flex-1"
-        style={{ width: `${total * 100}vw` }}
+        className="flex min-h-112 flex-1 items-center"
+        style={{ width: `${total * 100}%` }}
         animate={{ x: `-${(current * 100) / total}%` }}
         transition={{
           type: "tween",
@@ -107,7 +109,8 @@ export function ProjectsSection() {
         {PROJECTS.map((project) => (
           <div
             key={project.id}
-            className="flex w-screen shrink-0 items-center justify-center px-8"
+            style={{ width: `${100 / total}%` }}
+            className="flex shrink-0 items-center justify-center px-8"
           >
             <div className="flex w-full max-w-3xl flex-col items-center gap-8 sm:flex-row">
               {/* 썸네일 */}
@@ -115,10 +118,12 @@ export function ProjectsSection() {
                 className="relative h-52 w-full shrink-0 cursor-pointer overflow-hidden rounded-2xl sm:h-64 sm:w-96"
                 onClick={() => navigateToProject(project.id)}
               >
-                <img
+                <Image
                   src={project.images[0]}
                   alt={project.title}
-                  className="absolute left-1/2 h-full w-auto -translate-x-1/2 transition-transform duration-500 hover:scale-105"
+                  fill
+                  className="object-contain transition-transform duration-500 hover:scale-105"
+                  sizes="(max-width: 640px) 100vw, 384px"
                 />
                 <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-300 hover:bg-black/20">
                   <span className="rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-black opacity-0 transition-opacity duration-300 hover:opacity-100">
@@ -216,13 +221,13 @@ export function ProjectsSection() {
       <div className="flex w-full items-center justify-center px-8 pt-4 pb-8">
         <div className="flex w-full max-w-3xl items-center justify-between">
           {/* 인디케이터 (좌) */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {PROJECTS.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrent(i)}
                 aria-label={`프로젝트 ${i + 1}`}
-                className="cursor-pointer"
+                className="flex h-12 w-12 cursor-pointer items-center justify-center"
               >
                 <motion.div
                   className={cn(
@@ -239,12 +244,12 @@ export function ProjectsSection() {
           </div>
 
           {/* 화살표 버튼 (우) */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <motion.button
               onClick={goPrev}
               aria-label="이전 프로젝트"
               className={cn(
-                "flex h-9 w-9 cursor-pointer items-center justify-center rounded-full",
+                "flex h-12 w-12 cursor-pointer items-center justify-center rounded-full",
                 "bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20",
                 "text-zinc-600 transition-colors dark:text-zinc-400",
               )}
@@ -271,7 +276,7 @@ export function ProjectsSection() {
               onClick={goNext}
               aria-label="다음 프로젝트"
               className={cn(
-                "flex h-9 w-9 cursor-pointer items-center justify-center rounded-full",
+                "flex h-12 w-12 cursor-pointer items-center justify-center rounded-full",
                 "bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20",
                 "text-zinc-600 transition-colors dark:text-zinc-400",
               )}

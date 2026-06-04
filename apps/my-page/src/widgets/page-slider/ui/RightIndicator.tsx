@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/shared/lib/cn";
+import { PAGE_INDICATOR_LABEL_CLASS } from "../indicatorGutter";
 
 export interface SliderSection {
   id: string;
@@ -16,6 +17,14 @@ interface RightIndicatorProps {
   onDotClick: (index: number) => void;
 }
 
+const INDICATOR_LABEL_SIZE = "0.875rem";
+const INDICATOR_LABEL_SCALE_INACTIVE = 10 / 14;
+
+const indicatorTransition = {
+  duration: 0.28,
+  ease: [0.4, 0, 0.2, 1] as const,
+};
+
 export function RightIndicator({
   total,
   current,
@@ -23,27 +32,36 @@ export function RightIndicator({
   onDotClick,
 }: RightIndicatorProps) {
   return (
-    <div className="fixed top-1/2 right-6 z-50 flex -translate-y-1/2 flex-col items-center gap-3">
+    <div className="fixed top-1/2 right-6 z-50 flex -translate-y-1/2 flex-col items-end gap-3">
       {Array.from({ length: total }).map((_, i) => (
         <button
           key={i}
           onClick={() => onDotClick(i)}
           aria-label={sections[i].label}
-          className="group relative flex cursor-pointer flex-row items-center"
+          className="group flex h-12 cursor-pointer items-center gap-0 md:gap-3"
         >
           <span
-            className={cn(
-              "absolute right-4 text-xs font-medium whitespace-nowrap transition-opacity",
-              i === current
-                ? "text-xs text-zinc-700 opacity-100 dark:text-zinc-200"
-                : "text-[10px] text-zinc-400 opacity-40 group-hover:opacity-100 dark:text-zinc-500",
-            )}
+            className={cn(PAGE_INDICATOR_LABEL_CLASS, "min-w-13 justify-end")}
           >
-            {sections[i].label}
+            <motion.span
+              className={cn(
+                "inline-block origin-right font-medium whitespace-nowrap",
+                i === current
+                  ? "text-zinc-800 dark:text-zinc-100"
+                  : "text-zinc-600 group-hover:text-zinc-800 dark:text-zinc-400 dark:group-hover:text-zinc-200",
+              )}
+              style={{ fontSize: INDICATOR_LABEL_SIZE }}
+              animate={{
+                scale: i === current ? 1 : INDICATOR_LABEL_SCALE_INACTIVE,
+              }}
+              transition={indicatorTransition}
+            >
+              {sections[i].label}
+            </motion.span>
           </span>
           <motion.div
             className={cn(
-              "rounded-full",
+              "shrink-0 rounded-full",
               i === current
                 ? "bg-black dark:bg-white"
                 : "bg-black/20 hover:bg-black/40 dark:bg-white/20 dark:hover:bg-white/40",
@@ -52,7 +70,7 @@ export function RightIndicator({
               width: 8,
               height: i === current ? 24 : 8,
             }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            transition={indicatorTransition}
           />
         </button>
       ))}

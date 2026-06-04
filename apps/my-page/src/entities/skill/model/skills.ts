@@ -13,7 +13,7 @@ export const SKILL_CATEGORIES: SkillCategory[] = [
     category: "Frontend",
     skills: [
       { name: "React", slug: "react" },
-      { name: "Next.js", slug: "nextdotjs" },
+      { name: "Next.js", slug: "nextjs" },
       { name: "TypeScript", slug: "typescript" },
       { name: "JavaScript", slug: "javascript" },
       { name: "Tailwind CSS", slug: "tailwindcss" },
@@ -25,14 +25,14 @@ export const SKILL_CATEGORIES: SkillCategory[] = [
   {
     category: "3D / Graphics",
     skills: [
-      { name: "Three.js", slug: "threedotjs" },
+      { name: "Three.js", slug: "threejs" },
       { name: "Blender", slug: "blender" },
     ],
   },
   {
     category: "Backend",
     skills: [
-      { name: "Spring Boot", slug: "springboot" },
+      { name: "Spring Boot", slug: "spring" },
       { name: "Python", slug: "python" },
     ],
   },
@@ -52,7 +52,7 @@ export const SKILL_CATEGORIES: SkillCategory[] = [
     category: "AI",
     skills: [
       { name: "Cursor", slug: "cursor" },
-      { name: "Claude", slug: "claude" },
+      { name: "Claude", slug: "claudecode" },
     ],
   },
 ];

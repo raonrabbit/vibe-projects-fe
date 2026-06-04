@@ -3,6 +3,7 @@
 import { SkillItem, SkillCategory, SKILL_CATEGORIES } from "@/entities/skill";
 import { Button } from "@/shared";
 import { useState } from "react";
+import { SKILLS_SECTION_MIN_H_CLASS } from "@/shared/config/sectionMinHeights";
 
 function SkillCategoryButton({
   label,
@@ -31,7 +32,7 @@ function SkillGrid({
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-12">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-3">
         {skillCategories.map((sc) => (
           <SkillCategoryButton
             key={sc.category}
@@ -68,7 +69,9 @@ export function SkillsSection() {
   };
 
   return (
-    <section className="flex h-screen flex-col items-center justify-center gap-12">
+    <section
+      className={`flex ${SKILLS_SECTION_MIN_H_CLASS} flex-col items-center justify-center gap-8 px-6 py-12 sm:gap-12`}
+    >
       <h2 className="text-4xl font-bold text-black dark:text-white">Skills</h2>
       <div className="w-full space-y-8">
         <SkillGrid

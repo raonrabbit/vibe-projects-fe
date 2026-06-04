@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
 import { cn } from "@/shared/lib/cn";
 import { PROFILE } from "@/shared/config/profile";
+import { HERO_SECTION_MIN_H_CLASS } from "@/shared/config/sectionMinHeights";
 
 function TypingText() {
   const texts = PROFILE.typingTexts;
@@ -64,7 +65,9 @@ export function HeroSection() {
   }, []);
 
   return (
-    <section className="flex min-h-screen items-center justify-center px-6 py-24">
+    <section
+      className={`flex ${HERO_SECTION_MIN_H_CLASS} items-center justify-center px-6 py-16 sm:py-24`}
+    >
       <motion.div
         className="flex flex-col items-center gap-10 text-center md:flex-row md:items-center md:gap-20 md:text-left"
         variants={container}
@@ -99,7 +102,7 @@ export function HeroSection() {
         <div className="flex flex-col gap-3">
           <motion.p
             variants={item}
-            className="text-xs font-semibold tracking-widest text-zinc-400 uppercase dark:text-zinc-500"
+            className="text-xs font-semibold tracking-widest text-zinc-600 uppercase dark:text-zinc-400"
           >
             Hello, I&apos;m
           </motion.p>
