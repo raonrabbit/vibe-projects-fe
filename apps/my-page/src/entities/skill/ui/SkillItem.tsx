@@ -1,4 +1,5 @@
 import { Label } from "@/shared";
+import { cn } from "@/shared/lib/cn";
 import { SimpleIcon } from "@/shared/ui/SimpleIcon";
 
 import type { Skill } from "../model/skills";
@@ -11,14 +12,14 @@ function SkillItemRoot({ children }: { children: React.ReactNode }) {
   );
 }
 
-function SkillItemIcon({ slug, name }: Skill) {
+function SkillItemIcon({ slug, name, invertInDark }: Skill) {
   return (
     <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-black/5 dark:bg-white/5">
       <SimpleIcon
         slug={slug}
         alt={name}
         size={36}
-        className="h-9 w-9 object-contain"
+        className={cn("h-9 w-9 object-contain", invertInDark && "dark:invert")}
       />
     </div>
   );

@@ -50,7 +50,7 @@ function SkillGrid({
               className={`${currentCategory && (skillCategory.category !== currentCategory ? "blur" : "")} transition-all delay-75`}
             >
               <SkillItem>
-                <SkillItem.Icon slug={skill.slug} name={skill.name} />
+                <SkillItem.Icon {...skill} />
                 <SkillItem.Label name={skill.name} />
               </SkillItem>
             </div>

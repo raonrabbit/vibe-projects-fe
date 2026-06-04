@@ -1,6 +1,7 @@
 export interface Skill {
   name: string;
   slug: string; // simpleicons.org slug
+  invertInDark?: true;
 }
 
 export interface SkillCategory {
@@ -17,7 +18,7 @@ export const SKILL_CATEGORIES: SkillCategory[] = [
       { name: "TypeScript", slug: "typescript" },
       { name: "JavaScript", slug: "javascript" },
       { name: "Tailwind CSS", slug: "tailwindcss" },
-      { name: "Tanstack Query", slug: "reactquery" },
+      { name: "Tanstack Query", slug: "reactquery", invertInDark: true },
       { name: "Zustand", slug: "zustand" },
       { name: "Electron", slug: "electron" },
     ],
@@ -25,7 +26,7 @@ export const SKILL_CATEGORIES: SkillCategory[] = [
   {
     category: "3D / Graphics",
     skills: [
-      { name: "Three.js", slug: "threejs" },
+      { name: "Three.js", slug: "threejs", invertInDark: true },
       { name: "Blender", slug: "blender" },
     ],
   },
@@ -44,7 +45,7 @@ export const SKILL_CATEGORIES: SkillCategory[] = [
     category: "Tools",
     skills: [
       { name: "Git", slug: "git" },
-      { name: "GitHub", slug: "github" },
+      { name: "GitHub", slug: "github", invertInDark: true },
       { name: "Jira", slug: "jira" },
     ],
   },
