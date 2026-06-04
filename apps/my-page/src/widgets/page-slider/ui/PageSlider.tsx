@@ -11,6 +11,13 @@ interface PageSliderProps {
 export function PageSlider({ sections }: PageSliderProps) {
   const [current, setCurrent] = useState(0);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const currentRef = useRef(0);
+  const isScrollingRef = useRef(false);
+  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    currentRef.current = current;
+  }, [current]);
 
   // Restore navigation state from sessionStorage
   useEffect(() => {
@@ -40,6 +47,9 @@ export function PageSlider({ sections }: PageSliderProps) {
           ratios[index] = entry.intersectionRatio;
         });
 
+        // Suppress updates while programmatic scroll is in progress
+        if (isScrollingRef.current) return;
+
         let bestIndex = 0;
         let bestRatio = -1;
         ratios.forEach((ratio, index) => {
@@ -61,18 +71,67 @@ export function PageSlider({ sections }: PageSliderProps) {
   }, [sections.length]);
 
   const scrollToSection = (index: number) => {
+    isScrollingRef.current = true;
+    currentRef.current = index;
+    setCurrent(index);
     sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth" });
+    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+    scrollTimerRef.current = setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 800);
   };
 
+  useEffect(() => {
+    let isLocked = false;
+
+    const handleWheel = (e: WheelEvent) => {
+      const idx = currentRef.current;
+      const section = sectionRefs.current[idx];
+      if (!section) return;
+
+      const goingDown = e.deltaY > 0;
+
+      // Not at section boundary — let the browser scroll natively (smooth)
+      if (goingDown) {
+        const atBottom =
+          section.scrollTop + section.clientHeight >= section.scrollHeight - 1;
+        if (!atBottom) return;
+      } else {
+        const atTop = section.scrollTop <= 0;
+        if (!atTop) return;
+      }
+
+      // At boundary — intercept and navigate to adjacent section
+      e.preventDefault();
+
+      if (isLocked) return;
+
+      const nextIndex = goingDown
+        ? Math.min(idx + 1, sections.length - 1)
+        : Math.max(idx - 1, 0);
+
+      if (nextIndex === idx) return;
+
+      isLocked = true;
+      scrollToSection(nextIndex);
+      setTimeout(() => {
+        isLocked = false;
+      }, 800);
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    return () => window.removeEventListener("wheel", handleWheel);
+  }, [sections.length]);
+
   return (
-    <div className="scrollbar-hide h-screen snap-y snap-mandatory overflow-y-scroll">
+    <main className="scrollbar-hide h-screen overflow-y-scroll">
       {sections.map((section, i) => (
         <div
           key={section.id}
           ref={(el) => {
             sectionRefs.current[i] = el;
           }}
-          className={`snap-start ${PAGE_INDICATOR_GUTTER_CLASS}`}
+          className={`scrollbar-hide h-screen overflow-y-auto ${PAGE_INDICATOR_GUTTER_CLASS}`}
         >
           {section.component}
         </div>
@@ -84,6 +143,6 @@ export function PageSlider({ sections }: PageSliderProps) {
         sections={sections}
         onDotClick={scrollToSection}
       />
-    </div>
+    </main>
   );
 }
