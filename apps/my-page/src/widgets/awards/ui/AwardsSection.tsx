@@ -2,6 +2,7 @@
 
 import { motion, type Variants } from "framer-motion";
 import { AWARDS } from "@/entities/award";
+import { AWARDS_SECTION_MIN_H_CLASS } from "@/shared/config/sectionMinHeights";
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -22,7 +23,9 @@ const item: Variants = {
 
 export function AwardsSection() {
   return (
-    <section className="flex h-screen flex-col items-center justify-center px-6">
+    <section
+      className={`flex ${AWARDS_SECTION_MIN_H_CLASS} flex-col items-center justify-center px-6 py-12`}
+    >
       <motion.div
         className="w-full max-w-5xl"
         initial="hidden"

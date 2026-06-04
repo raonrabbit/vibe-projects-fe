@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { PAGE_INDICATOR_GUTTER_CLASS } from "../indicatorGutter";
 import { RightIndicator, type SliderSection } from "./RightIndicator";
 
 interface PageSliderProps {
@@ -27,18 +28,29 @@ export function PageSlider({ sections }: PageSliderProps) {
   }, [sections]);
 
   useEffect(() => {
+    const ratios = new Array<number>(sections.length).fill(0);
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const index = sectionRefs.current.indexOf(
-              entry.target as HTMLDivElement,
-            );
-            if (index !== -1) setCurrent(index);
+          const index = sectionRefs.current.indexOf(
+            entry.target as HTMLDivElement,
+          );
+          if (index === -1) return;
+          ratios[index] = entry.intersectionRatio;
+        });
+
+        let bestIndex = 0;
+        let bestRatio = -1;
+        ratios.forEach((ratio, index) => {
+          if (ratio > bestRatio) {
+            bestRatio = ratio;
+            bestIndex = index;
           }
         });
+        setCurrent(bestIndex);
       },
-      { threshold: 0.6 },
+      { threshold: [0, 0.25, 0.5, 0.75, 1] },
     );
 
     sectionRefs.current.forEach((ref) => {
@@ -46,7 +58,7 @@ export function PageSlider({ sections }: PageSliderProps) {
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [sections.length]);
 
   const scrollToSection = (index: number) => {
     sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth" });
@@ -60,7 +72,7 @@ export function PageSlider({ sections }: PageSliderProps) {
           ref={(el) => {
             sectionRefs.current[i] = el;
           }}
-          className="h-screen snap-start"
+          className={`snap-start ${PAGE_INDICATOR_GUTTER_CLASS}`}
         >
           {section.component}
         </div>
