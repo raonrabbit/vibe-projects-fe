@@ -1,4 +1,5 @@
 import { Label } from "@/shared";
+import { cn } from "@/shared/lib/cn";
 import { SimpleIcon } from "@/shared/ui/SimpleIcon";
 
 import type { Skill } from "../model/skills";
@@ -18,7 +19,7 @@ function SkillItemIcon({ slug, name, invertInDark }: Skill) {
         slug={slug}
         alt={name}
         size={36}
-        className={`h-9 w-9 object-contain${invertInDark ? "dark:invert" : ""}`}
+        className={cn("h-9 w-9 object-contain", invertInDark && "dark:invert")}
       />
     </div>
   );
