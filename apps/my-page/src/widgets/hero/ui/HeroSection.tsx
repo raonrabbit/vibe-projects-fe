@@ -79,6 +79,7 @@ export function HeroSection() {
               fill
               className="object-cover"
               priority
+              fetchPriority="high"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.display = "none";
               }}
