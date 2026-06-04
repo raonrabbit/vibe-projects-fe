@@ -32,7 +32,7 @@ export function RightIndicator({
   onDotClick,
 }: RightIndicatorProps) {
   return (
-    <div className="fixed top-1/2 right-6 z-50 flex -translate-y-1/2 flex-col items-end gap-3">
+    <div className="fixed top-1/2 right-3 z-50 flex -translate-y-1/2 flex-col items-end gap-3 md:right-6">
       {Array.from({ length: total }).map((_, i) => (
         <button
           key={i}
