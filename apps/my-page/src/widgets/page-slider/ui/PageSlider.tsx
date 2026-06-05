@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { PAGE_INDICATOR_GUTTER_CLASS } from "../indicatorGutter";
-import { RightIndicator, type SliderSection } from "./RightIndicator";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useActiveSection } from "@/shared/lib/activeSection";
+import type { SliderSection } from "./RightIndicator";
 
 interface PageSliderProps {
   sections: SliderSection[];
@@ -14,10 +14,15 @@ export function PageSlider({ sections }: PageSliderProps) {
   const currentRef = useRef(0);
   const isScrollingRef = useRef(false);
   const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { setActiveSection, registerScrollToSection } = useActiveSection();
 
   useEffect(() => {
     currentRef.current = current;
   }, [current]);
+
+  useEffect(() => {
+    setActiveSection(sections[current]?.id ?? "hero");
+  }, [current, sections, setActiveSection]);
 
   // Restore navigation state from sessionStorage
   useEffect(() => {
@@ -70,7 +75,7 @@ export function PageSlider({ sections }: PageSliderProps) {
     return () => observer.disconnect();
   }, [sections.length]);
 
-  const scrollToSection = (index: number) => {
+  const scrollToIndex = useCallback((index: number) => {
     isScrollingRef.current = true;
     currentRef.current = index;
     setCurrent(index);
@@ -79,7 +84,19 @@ export function PageSlider({ sections }: PageSliderProps) {
     scrollTimerRef.current = setTimeout(() => {
       isScrollingRef.current = false;
     }, 800);
-  };
+  }, []);
+
+  const scrollById = useCallback(
+    (id: string) => {
+      const index = sections.findIndex((s) => s.id === id);
+      if (index !== -1) scrollToIndex(index);
+    },
+    [sections, scrollToIndex],
+  );
+
+  useEffect(() => {
+    registerScrollToSection(scrollById);
+  }, [registerScrollToSection, scrollById]);
 
   useEffect(() => {
     let isLocked = false;
@@ -113,7 +130,7 @@ export function PageSlider({ sections }: PageSliderProps) {
       if (nextIndex === idx) return;
 
       isLocked = true;
-      scrollToSection(nextIndex);
+      scrollToIndex(nextIndex);
       setTimeout(() => {
         isLocked = false;
       }, 800);
@@ -121,7 +138,7 @@ export function PageSlider({ sections }: PageSliderProps) {
 
     window.addEventListener("wheel", handleWheel, { passive: false });
     return () => window.removeEventListener("wheel", handleWheel);
-  }, [sections.length]);
+  }, [sections.length, scrollToIndex]);
 
   return (
     <main className="scrollbar-hide h-screen overflow-y-scroll">
@@ -131,18 +148,11 @@ export function PageSlider({ sections }: PageSliderProps) {
           ref={(el) => {
             sectionRefs.current[i] = el;
           }}
-          className={`scrollbar-hide h-screen overflow-y-auto ${PAGE_INDICATOR_GUTTER_CLASS}`}
+          className="scrollbar-hide h-screen overflow-y-auto"
         >
           {section.component}
         </div>
       ))}
-
-      <RightIndicator
-        total={sections.length}
-        current={current}
-        sections={sections}
-        onDotClick={scrollToSection}
-      />
     </main>
   );
 }
