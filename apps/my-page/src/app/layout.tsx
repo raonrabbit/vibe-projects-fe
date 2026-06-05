@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import { PROFILE } from "@/shared/config/profile";
 import { ActiveSectionProvider } from "@/shared/lib/activeSection";
@@ -96,6 +97,18 @@ export default function RootLayout({
           {children}
         </ActiveSectionProvider>
       </body>
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-ZFY09Z75X0"
+        strategy="afterInteractive"
+      />
+      <Script id="ga-init" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-ZFY09Z75X0');
+        `}
+      </Script>
     </html>
   );
 }
