@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { PROFILE } from "@/shared/config/profile";
-import { ThemeToggle } from "@/shared/ui/ThemeToggle";
+import { ActiveSectionProvider } from "@/shared/lib/activeSection";
+import { Header } from "@/widgets/header";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -90,8 +91,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-bg text-text-primary antialiased`}
       >
-        <ThemeToggle />
-        {children}
+        <ActiveSectionProvider>
+          <Header />
+          {children}
+        </ActiveSectionProvider>
       </body>
     </html>
   );
