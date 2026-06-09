@@ -4,9 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/shared/lib/cn";
-import { useTheme } from "@/shared/lib/useTheme";
-import { SunIcon, MoonIcon } from "@/shared/ui/ThemeIcons";
-import { useActiveSection } from "@/shared/lib/activeSection";
+import { ThemeToggle } from "@/features/theme";
+import { useActiveSection } from "@/features/active-section";
 
 const SECTION_LINKS = [
   { id: "hero", label: "About" },
@@ -18,7 +17,6 @@ const SECTION_LINKS = [
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, toggle, mounted } = useTheme();
   const { activeSection, scrollToSection } = useActiveSection();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -81,18 +79,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-1">
-          <button
-            onClick={toggle}
-            aria-label="테마 토글"
-            className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-black/5 text-zinc-600 transition-colors duration-200 hover:bg-black/10 dark:bg-white/10 dark:text-zinc-400 dark:hover:bg-white/20"
-          >
-            {mounted &&
-              (theme === "dark" ? (
-                <SunIcon size={16} />
-              ) : (
-                <MoonIcon size={16} />
-              ))}
-          </button>
+          <ThemeToggle className="h-9 w-9" />
 
           <button
             onClick={() => setMobileOpen((v) => !v)}

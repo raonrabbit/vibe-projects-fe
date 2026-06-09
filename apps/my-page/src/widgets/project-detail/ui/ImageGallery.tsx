@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ProjectThumbnail } from "@/shared";
 
 interface ImageGalleryProps {
   images: string[];
@@ -29,21 +30,19 @@ export function ImageGallery({ images, alt }: ImageGalleryProps) {
             <button
               key={i}
               onClick={() => setSelectedIndex(i)}
-              className={`shrink-0 cursor-pointer rounded-lg border-2 focus:outline-none ${
+              className={`group shrink-0 cursor-pointer rounded-lg border-2 focus:outline-none ${
                 i === selectedIndex
                   ? "border-black dark:border-white"
                   : "border-transparent"
               }`}
               aria-label={`이미지 ${i + 1} 선택`}
             >
-              {/* border와 overflow-hidden 분리 — h-full이 border 포함 높이로 계산되어 위아래 잘리는 문제 방지 */}
-              <div className="flex h-16 w-24 items-center justify-center overflow-hidden rounded-[6px]">
-                <img
-                  src={src}
-                  alt={`${alt} 썸네일 ${i + 1}`}
-                  className="h-full w-auto max-w-none flex-shrink-0"
-                />
-              </div>
+              <ProjectThumbnail
+                src={src}
+                alt={`${alt} 썸네일 ${i + 1}`}
+                className="h-16 w-24 rounded-[6px]"
+                sizes="96px"
+              />
             </button>
           ))}
         </div>
