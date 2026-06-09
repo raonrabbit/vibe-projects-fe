@@ -3,8 +3,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: var(--font-geist-sans), Arial, sans-serif;
-  --font-mono: var(--font-geist-mono), monospace;
+  --font-sans:
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, sans-serif;
+  --font-mono: monospace;
 
   --color-bg: #ffffff;
   --color-text-primary: #111827;
@@ -18,7 +20,13 @@
 body {
   background: var(--color-bg);
   color: var(--color-text-primary);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family:
+    "Pretendard Variable",
+    Pretendard,
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    sans-serif;
 }
 
 .scrollbar-hide {
@@ -27,6 +35,12 @@ body {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* 다크모드 토글 원형 확장 애니메이션 — JS가 clip-path 직접 제어 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
 }
 
 @keyframes marquee {
