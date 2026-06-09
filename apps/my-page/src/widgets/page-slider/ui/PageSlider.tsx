@@ -1,8 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useActiveSection } from "@/shared/lib/activeSection";
-import type { SliderSection } from "./RightIndicator";
+import { useActiveSection } from "@/features/active-section";
+
+export interface SliderSection {
+  id: string;
+  label: string;
+  component: React.ReactNode;
+}
 
 interface PageSliderProps {
   sections: SliderSection[];
@@ -11,14 +16,7 @@ interface PageSliderProps {
 export function PageSlider({ sections }: PageSliderProps) {
   const [current, setCurrent] = useState(0);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const currentRef = useRef(0);
-  const isScrollingRef = useRef(false);
-  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { setActiveSection, registerScrollToSection } = useActiveSection();
-
-  useEffect(() => {
-    currentRef.current = current;
-  }, [current]);
 
   useEffect(() => {
     setActiveSection(sections[current]?.id ?? "hero");
@@ -52,9 +50,6 @@ export function PageSlider({ sections }: PageSliderProps) {
           ratios[index] = entry.intersectionRatio;
         });
 
-        // Suppress updates while programmatic scroll is in progress
-        if (isScrollingRef.current) return;
-
         let bestIndex = 0;
         let bestRatio = -1;
         ratios.forEach((ratio, index) => {
@@ -76,14 +71,7 @@ export function PageSlider({ sections }: PageSliderProps) {
   }, [sections.length]);
 
   const scrollToIndex = useCallback((index: number) => {
-    isScrollingRef.current = true;
-    currentRef.current = index;
-    setCurrent(index);
     sectionRefs.current[index]?.scrollIntoView({ behavior: "smooth" });
-    if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-    scrollTimerRef.current = setTimeout(() => {
-      isScrollingRef.current = false;
-    }, 800);
   }, []);
 
   const scrollById = useCallback(
@@ -98,57 +86,14 @@ export function PageSlider({ sections }: PageSliderProps) {
     registerScrollToSection(scrollById);
   }, [registerScrollToSection, scrollById]);
 
-  useEffect(() => {
-    let isLocked = false;
-
-    const handleWheel = (e: WheelEvent) => {
-      const idx = currentRef.current;
-      const section = sectionRefs.current[idx];
-      if (!section) return;
-
-      const goingDown = e.deltaY > 0;
-
-      // Not at section boundary — let the browser scroll natively (smooth)
-      if (goingDown) {
-        const atBottom =
-          section.scrollTop + section.clientHeight >= section.scrollHeight - 1;
-        if (!atBottom) return;
-      } else {
-        const atTop = section.scrollTop <= 0;
-        if (!atTop) return;
-      }
-
-      // At boundary — intercept and navigate to adjacent section
-      e.preventDefault();
-
-      if (isLocked) return;
-
-      const nextIndex = goingDown
-        ? Math.min(idx + 1, sections.length - 1)
-        : Math.max(idx - 1, 0);
-
-      if (nextIndex === idx) return;
-
-      isLocked = true;
-      scrollToIndex(nextIndex);
-      setTimeout(() => {
-        isLocked = false;
-      }, 800);
-    };
-
-    window.addEventListener("wheel", handleWheel, { passive: false });
-    return () => window.removeEventListener("wheel", handleWheel);
-  }, [sections.length, scrollToIndex]);
-
   return (
-    <main className="scrollbar-hide h-screen overflow-y-scroll">
+    <main className="pt-14">
       {sections.map((section, i) => (
         <div
           key={section.id}
           ref={(el) => {
             sectionRefs.current[i] = el;
           }}
-          className="scrollbar-hide h-screen overflow-y-auto"
         >
           {section.component}
         </div>
