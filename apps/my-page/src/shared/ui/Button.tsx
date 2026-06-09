@@ -9,9 +9,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  solid: "bg-black text-white dark:bg-white dark:text-black",
-  ghost: "bg-black/5 text-zinc-600 dark:bg-white/10 dark:text-zinc-400",
-  pill: "rounded-full bg-black/5 text-zinc-600 dark:bg-white/10 dark:text-zinc-400",
+  solid:
+    "bg-black text-white dark:bg-white dark:text-black hover:bg-zinc-800 dark:hover:bg-zinc-200",
+  ghost:
+    "bg-black/5 text-zinc-600 dark:bg-white/10 dark:text-zinc-400 hover:bg-black/10 dark:hover:bg-white/15",
+  pill: "rounded-full bg-black/5 text-zinc-600 dark:bg-white/10 dark:text-zinc-400 hover:bg-black/10 dark:hover:bg-white/15",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

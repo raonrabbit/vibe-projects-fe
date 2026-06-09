@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { PostMeta } from "@/entities/post";
 import { PostCard } from "./PostCard";
 import { TagFilter } from "./TagFilter";
@@ -11,6 +11,10 @@ interface BlogListProps {
 
 export function BlogList({ posts }: BlogListProps) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+
+  const handleTagChange = (tag: string | null) => {
+    setSelectedTag(tag);
+  };
 
   const allTags = useMemo(
     () => Array.from(new Set(posts.flatMap((p) => p.tags))).sort(),
@@ -28,7 +32,7 @@ export function BlogList({ posts }: BlogListProps) {
       <TagFilter
         tags={allTags}
         selected={selectedTag}
-        onChange={setSelectedTag}
+        onChange={handleTagChange}
       />
 
       {filtered.length === 0 ? (

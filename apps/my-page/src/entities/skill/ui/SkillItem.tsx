@@ -6,7 +6,7 @@ import type { Skill } from "../model/skills";
 
 function SkillItemRoot({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex shrink-0 flex-col items-center gap-3 px-2">
+    <div className="group flex shrink-0 flex-col items-center gap-3 px-2">
       {children}
     </div>
   );
@@ -14,7 +14,7 @@ function SkillItemRoot({ children }: { children: React.ReactNode }) {
 
 function SkillItemIcon({ slug, name, invertInDark }: Skill) {
   return (
-    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-black/5 dark:bg-white/5">
+    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-black/5 transition-all duration-200 group-hover:scale-110 group-hover:bg-black/10 dark:bg-white/5 dark:group-hover:bg-white/10">
       <SimpleIcon
         slug={slug}
         alt={name}
