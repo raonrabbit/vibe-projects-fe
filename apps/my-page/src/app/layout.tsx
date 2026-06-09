@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import { PROFILE } from "@/shared/config/profile";
-import { ActiveSectionProvider } from "@/shared/lib/activeSection";
+import { ActiveSectionProvider } from "@/features/active-section";
 import { Header } from "@/widgets/header";
 import "./globals.css";
 
