@@ -1,20 +1,9 @@
 import type { Metadata } from "next";
 import Script from "next/script";
-import { Geist, Geist_Mono } from "next/font/google";
-import { PROFILE } from "@/shared/config/profile";
-import { ActiveSectionProvider } from "@/shared/lib/activeSection";
+import { ActiveSectionProvider } from "@/features/active-section";
+import { RabbitCharacter } from "@/features/rabbit";
 import { Header } from "@/widgets/header";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.raonrabbit.dev"),
@@ -63,9 +52,13 @@ export default function RootLayout({
       <head>
         <link
           rel="preload"
-          as="image"
-          href={PROFILE.photo}
-          fetchPriority="high"
+          href="/fonts/pretendard/pretendard.css"
+          as="style"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var l=document.createElement('link');l.rel='stylesheet';l.href='/fonts/pretendard/pretendard.css';document.head.appendChild(l);})()`,
+          }}
         />
         <script
           dangerouslySetInnerHTML={{
@@ -89,12 +82,11 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-bg text-text-primary antialiased`}
-      >
+      <body className="bg-bg text-text-primary antialiased">
         <ActiveSectionProvider>
           <Header />
           {children}
+          <RabbitCharacter />
         </ActiveSectionProvider>
       </body>
       <Script
