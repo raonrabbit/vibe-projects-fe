@@ -4,7 +4,8 @@ export type QuizCategory =
   | "data-structures"
   | "network"
   | "javascript"
-  | "react";
+  | "react"
+  | "coding";
 
 export interface QuizQuestion {
   id: string;
@@ -21,4 +22,5 @@ export const CATEGORY_LABELS: Record<QuizCategory, string> = {
   network: "네트워크",
   javascript: "JavaScript",
   react: "React",
+  coding: "코딩",
 };
