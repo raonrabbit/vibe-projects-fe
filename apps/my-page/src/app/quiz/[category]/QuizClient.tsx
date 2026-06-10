@@ -53,6 +53,7 @@ export default function QuizClient({ questions, category }: Props) {
   const directionRef = useRef<1 | -1>(1);
   const [done, setDone] = useState(false);
   const [note, setNote] = useState("");
+  const [historyStack, setHistoryStack] = useState<number[]>([]);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function QuizClient({ questions, category }: Props) {
     setIndex(0);
     setReveal(false);
     setDone(false);
+    setHistoryStack([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questions]);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -78,6 +80,7 @@ export default function QuizClient({ questions, category }: Props) {
   const advance = useCallback(
     (dir: 1 | -1) => {
       directionRef.current = dir;
+      setHistoryStack((h) => [...h, index]);
       setReveal(false);
       setNote("");
       if (index + 1 >= sorted.length) {
@@ -88,6 +91,17 @@ export default function QuizClient({ questions, category }: Props) {
     },
     [index, sorted.length],
   );
+
+  const goBack = useCallback(() => {
+    if (historyStack.length === 0) return;
+    const prev = historyStack[historyStack.length - 1];
+    setHistoryStack((h) => h.slice(0, -1));
+    directionRef.current = -1;
+    setDone(false);
+    setIndex(prev);
+    setReveal(false);
+    setNote("");
+  }, [historyStack]);
 
   const handleKnown = useCallback(() => {
     if (!current) return;
@@ -121,6 +135,10 @@ export default function QuizClient({ questions, category }: Props) {
         e.preventDefault();
         setReveal((r) => !r);
       }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        goBack();
+      }
       if (!revealed) return;
       if (e.key === "ArrowRight") handleKnown();
       if (e.key === "ArrowLeft") handleUnknown();
@@ -128,7 +146,7 @@ export default function QuizClient({ questions, category }: Props) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [revealed, index, sorted]);
+  }, [revealed, index, sorted, goBack]);
 
   const handleReset = () => {
     resetCategory(category);
@@ -136,6 +154,7 @@ export default function QuizClient({ questions, category }: Props) {
     setIndex(0);
     setReveal(false);
     setDone(false);
+    setHistoryStack([]);
   };
 
   const restart = () => {
@@ -143,6 +162,7 @@ export default function QuizClient({ questions, category }: Props) {
     setIndex(0);
     setReveal(false);
     setDone(false);
+    setHistoryStack([]);
   };
 
   // ── done screen ────────────────────────────────────────────────────────────
@@ -159,6 +179,14 @@ export default function QuizClient({ questions, category }: Props) {
             / 전체 {stats.total}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
+            {historyStack.length > 0 && (
+              <button
+                onClick={goBack}
+                className="rounded-lg border border-text-primary/20 px-5 py-2.5 text-sm transition-colors hover:border-text-primary/50"
+              >
+                ← 이전 문제
+              </button>
+            )}
             <button
               onClick={restart}
               className="rounded-lg border border-text-primary/20 px-5 py-2.5 text-sm transition-colors hover:border-text-primary/50"
@@ -309,6 +337,14 @@ export default function QuizClient({ questions, category }: Props) {
 
       {/* action buttons */}
       <div className="mt-3 flex w-full max-w-lg flex-col gap-3">
+        {historyStack.length > 0 && (
+          <button
+            onClick={goBack}
+            className="self-start text-xs text-text-primary/40 transition-colors hover:text-text-primary/70"
+          >
+            ← 이전 문제 <span className="text-text-primary/25">[↑]</span>
+          </button>
+        )}
         <button
           onClick={() => setReveal((r) => !r)}
           className="w-full rounded-xl border border-text-primary/20 py-3 text-sm font-medium transition-colors hover:border-text-primary/50"
