@@ -16,6 +16,7 @@ import {
   type QuizQuestion,
 } from "@/shared/data/quiz-questions";
 import { useQuizProgress } from "@/shared/lib/useQuizProgress";
+import { MarkdownBlock } from "@/shared/ui/MarkdownBlock";
 
 function sortQuestions(
   questions: QuizQuestion[],
@@ -280,7 +281,7 @@ export default function QuizClient({ questions, category }: Props) {
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
         >
-          <div className="flex min-h-[220px] flex-col gap-4 rounded-2xl border border-text-primary/10 p-7">
+          <div className="flex min-h-[220px] flex-col gap-4 rounded-2xl border border-text-primary/10 p-7 select-text">
             <div className="flex items-center gap-2">
               <span className="rounded-full border border-text-primary/15 px-2 py-0.5 text-xs text-text-primary/50">
                 {CATEGORY_LABELS[current.category]}
@@ -297,9 +298,10 @@ export default function QuizClient({ questions, category }: Props) {
               )}
             </div>
 
-            <p className="text-base leading-relaxed font-medium">
-              {current.question}
-            </p>
+            <MarkdownBlock
+              text={current.question}
+              className="text-base leading-relaxed font-medium"
+            />
 
             <AnimatePresence initial={false}>
               {revealed && (
@@ -312,9 +314,10 @@ export default function QuizClient({ questions, category }: Props) {
                   className="overflow-hidden"
                 >
                   <div className="border-t border-text-primary/10 pt-4">
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap text-text-primary/70">
-                      {current.answer}
-                    </p>
+                    <MarkdownBlock
+                      text={current.answer}
+                      className="text-sm leading-relaxed text-text-primary/70"
+                    />
                   </div>
                 </motion.div>
               )}

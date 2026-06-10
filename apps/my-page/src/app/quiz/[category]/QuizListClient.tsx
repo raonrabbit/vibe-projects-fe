@@ -10,6 +10,7 @@ import {
   type QuizQuestion,
 } from "@/shared/data/quiz-questions";
 import { useQuizProgress } from "@/shared/lib/useQuizProgress";
+import { MarkdownBlock, getQuestionTitle } from "@/shared/ui/MarkdownBlock";
 
 interface Props {
   staticQuestions: QuizQuestion[];
@@ -136,7 +137,7 @@ export default function QuizListClient({ staticQuestions, category }: Props) {
                       </div>
                     )}
                     <p className="text-sm leading-relaxed font-medium">
-                      {q.question}
+                      {getQuestionTitle(q.question)}
                     </p>
                   </div>
 
@@ -160,9 +161,10 @@ export default function QuizListClient({ staticQuestions, category }: Props) {
                       className="overflow-hidden"
                     >
                       <div className="border-t border-text-primary/10 px-5 pt-4 pb-5">
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap text-text-primary/70">
-                          {q.answer}
-                        </p>
+                        <MarkdownBlock
+                          text={q.answer}
+                          className="text-sm leading-relaxed text-text-primary/70"
+                        />
                       </div>
                     </motion.div>
                   )}
