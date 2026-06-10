@@ -32,6 +32,10 @@ function StatusDot({ status }: { status?: "known" | "unknown" }) {
 export default function QuizListClient({ staticQuestions, category }: Props) {
   const { progress } = useQuizProgress();
   const [openId, setOpenId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "solved">("all");
+
+  const solved = staticQuestions.filter((q) => !!progress[q.id]);
+  const displayed = filter === "solved" ? solved : staticQuestions;
 
   const categoryLabel =
     category === "all" ? "전체" : CATEGORY_LABELS[category as QuizCategory];
@@ -56,16 +60,47 @@ export default function QuizListClient({ staticQuestions, category }: Props) {
         </div>
 
         {/* title */}
-        <div className="mb-6">
+        <div className="mb-4">
           <h1 className="text-xl font-bold">{categoryLabel}</h1>
           <p className="mt-0.5 text-sm text-text-primary/50">
             {staticQuestions.length}문제
           </p>
         </div>
 
+        {/* filter */}
+        <div className="mb-5 flex gap-1">
+          <button
+            onClick={() => setFilter("all")}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-xs transition-colors",
+              filter === "all"
+                ? "bg-text-primary/10 text-text-primary"
+                : "text-text-primary/40 hover:text-text-primary/70",
+            )}
+          >
+            전체 {staticQuestions.length}
+          </button>
+          <button
+            onClick={() => setFilter("solved")}
+            className={cn(
+              "rounded-lg px-3 py-1.5 text-xs transition-colors",
+              filter === "solved"
+                ? "bg-text-primary/10 text-text-primary"
+                : "text-text-primary/40 hover:text-text-primary/70",
+            )}
+          >
+            푼 문제 {solved.length}
+          </button>
+        </div>
+
         {/* question list */}
         <div className="flex flex-col gap-2">
-          {staticQuestions.map((q) => {
+          {displayed.length === 0 && (
+            <p className="py-12 text-center text-sm text-text-primary/40">
+              아직 푼 문제가 없습니다.
+            </p>
+          )}
+          {displayed.map((q) => {
             const isOpen = openId === q.id;
             const status = progress[q.id] as "known" | "unknown" | undefined;
 
