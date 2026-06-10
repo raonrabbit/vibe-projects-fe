@@ -1,40 +1,95 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import { cn } from "@/shared/lib/cn";
 import { PROFILE } from "@/shared/config/profile";
-import { HERO_SECTION_MIN_H_CLASS } from "@/shared/config/sectionMinHeights";
-import { HeroTextContent } from "./HeroTextContent";
+import { GrowingTree } from "./GrowingTree";
+import { HeroBio } from "./HeroBio";
 
 export function HeroSection() {
-  return (
-    <section
-      className={`flex ${HERO_SECTION_MIN_H_CLASS} items-center justify-center px-6 py-16 sm:py-24`}
-    >
-      <div className="flex flex-col items-center gap-10 text-center md:flex-row md:items-center md:gap-20 md:text-left">
-        <div className="shrink-0">
-          <div className="relative h-44 w-44 overflow-hidden rounded-full ring-2 ring-black/10 md:h-56 md:w-56 dark:ring-white/10">
-            <Image
-              src={PROFILE.photo}
-              alt={PROFILE.name}
-              fill
-              className="object-cover"
-              priority
-              fetchPriority="high"
-              sizes="(max-width: 768px) 176px, 224px"
-            />
-            <div
-              className={cn(
-                "flex h-full w-full items-center justify-center",
-                "bg-zinc-100 text-4xl font-bold text-zinc-400",
-                "dark:bg-zinc-800 dark:text-zinc-500",
-              )}
-            >
-              JH
-            </div>
-          </div>
-        </div>
+  const [copied, setCopied] = useState(false);
 
-        <HeroTextContent />
+  const copyEmail = useCallback(() => {
+    navigator.clipboard.writeText(PROFILE.email).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, []);
+
+  return (
+    <section className="relative flex h-[calc(100svh-3.5rem)] min-h-[560px] flex-col justify-between overflow-hidden px-6 pt-8 pb-10 sm:px-12">
+      <GrowingTree />
+      {/* top meta */}
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-medium tracking-[0.2em] uppercase opacity-40">
+          Frontend Developer
+        </span>
+        <span className="text-[11px] font-medium tracking-[0.2em] uppercase opacity-40">
+          Seoul, KR — 2026
+        </span>
       </div>
+
+      {/* display name */}
+      <div className="select-none">
+        <motion.div
+          initial={{ opacity: 0, y: 60 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <div
+            className="leading-[0.88] font-black tracking-[-0.04em]"
+            style={{ fontSize: "clamp(3.5rem, 20vw, 17rem)" }}
+          >
+            CHOI
+          </div>
+          <div
+            className="leading-[0.88] font-black tracking-[-0.04em]"
+            style={{ fontSize: "clamp(2.2rem, 12.5vw, 10.5rem)" }}
+          >
+            JUNHYUK
+          </div>
+        </motion.div>
+
+        <HeroBio />
+      </div>
+
+      {/* bottom links bar */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.7 }}
+      >
+        <div className="mb-5 h-px bg-current opacity-10" />
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+          <button
+            onClick={copyEmail}
+            className={cn(
+              "text-[11px] tracking-[0.15em] uppercase transition-opacity",
+              copied ? "opacity-60" : "opacity-40 hover:opacity-70",
+            )}
+          >
+            {copied ? "COPIED!" : PROFILE.email}
+          </button>
+          <a
+            href={PROFILE.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] tracking-[0.15em] uppercase opacity-40 transition-opacity hover:opacity-70"
+          >
+            GitHub
+          </a>
+          <a
+            href="https://drive.google.com/file/d/1BuHfXwNXS_RQ0iHGsCH6H3u_mEPVtB76/view?usp=drive_link"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] tracking-[0.15em] uppercase opacity-40 transition-opacity hover:opacity-70"
+          >
+            Portfolio PDF
+          </a>
+          <span className="ml-auto text-[11px] opacity-30">최준혁</span>
+        </div>
+      </motion.div>
     </section>
   );
 }
