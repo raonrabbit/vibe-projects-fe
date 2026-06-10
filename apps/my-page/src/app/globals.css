@@ -8,13 +8,13 @@
     system-ui, sans-serif;
   --font-mono: monospace;
 
-  --color-bg: #ffffff;
-  --color-text-primary: #111827;
+  --color-bg: #faf9f6;
+  --color-text-primary: #141510;
 }
 
 .dark {
-  --color-bg: #030712;
-  --color-text-primary: #f9fafb;
+  --color-bg: #0d0f0c;
+  --color-text-primary: #f0ede6;
 }
 
 body {
@@ -27,6 +27,15 @@ body {
     BlinkMacSystemFont,
     system-ui,
     sans-serif;
+}
+
+@keyframes hero-text-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .scrollbar-hide {

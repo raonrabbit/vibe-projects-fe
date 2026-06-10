@@ -20,7 +20,7 @@ export function ProjectThumbnail({
         src={src}
         alt={alt}
         fill
-        className="object-contain transition-transform duration-300 group-hover:scale-115"
+        className="object-contain transition-transform duration-300 group-hover:scale-105"
         sizes={sizes}
       />
     </div>
