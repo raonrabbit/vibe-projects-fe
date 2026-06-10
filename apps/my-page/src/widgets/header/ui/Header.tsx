@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/shared/lib/cn";
 import { ThemeToggle } from "@/features/theme";
+import { RabbitNest } from "@/features/rabbit";
 import { useActiveSection } from "@/features/active-section";
 
 const SECTION_LINKS = [
@@ -79,6 +80,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-1">
+          <RabbitNest />
           <ThemeToggle className="h-9 w-9" />
 
           <button
