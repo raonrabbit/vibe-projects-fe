@@ -1,154 +1,316 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, animate } from "framer-motion";
+import type { AnimationPlaybackControlsWithThen } from "framer-motion";
 import { RabbitSprite } from "./RabbitSprite";
 
 const RABBIT_H = 33;
 const MARGIN = 20;
 const HEADER_H = 56;
-const HOP_SIZE = 90; // 한 번의 점프로 이동하는 px
+const HOP_SIZE = 90;
 
-// 각 hop의 spring 설정: underdamped(ζ≈0.44)로 착지 시 약 20% 오버슈트
-const HOP_SPRING = {
-  type: "spring" as const,
-  stiffness: 250,
-  damping: 18,
-  mass: 0.6,
-};
+type Phase =
+  | "nest"
+  | "leaving"
+  | "entering-left"
+  | "wandering"
+  | "hopping"
+  | "scrolling"
+  | "approaching"
+  | "exiting-left"
+  | "returning-top";
 
+const ACTIVE_PHASES = new Set<Phase>([
+  "wandering",
+  "hopping",
+  "scrolling",
+  "approaching",
+]);
+
+// Random Y within the visible viewport (viewport coords, for position:fixed)
 function randomViewportY(): number {
-  const scrollY = window.scrollY;
-  const viewportH = window.innerHeight;
   return (
     HEADER_H +
     MARGIN +
-    scrollY +
-    Math.random() * Math.max(0, viewportH - RABBIT_H - HEADER_H - MARGIN * 2)
+    Math.random() *
+      Math.max(0, window.innerHeight - RABBIT_H - HEADER_H - MARGIN * 2)
   );
 }
 
-function isInViewport(pageY: number): boolean {
-  const scrollY = window.scrollY;
-  const viewportH = window.innerHeight;
-  return pageY + RABBIT_H > scrollY && pageY < scrollY + viewportH;
+function isInViewport(viewportY: number): boolean {
+  return viewportY + RABBIT_H > 0 && viewportY < window.innerHeight;
 }
 
-// wandering: 뷰포트 내 배회 (hop 이동 중에는 hopping)
-// scrolling: 스크롤 중 (토끼 Y 고정)
-// approaching: 뷰포트 밖에서 경계까지 빠르게 달려옴
-// hopping: 뷰포트 내에서 껑충껑충
-type Phase = "wandering" | "scrolling" | "approaching" | "hopping";
+function getNestViewportPos() {
+  const el = document.getElementById("rabbit-nest");
+  if (el) {
+    const r = el.getBoundingClientRect();
+    return { x: r.left, y: r.top };
+  }
+  return { x: window.innerWidth - 80, y: (HEADER_H - RABBIT_H) / 2 };
+}
 
 export function RabbitCharacter() {
-  const [pageY, setPageY] = useState<number | null>(null);
+  // All coords are VIEWPORT coords (position: fixed)
+  const mx = useMotionValue(-200);
+  const my = useMotionValue(-200);
+
+  // Separate page-Y tracking: used during active phases to keep the rabbit at
+  // the same page position while the user scrolls.
+  const mPageY = useMotionValue(0);
+
   const [spriteState, setSpriteState] = useState<"idle" | "run" | "react">(
     "idle",
   );
   const [flipX, setFlipX] = useState(false);
 
-  const phaseRef = useRef<Phase>("wandering");
-  const scheduleWanderRef = useRef<() => void>(() => {});
-  const pageYRef = useRef(0);
-  const hopQueueRef = useRef<number[]>([]);
-  const hopIndexRef = useRef(0);
-  const finalYRef = useRef(0); // approach 완료 후 hop 착지 목표
-  const approachDurRef = useRef(0.5);
-  const wanderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const scrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const reactTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const initialized = useRef(false);
+  const phaseRef = useRef<Phase>("nest");
+  const stopRef = useRef<(() => void) | null>(null);
+  const wanderTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reactTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hopGen = useRef(0);
 
-  // 목표까지의 거리를 HOP_SIZE 단위로 쪼개 hop 배열 생성 후 첫 hop 시작
-  const startHops = useCallback((targetY: number) => {
-    const startY = pageYRef.current;
-    const totalDist = Math.abs(targetY - startY);
-    const hopCount = Math.max(1, Math.ceil(totalDist / HOP_SIZE));
-    const hopSize = (targetY - startY) / hopCount;
+  // When mPageY changes (during hop animation), sync my = mPageY - scrollY
+  useEffect(() => {
+    const unsub = mPageY.on("change", (v) => {
+      if (ACTIVE_PHASES.has(phaseRef.current)) {
+        my.set(v - window.scrollY);
+      }
+    });
+    return unsub;
+  }, [mPageY, my]);
 
-    hopQueueRef.current = Array.from(
-      { length: hopCount },
-      (_, i) => startY + hopSize * (i + 1),
-    );
-    hopIndexRef.current = 0;
-    phaseRef.current = "hopping";
-    setFlipX(Math.random() < 0.5);
+  const runAnim = useCallback(
+    (ctrl: AnimationPlaybackControlsWithThen): Promise<void> =>
+      new Promise<void>((resolve) => {
+        const stop = () => {
+          ctrl.stop();
+          resolve();
+        };
+        stopRef.current = stop;
+        ctrl.then(() => {
+          if (stopRef.current === stop) stopRef.current = null;
+          resolve();
+        });
+      }),
+    [],
+  );
 
-    const firstY = hopQueueRef.current[0];
-    pageYRef.current = firstY;
-    setSpriteState("run");
-    setPageY(firstY);
+  const interrupt = useCallback(() => {
+    hopGen.current++; // invalidate any running hopTo loop
+    stopRef.current?.();
+    stopRef.current = null;
+    if (wanderTimer.current) clearTimeout(wanderTimer.current);
   }, []);
 
-  const scheduleWander = useCallback(() => {
-    if (wanderTimerRef.current) clearTimeout(wanderTimerRef.current);
-    const delay = 800 + Math.random() * 2500;
-    wanderTimerRef.current = setTimeout(() => {
-      if (phaseRef.current !== "wandering") return;
-      if (Math.random() > 0.35) {
-        startHops(randomViewportY());
-      } else {
-        scheduleWanderRef.current(); // 가만히 있음
+  const dispatchPhase = (phase: Phase) =>
+    window.dispatchEvent(
+      new CustomEvent("rabbit:phase", { detail: { phase } }),
+    );
+
+  const scheduleWanderRef = useRef<() => void>(() => {});
+
+  // targetViewportY: viewport coordinate target
+  const hopTo = useCallback(
+    async (targetViewportY: number) => {
+      const myGen = ++hopGen.current;
+      phaseRef.current = "hopping";
+
+      const startPageY = mPageY.get();
+      const targetPageY = targetViewportY + window.scrollY;
+      const dist = Math.abs(targetPageY - startPageY);
+      const count = Math.max(1, Math.ceil(dist / HOP_SIZE));
+      const step = (targetPageY - startPageY) / count;
+
+      setSpriteState("run");
+      setFlipX(Math.random() < 0.5);
+
+      for (let i = 0; i < count; i++) {
+        if (hopGen.current !== myGen) return;
+        await runAnim(
+          animate(mPageY, startPageY + step * (i + 1), {
+            type: "spring",
+            stiffness: 250,
+            damping: 18,
+            mass: 0.6,
+          }),
+        );
+        if (hopGen.current !== myGen) return;
       }
-    }, delay);
-  }, [startHops]);
+
+      phaseRef.current = "wandering";
+      setSpriteState("idle");
+      scheduleWanderRef.current();
+    },
+    [mPageY, runAnim],
+  );
+
+  const scheduleWander = useCallback(() => {
+    if (wanderTimer.current) clearTimeout(wanderTimer.current);
+    wanderTimer.current = setTimeout(
+      () => {
+        if (phaseRef.current !== "wandering") return;
+        if (Math.random() > 0.35) hopTo(randomViewportY());
+        else scheduleWanderRef.current();
+      },
+      800 + Math.random() * 2500,
+    );
+  }, [hopTo]);
 
   useEffect(() => {
     scheduleWanderRef.current = scheduleWander;
   }, [scheduleWander]);
 
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-    const y = randomViewportY();
-    pageYRef.current = y;
-    setPageY(y);
+  const doLeave = useCallback(async () => {
+    if (phaseRef.current !== "nest") return;
+    phaseRef.current = "leaving";
+    dispatchPhase("leaving");
+
+    const nest = getNestViewportPos();
+    mx.set(nest.x);
+    my.set(nest.y);
+    setSpriteState("run");
+    setFlipX(false);
+
+    // Fly upward off-screen
+    await runAnim(
+      animate(my, -100, { duration: 0.4, ease: [0.4, 0, 0.8, 0.1] }),
+    );
+    if (phaseRef.current !== "leaving") return;
+
+    // Pop in from left side
+    phaseRef.current = "entering-left";
+    const targetVY = randomViewportY();
+    mx.set(-60);
+    my.set(targetVY);
+    setFlipX(false);
+
+    await runAnim(animate(mx, 20, { duration: 0.5, ease: [0.25, 0, 0.05, 1] }));
+    if (phaseRef.current !== "entering-left") return;
+
+    // Sync page Y so scroll-tracking works correctly
+    mPageY.set(my.get() + window.scrollY);
+    phaseRef.current = "wandering";
+    dispatchPhase("wandering");
+    setSpriteState("idle");
     scheduleWander();
-    return () => {
-      if (wanderTimerRef.current) clearTimeout(wanderTimerRef.current);
-    };
-  }, [scheduleWander]);
+  }, [mx, my, mPageY, runAnim, scheduleWander]);
+
+  const doReturn = useCallback(async () => {
+    if (!ACTIVE_PHASES.has(phaseRef.current)) return;
+    interrupt();
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+
+    phaseRef.current = "exiting-left";
+    dispatchPhase("exiting-left");
+    setSpriteState("run");
+    setFlipX(true);
+    // my is already at correct viewport Y (kept in sync by scroll handler)
+
+    await runAnim(animate(mx, -80, { duration: 0.4, ease: [0.5, 0, 0.8, 0] }));
+    if (phaseRef.current !== "exiting-left") return;
+
+    // Drop from top into nest
+    phaseRef.current = "returning-top";
+    const nest = getNestViewportPos();
+    mx.set(nest.x);
+    my.set(-100);
+    setFlipX(false);
+
+    await runAnim(
+      animate(my, nest.y, {
+        type: "spring",
+        stiffness: 300,
+        damping: 38,
+        mass: 0.8,
+      }),
+    );
+    if (phaseRef.current !== "returning-top") return;
+
+    phaseRef.current = "nest";
+    dispatchPhase("nest");
+    setSpriteState("idle");
+  }, [mx, my, runAnim, interrupt]);
+
+  const handleClick = useCallback(() => {
+    if (phaseRef.current === "nest") {
+      doLeave();
+    } else if (ACTIVE_PHASES.has(phaseRef.current)) {
+      interrupt();
+      hopTo(randomViewportY());
+    }
+  }, [doLeave, hopTo, interrupt]);
+
+  const triggerReact = useCallback(() => {
+    if (phaseRef.current !== "wandering") return;
+    setSpriteState("react");
+    if (reactTimer.current) clearTimeout(reactTimer.current);
+    reactTimer.current = setTimeout(() => setSpriteState("idle"), 700);
+  }, []);
+
+  // Init: place rabbit at nest in header
+  useEffect(() => {
+    const nest = getNestViewportPos();
+    mx.set(nest.x);
+    my.set(nest.y);
+    mPageY.set(nest.y + window.scrollY);
+    phaseRef.current = "nest";
+    dispatchPhase("nest");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
+    const handler = () => doReturn();
+    window.addEventListener("rabbit:recall", handler);
+    return () => window.removeEventListener("rabbit:recall", handler);
+  }, [doReturn]);
+
+  // Scroll: keep the rabbit at the same page position by adjusting viewport Y
+  useEffect(() => {
     const onScroll = () => {
+      if (!ACTIVE_PHASES.has(phaseRef.current)) return;
+
+      // Keep fixed position tracking page Y
+      my.set(mPageY.get() - window.scrollY);
+
       if (phaseRef.current !== "scrolling") {
-        if (wanderTimerRef.current) clearTimeout(wanderTimerRef.current);
-        hopQueueRef.current = []; // 진행 중인 hop 큐 초기화
+        interrupt();
         phaseRef.current = "scrolling";
         setSpriteState("idle");
       }
-
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
-      scrollTimerRef.current = setTimeout(() => {
-        if (isInViewport(pageYRef.current)) {
+      if (scrollTimer.current) clearTimeout(scrollTimer.current);
+      scrollTimer.current = setTimeout(async () => {
+        const currVY = my.get(); // viewport Y
+        if (isInViewport(currVY)) {
           phaseRef.current = "wandering";
           scheduleWander();
         } else {
-          const scrollY = window.scrollY;
-          const viewportH = window.innerHeight;
-          const isAbove = pageYRef.current < scrollY;
-
-          // 1단계: 뷰포트 경계까지 빠르게
-          const edgeY = isAbove
-            ? scrollY + HEADER_H + MARGIN
-            : scrollY + viewportH - RABBIT_H - MARGIN;
-
-          // 2단계: 뷰포트 중앙부(20~80%) 랜덤 착지
-          const midMin = scrollY + viewportH * 0.2;
-          const midMax = scrollY + viewportH * 0.8 - RABBIT_H;
-          finalYRef.current =
-            midMin + Math.random() * Math.max(0, midMax - midMin);
-
-          const distance = Math.abs(edgeY - pageYRef.current);
-          approachDurRef.current = Math.min(
-            0.6,
-            Math.max(0.2, distance / 1500),
-          );
+          const isAbove = currVY < 0;
+          const edgeVY = isAbove
+            ? HEADER_H + MARGIN
+            : window.innerHeight - RABBIT_H - MARGIN;
+          const midVY =
+            window.innerHeight * 0.2 +
+            Math.random() * Math.max(0, window.innerHeight * 0.6 - RABBIT_H);
 
           phaseRef.current = "approaching";
-          pageYRef.current = edgeY;
           setSpriteState("run");
-          setPageY(edgeY);
+          const dur = Math.min(
+            0.6,
+            Math.max(0.2, Math.abs(edgeVY - currVY) / 1500),
+          );
+          // Animate mPageY so scroll-sync stays consistent
+          const edgePageY = edgeVY + window.scrollY;
+          await runAnim(
+            animate(mPageY, edgePageY, {
+              duration: dur,
+              ease: [0.25, 0, 0.05, 1],
+            }),
+          );
+          if (phaseRef.current !== "approaching") return;
+          hopTo(midVY);
         }
       }, 300);
     };
@@ -156,69 +318,47 @@ export function RabbitCharacter() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
-      if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+      if (scrollTimer.current) clearTimeout(scrollTimer.current);
     };
-  }, [scheduleWander]);
+  }, [my, mPageY, interrupt, scheduleWander, hopTo, runAnim]);
 
-  const onAnimationComplete = useCallback(() => {
-    const phase = phaseRef.current;
+  // Re-sync nest position on resize so the rabbit doesn't disappear when
+  // viewport width changes while it's sitting in the header.
+  useEffect(() => {
+    const onResize = () => {
+      if (phaseRef.current !== "nest") return;
+      const nest = getNestViewportPos();
+      mx.set(nest.x);
+      my.set(nest.y);
+      mPageY.set(nest.y + window.scrollY);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [mx, my, mPageY]);
 
-    if (phase === "approaching") {
-      // 경계 도착 → hop으로 착지
-      startHops(finalYRef.current);
-    } else if (phase === "hopping") {
-      hopIndexRef.current++;
-      if (hopIndexRef.current < hopQueueRef.current.length) {
-        // 다음 hop
-        const nextY = hopQueueRef.current[hopIndexRef.current];
-        pageYRef.current = nextY;
-        setPageY(nextY);
-      } else {
-        // 모든 hop 완료
-        setSpriteState("idle");
-        phaseRef.current = "wandering";
-        scheduleWander();
-      }
-    }
-    // "scrolling": 진행 중이던 hop이 자연스럽게 끝남 (별도 처리 불필요)
-  }, [scheduleWander, startHops]);
-
-  const triggerReact = useCallback(() => {
-    if (phaseRef.current !== "wandering") return;
-    setSpriteState("react");
-    if (reactTimerRef.current) clearTimeout(reactTimerRef.current);
-    reactTimerRef.current = setTimeout(() => setSpriteState("idle"), 700);
-  }, []);
-
-  if (pageY === null) return null;
-
-  const isRunning = spriteState === "run";
-  // eslint-disable-next-line react-hooks/refs
-  const phase = phaseRef.current;
-
-  const transition = (() => {
-    if (!isRunning) return { duration: 0 };
-    if (phase === "approaching") {
-      return {
-        // eslint-disable-next-line react-hooks/refs
-        duration: approachDurRef.current,
-        ease: [0.25, 0, 0.05, 1] as const,
-      };
-    }
-    return HOP_SPRING; // hopping: 각 hop마다 spring으로 탱탱 튀김
-  })();
+  useEffect(() => {
+    return () => {
+      interrupt();
+      if (scrollTimer.current) clearTimeout(scrollTimer.current);
+      if (reactTimer.current) clearTimeout(reactTimer.current);
+    };
+  }, [interrupt]);
 
   return (
     <motion.div
-      style={{ position: "absolute", left: 20, zIndex: 40, cursor: "pointer" }}
-      initial={false}
-      animate={{ top: pageY }}
-      transition={transition}
-      onAnimationComplete={onAnimationComplete}
+      style={{
+        position: "fixed",
+        left: 0,
+        top: 0,
+        x: mx,
+        y: my,
+        zIndex: 55,
+        cursor: "pointer",
+      }}
+      onClick={handleClick}
       onHoverStart={triggerReact}
-      onClick={triggerReact}
     >
-      <RabbitSprite state={spriteState} direction="down" flipX={flipX} />
+      <RabbitSprite state={spriteState} flipX={flipX} />
     </motion.div>
   );
 }
