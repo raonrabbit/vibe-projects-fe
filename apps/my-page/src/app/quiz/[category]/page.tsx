@@ -16,6 +16,7 @@ const VALID_CATEGORIES = [
   "network",
   "javascript",
   "react",
+  "coding",
 ] as const;
 
 type ValidCategory = (typeof VALID_CATEGORIES)[number];

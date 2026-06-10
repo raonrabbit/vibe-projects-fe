@@ -18,6 +18,7 @@ const CATEGORIES: QuizCategory[] = [
   "network",
   "javascript",
   "react",
+  "coding",
 ];
 
 export default function QuizIndexPage() {

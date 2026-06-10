@@ -80,6 +80,26 @@ body {
   background-color: rgba(255, 255, 255, 0.08);
 }
 
+/* quiz code blocks: shiki dual-theme (client-side, MarkdownBlock) */
+.quiz-code .shiki {
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-family: var(--font-mono, monospace);
+  line-height: 1.625;
+  background-color: var(--shiki-light-bg);
+  overflow-x: auto;
+}
+.dark .quiz-code .shiki {
+  background-color: var(--shiki-dark-bg);
+}
+.quiz-code .shiki span {
+  color: var(--shiki-light);
+}
+.dark .quiz-code .shiki span {
+  color: var(--shiki-dark);
+}
+
 /* rehype-pretty-code: dual theme (class-based dark mode) */
 code[data-theme*=" "],
 code[data-theme*=" "] span {

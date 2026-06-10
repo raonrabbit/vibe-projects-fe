@@ -7,6 +7,7 @@ import { DATA_STRUCTURES_QUESTIONS } from "./data-structures";
 import { NETWORK_QUESTIONS } from "./network";
 import { JAVASCRIPT_QUESTIONS } from "./javascript";
 import { REACT_QUESTIONS } from "./react";
+import { CODING_QUESTIONS } from "./coding";
 
 export const QUIZ_QUESTIONS = [
   ...CS_BASICS_QUESTIONS,
@@ -15,4 +16,5 @@ export const QUIZ_QUESTIONS = [
   ...NETWORK_QUESTIONS,
   ...JAVASCRIPT_QUESTIONS,
   ...REACT_QUESTIONS,
+  ...CODING_QUESTIONS,
 ];
