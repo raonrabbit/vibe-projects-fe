@@ -73,7 +73,7 @@ export default async function ProjectDetailPage({ params }: Props) {
           }),
         }}
       />
-      <main className="min-h-screen bg-white px-6 py-16 dark:bg-zinc-950">
+      <main className="min-h-screen px-6 py-16">
         <div className="mx-auto max-w-3xl">
           {/* 뒤로가기 */}
           <Link
