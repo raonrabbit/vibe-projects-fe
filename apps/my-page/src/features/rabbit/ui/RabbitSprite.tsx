@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 export interface RabbitSpriteProps {
   state: "idle" | "run" | "react";
@@ -127,6 +127,12 @@ const REACT_FRAMES: Frame[] = [
   ],
 ];
 
+function subscribeDarkMode(cb: () => void) {
+  const observer = new MutationObserver(cb);
+  observer.observe(document.documentElement, { attributeFilter: ["class"] });
+  return () => observer.disconnect();
+}
+
 const COLS = 12;
 const ROWS = 11;
 const PX = 3; // each pixel = 3×3 SVG units
@@ -166,21 +172,12 @@ export function RabbitSprite({
   flipX = false,
 }: RabbitSpriteProps) {
   const [frameIndex, setFrameIndex] = useState(0);
-  const [isDark, setIsDark] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      document.documentElement.classList.contains("dark"),
+  const isDark = useSyncExternalStore(
+    subscribeDarkMode,
+    () => document.documentElement.classList.contains("dark"),
+    () => false,
   );
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const observer = new MutationObserver(() =>
-      setIsDark(root.classList.contains("dark")),
-    );
-    observer.observe(root, { attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     if (timerRef.current !== null) {
