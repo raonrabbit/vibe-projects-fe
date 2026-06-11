@@ -153,6 +153,13 @@ export const NETWORK_QUESTIONS: QuizQuestion[] = [
       "쿠키는 브라우저에, 세션은 서버에 데이터를 저장합니다. 세션 기반 인증에서 서버는 세션을 생성하고 세션 ID만 쿠키로 클라이언트에 전달합니다. 이후 요청마다 쿠키의 세션 ID를 서버 저장소(DB·Redis)에서 조회하여 사용자를 식별합니다. 쿠키는 클라이언트에 저장되어 보안에 취약할 수 있지만 HttpOnly·Secure 속성으로 보완합니다. 세션은 서버에서 즉시 무효화할 수 있지만 서버 확장 시 세션 공유가 필요합니다.",
   },
   {
+    id: "net-18b",
+    category: "network",
+    question: "JWT란 무엇인가요?",
+    answer:
+      "JSON Web Token의 약자로, 인증 정보를 서버가 아닌 토큰 자체에 담아 전달하는 방식입니다. Header(알고리즘 정보).Payload(사용자 정보).Signature 세 부분을 점(.)으로 이어붙인 구조입니다. 서버는 요청을 받을 때 Signature를 비밀키로 검증해 토큰이 위변조되지 않았음을 확인합니다. Payload는 Base64로 인코딩만 된 것이라 누구나 디코딩해서 볼 수 있으므로, 비밀번호 같은 민감한 정보는 담으면 안 됩니다.",
+  },
+  {
     id: "net-19",
     category: "network",
     question: "JWT의 장단점은?",
@@ -303,5 +310,12 @@ export const NETWORK_QUESTIONS: QuizQuestion[] = [
       "프론트엔드 성능 최적화 방법을 크게 세 가지 관점으로 설명해주세요.",
     answer:
       "① 로딩 최적화(LCP 개선): 이미지 WebP/AVIF 포맷 변환, loading='lazy' 지연 로딩, CDN으로 정적 자산 배포, link rel='preload'로 중요 리소스 우선 요청. ② 렌더링 최적화(INP/CLS 개선): transform·opacity 사용으로 Reflow 회피, 긴 목록은 가상화(Virtualization)로 DOM 수 최소화, 이미지에 width·height 명시로 CLS 방지, React 18의 startTransition으로 낮은 우선순위 업데이트 구분. ③ 번들 최적화: 코드 스플리팅(라우트·컴포넌트 단위 dynamic import), Tree Shaking으로 사용하지 않는 코드 제거, 정적 자산에 Cache-Control: max-age=31536000, immutable 설정.",
+  },
+  {
+    id: "net-37",
+    category: "network",
+    question: "세션 인증과 JWT 중 언제 어떤 방식을 선택하나요?",
+    answer:
+      "서버가 여러 대인 수평 확장 환경이라면 JWT가 유리합니다. 세션은 서버 메모리에 상태를 저장하기 때문에 로드 밸런서 뒤에서는 세션 공유를 위한 별도 저장소(Redis 등)가 필요합니다. JWT는 토큰 자체에 정보가 담겨 서버가 상태를 저장하지 않아도 됩니다. 반면 즉시 무효화가 중요하다면(강제 로그아웃, 계정 정지) 세션이 유리합니다. JWT는 만료 전까지 무효화할 수 없기 때문입니다. 실무에서는 짧은 수명의 Access Token과 서버에서 관리하는 Refresh Token을 조합해 두 방식의 장점을 취합니다.",
   },
 ];
