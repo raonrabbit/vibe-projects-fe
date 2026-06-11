@@ -58,7 +58,7 @@ export const CS_BASICS_QUESTIONS: QuizQuestion[] = [
     category: "cs-basics",
     question: "Race Condition(경쟁 조건)이란 무엇이고, 어떻게 해결하나요?",
     answer:
-      "Race Condition은 둘 이상의 스레드가 공유 자원에 동시에 접근할 때, 실행 순서에 따라 결과가 달라지는 문제입니다. 예를 들어 두 스레드가 동시에 count++를 실행하면, read→increment→write 사이에 다른 스레드가 끼어들어 최종값이 2가 아닌 1이 될 수 있습니다. 해결 방법은 Mutex(뮤텍스): 한 번에 하나의 스레드만 임계 구역에 진입하도록 잠금을 사용하고, Semaphore(세마포어): N개 스레드까지 동시 접근을 허용합니다. JavaScript는 싱글 스레드이므로 기본적으로 Race Condition이 발생하지 않습니다.",
+      "둘 이상의 스레드가 공유 자원에 동시에 접근할 때 실행 순서에 따라 결과가 달라지는 문제입니다. count++은 내부적으로 읽기→증가→쓰기 세 단계인데, 두 스레드가 동시에 실행하면 그 사이에 다른 스레드가 끼어들어 최종값이 1만 증가할 수 있습니다. 해결 방법은 Mutex(한 번에 하나의 스레드만 임계 구역에 진입하도록 잠금)와 Semaphore(N개 스레드까지 동시 접근 허용)입니다. JavaScript는 싱글 스레드라 기본적으로 Race Condition이 발생하지 않습니다.",
     isAdvanced: true,
   },
   {

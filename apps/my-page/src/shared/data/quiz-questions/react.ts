@@ -279,4 +279,19 @@ export const REACT_QUESTIONS: QuizQuestion[] = [
       "Context API는 React 내장 기능으로 별도 라이브러리 불필요하지만, 구독하는 모든 컴포넌트가 value 변경 시 리렌더링되어 세밀한 최적화가 어렵습니다. Zustand 같은 라이브러리는 selector 기반으로 필요한 상태 조각만 구독할 수 있어 불필요한 리렌더링을 방지합니다. 단순한 테마·언어 설정 같은 전역 공유 상태는 Context로 충분하지만, 빈번하게 업데이트되는 복잡한 전역 상태는 외부 라이브러리가 더 적합합니다.",
     isAdvanced: true,
   },
+  {
+    id: "react-34",
+    category: "react",
+    question: "useMemo와 useCallback은 언제 써야 하나요?",
+    answer:
+      "실제 성능 문제가 확인됐을 때 사용합니다. useMemo는 계산 비용이 높은 연산 결과를 캐싱할 때, useCallback은 React.memo로 감싼 자식 컴포넌트에 함수 prop을 전달하거나 useEffect 의존성 배열에 함수를 포함할 때 씁니다. 모든 곳에 남용하면 메모이제이션 비교 비용이 쌓이고 코드 복잡도만 높아집니다. 먼저 React DevTools Profiler로 어느 컴포넌트가 불필요하게 렌더링되는지 확인하고 나서 적용하는 게 원칙입니다.",
+  },
+  {
+    id: "react-35",
+    category: "react",
+    question:
+      "Server Component와 Client Component 중 어떤 기준으로 선택하나요?",
+    answer:
+      "인터랙션이 필요 없는 컴포넌트는 기본적으로 Server Component로 둡니다. DB나 파일시스템에 직접 접근하거나, 번들 크기를 줄여야 하거나, API 키처럼 노출되면 안 되는 정보를 다룰 때 Server Component가 적합합니다. useState·useEffect·이벤트 핸들러가 필요하거나 브라우저 API를 사용해야 한다면 'use client'를 선언합니다. Next.js App Router에서는 기본이 Server Component이므로, 클라이언트가 꼭 필요한 최소한의 컴포넌트에만 'use client'를 붙이는 방식이 권장됩니다.",
+  },
 ];
