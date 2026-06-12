@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 body {
-    background-color: #0a0806;
+  background-color: #0a0806;
 }
 
 /* ─── FlightRail Design System ────────────────────────────────────────────
@@ -13,143 +13,143 @@ body {
  * ─────────────────────────────────────────────────────────────────────────── */
 
 @theme {
-    /* ── Backgrounds ─────────────────────────────────────────── */
-    --color-fr-base: #060c18; /* deepest — page root */
-    --color-fr-surface: #091524; /* cards, panels */
-    --color-fr-elevated: #0d1826; /* elevated surfaces */
-    --color-fr-overlay: #0c1521; /* semi-opaque overlays */
-    --color-fr-deep: #040810; /* gradient bottom */
+  /* ── Backgrounds ─────────────────────────────────────────── */
+  --color-fr-base: #060c18; /* deepest — page root */
+  --color-fr-surface: #091524; /* cards, panels */
+  --color-fr-elevated: #0d1826; /* elevated surfaces */
+  --color-fr-overlay: #0c1521; /* semi-opaque overlays */
+  --color-fr-deep: #040810; /* gradient bottom */
 
-    /* ── Accent — Sky blue (primary CTA, active state) ───────── */
-    --color-fr-sky: #38bdf8;
-    --color-fr-sky-hi: #7dd3fc;
-    --color-fr-sky-deep: #0a3a47; /* dark CTA background */
+  /* ── Accent — Sky blue (primary CTA, active state) ───────── */
+  --color-fr-sky: #38bdf8;
+  --color-fr-sky-hi: #7dd3fc;
+  --color-fr-sky-deep: #0a3a47; /* dark CTA background */
 
-    /* ── Accent — Amber (destinations, secondary) ────────────── */
-    --color-fr-amber: #fbbf24;
+  /* ── Accent — Amber (destinations, secondary) ────────────── */
+  --color-fr-amber: #fbbf24;
 
-    /* ── Passport — cover (dark navy-teal spine) ─────────────── */
-    --color-fr-passport-cover: #091828;
-    --color-fr-passport-spine: #060f1e;
-    --color-fr-passport-border: #162840;
+  /* ── Passport — cover (dark navy-teal spine) ─────────────── */
+  --color-fr-passport-cover: #091828;
+  --color-fr-passport-spine: #060f1e;
+  --color-fr-passport-border: #162840;
 
-    /* ── Passport — data page (parchment + ink) ──────────────── */
-    --color-fr-gold: #c8a040;
-    --color-fr-parchment: #f8f3ec;
-    --color-fr-parchment-mid: #f4f0e8;
-    --color-fr-parchment-dim: #e4ddd0;
-    --color-fr-parchment-muted: #e8e0d0;
-    --color-fr-parchment-border: #cdc5b5;
-    --color-fr-ink: #1e1810;
-    --color-fr-ink-mid: #4a4030;
-    --color-fr-ink-dim: #9a9080;
+  /* ── Passport — data page (parchment + ink) ──────────────── */
+  --color-fr-gold: #c8a040;
+  --color-fr-parchment: #f8f3ec;
+  --color-fr-parchment-mid: #f4f0e8;
+  --color-fr-parchment-dim: #e4ddd0;
+  --color-fr-parchment-muted: #e8e0d0;
+  --color-fr-parchment-border: #cdc5b5;
+  --color-fr-ink: #1e1810;
+  --color-fr-ink-mid: #4a4030;
+  --color-fr-ink-dim: #9a9080;
 
-    /* ── Status ──────────────────────────────────────────────── */
-    --color-fr-success: #10b981;
-    --color-fr-warning: #f59e0b;
-    --color-fr-danger: #ef4444;
+  /* ── Status ──────────────────────────────────────────────── */
+  --color-fr-success: #10b981;
+  --color-fr-warning: #f59e0b;
+  --color-fr-danger: #ef4444;
 
-    /* ── Typography scale ────────────────────────────────────── */
-    /* text-fr-{name} → sets font-size                           */
-    --font-size-fr-display: 2.25rem; /* 36px — large stat numbers  */
-    --font-size-fr-heading: 1.5rem; /* 24px — page titles         */
-    --font-size-fr-body: 0.875rem; /* 14px — primary body        */
-    --font-size-fr-body-sm: 0.8125rem; /* 13px — secondary body      */
-    --font-size-fr-caption: 0.75rem; /* 12px — captions, hints     */
-    --font-size-fr-label: 0.6875rem; /* 11px — badges, labels      */
-    --font-size-fr-micro: 0.5625rem; /* 9px  — SECTION HEADERS     */
+  /* ── Typography scale ────────────────────────────────────── */
+  /* text-fr-{name} → sets font-size                           */
+  --font-size-fr-display: 2.25rem; /* 36px — large stat numbers  */
+  --font-size-fr-heading: 1.5rem; /* 24px — page titles         */
+  --font-size-fr-body: 0.875rem; /* 14px — primary body        */
+  --font-size-fr-body-sm: 0.8125rem; /* 13px — secondary body      */
+  --font-size-fr-caption: 0.75rem; /* 12px — captions, hints     */
+  --font-size-fr-label: 0.6875rem; /* 11px — badges, labels      */
+  --font-size-fr-micro: 0.5625rem; /* 9px  — SECTION HEADERS     */
 
-    /* ── Border radius ───────────────────────────────────────── */
-    /* rounded-fr-{name}                                          */
-    --radius-fr-card: 1.5rem; /* 24px — major containers */
-    --radius-fr-panel: 1rem; /* 16px — cards, modals    */
-    --radius-fr-button: 0.75rem; /* 12px — buttons, inputs  */
-    --radius-fr-pill: 9999px; /* full pill               */
+  /* ── Border radius ───────────────────────────────────────── */
+  /* rounded-fr-{name}                                          */
+  --radius-fr-card: 1.5rem; /* 24px — major containers */
+  --radius-fr-panel: 1rem; /* 16px — cards, modals    */
+  --radius-fr-button: 0.75rem; /* 12px — buttons, inputs  */
+  --radius-fr-pill: 9999px; /* full pill               */
 
-    /* ── Named animations ────────────────────────────────────── */
-    /* animate-fr-{name}                                          */
-    --animate-fr-drift: fr-drift 5s ease-in-out infinite;
-    --animate-fr-blink: fr-blink 1.4s step-end infinite;
-    --animate-fr-pulse-slow: fr-pulse-slow 2.5s ease-in-out infinite;
+  /* ── Named animations ────────────────────────────────────── */
+  /* animate-fr-{name}                                          */
+  --animate-fr-drift: fr-drift 5s ease-in-out infinite;
+  --animate-fr-blink: fr-blink 1.4s step-end infinite;
+  --animate-fr-pulse-slow: fr-pulse-slow 2.5s ease-in-out infinite;
 }
 
 /* ── Keyframes ──────────────────────────────────────────────────────────── */
 
 @keyframes fr-drift {
-    0%,
-    100% {
-        transform: translate(0, 0) rotate(0deg);
-    }
-    33% {
-        transform: translate(5px, -3px) rotate(0.8deg);
-    }
-    66% {
-        transform: translate(-3px, 4px) rotate(-0.5deg);
-    }
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(5px, -3px) rotate(0.8deg);
+  }
+  66% {
+    transform: translate(-3px, 4px) rotate(-0.5deg);
+  }
 }
 
 @keyframes fr-blink {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0;
-    }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 @keyframes fr-pulse-slow {
-    0%,
-    100% {
-        opacity: 0.2;
-    }
-    50% {
-        opacity: 0.6;
-    }
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 @keyframes fr-slide-up {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fr-slide-down {
-    from {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    to {
-        opacity: 0;
-        transform: translateY(10px);
-    }
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
 }
 
 /* ── Custom scrollbar ───────────────────────────────────────────────────── */
 
 .fr-scrollbar::-webkit-scrollbar {
-    width: 3px;
-    height: 3px;
+  width: 3px;
+  height: 3px;
 }
 
 .fr-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+  background: transparent;
 }
 
 .fr-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(56, 189, 248, 0.2);
-    border-radius: 9999px;
+  background: rgba(56, 189, 248, 0.2);
+  border-radius: 9999px;
 }
 
 .fr-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(56, 189, 248, 0.45);
+  background: rgba(56, 189, 248, 0.45);
 }
 
 .fr-scrollbar::-webkit-scrollbar-corner {
-    background: transparent;
+  background: transparent;
 }

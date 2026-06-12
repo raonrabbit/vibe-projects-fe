@@ -5,5 +5,5 @@ import { TimerPage } from "@/views/timer";
 export const metadata: Metadata = { robots: { index: false } };
 
 export default function TimerRoute() {
-    return <TimerPage />;
+  return <TimerPage />;
 }

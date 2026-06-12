@@ -4,12 +4,12 @@
 
 ## Stack
 
-- Framework: Next.js 15 (App Router)
+- Framework: Next.js 16 (App Router)
 - Styling: Tailwind CSS v4
 - 3D: React Three Fiber (R3F) + @react-three/drei + Three.js
 - Map: D3.js (세계지도 캔버스 → Three.js 텍스처)
 - Auth + DB: Supabase (Google OAuth)
-- UI Components: `@vibe/ui` (단순 버튼/입력 등만 재사용)
+- UI Components: `shared/ui/` (앱 전용)
 
 ## Architecture
 
