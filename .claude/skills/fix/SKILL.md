@@ -79,7 +79,7 @@ type FooProps = HTMLAttributes<HTMLDivElement>;
     권장: className="text-accent"
     이유: 시맨틱 토큰을 써야 다크모드·테마 변경에 대응 가능
 
-  • 12번째 줄 — Next.js import 금지 (packages/ui 규칙)
+  • 12번째 줄 — Next.js import 금지 (CLAUDE.md 규칙)
     현재: import Image from "next/image"
     권장: <img> 또는 소비하는 앱에서 주입
 

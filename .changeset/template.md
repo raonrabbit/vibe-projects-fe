@@ -1,6 +1,6 @@
 ---
 type: patch # patch | minor | major
-package: "@vibe/ui"
+package: "@vibe/tsconfig" # or @vibe/eslint-config
 ---
 
 ## Summary
@@ -9,4 +9,4 @@ package: "@vibe/ui"
 
 ## Impact on consumers
 
-<!-- What apps/dev-news developers need to know: safe update, API change, visual change -->
+<!-- What apps need to know: safe update, config change, breaking change -->

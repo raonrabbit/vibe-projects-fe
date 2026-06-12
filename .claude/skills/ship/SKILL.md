@@ -24,11 +24,13 @@ Create a branch, commit changes, push, and open a PR for review — never push d
 | Scope | Path |
 |-------|------|
 <!-- workspace-scopes:start -->
-| `ui` | `packages/ui/` |
+| `tsconfig` | `packages/tsconfig/` |
+| `eslint-config` | `packages/eslint-config/` |
 | `figma-plugin` | `packages/figma-plugin/` |
 | `dev-news` | `apps/dev-news/` |
 | `mercari-kor` | `apps/mercari-kor/` |
 | `my-page` | `apps/my-page/` |
+| `flightrail` | `apps/flightrail/` |
 <!-- workspace-scopes:end -->
 | `config` | root config files (`.claude/`, `turbo.json`, etc.) |
 | `deps` | dependency changes (`pnpm-lock.yaml`, `package.json`) |
@@ -42,7 +44,7 @@ Create a branch, commit changes, push, and open a PR for review — never push d
 
 ```
 feat(dev-news): add article card hover animation    → branch: feat/article-card-hover
-fix(ui): correct button disabled state color        → branch: fix/button-disabled-color
+fix(eslint-config): correct peer dependency range   → branch: fix/eslint-peer-dep
 chore(config): add md-check hook to settings        → branch: chore/md-check-hook
 ```
 
@@ -52,7 +54,7 @@ chore(config): add md-check hook to settings        → branch: chore/md-check-h
 
 2. **Fix — run before anything else.**
 
-    2a. Identify which workspaces have changed files (e.g., `apps/dev-news`, `packages/ui`).
+    2a. Identify which workspaces have changed files (e.g., `apps/dev-news`, `packages/tsconfig`).
 
     2b. For each affected workspace, run `/fix` from that workspace's root directory.
 
@@ -72,8 +74,8 @@ chore(config): add md-check hook to settings        → branch: chore/md-check-h
     [1] chore(config): add md-check hook and git push permission
         .claude/settings.json, .claude/hooks/md-check.ps1
 
-    [2] feat(ui): add design system components and tokens
-        packages/ui/src/, packages/ui/tokens.json, ...
+    [2] chore(tsconfig): update base tsconfig target
+        packages/tsconfig/base.json
 
     [3] feat(dev-news): scaffold Next.js app
         apps/dev-news/
