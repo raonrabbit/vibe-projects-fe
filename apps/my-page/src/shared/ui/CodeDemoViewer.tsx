@@ -70,7 +70,7 @@ function highlightCode(code: string): React.ReactNode[] {
 
   if (lastIndex < code.length) {
     nodes.push(
-      <span key={key++} className="text-zinc-300">
+      <span key={key} className="text-zinc-300">
         {code.slice(lastIndex)}
       </span>,
     );

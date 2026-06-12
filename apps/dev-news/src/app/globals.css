@@ -1,24 +1,21 @@
-@import "@vibe/ui/styles";
-
-/* Scan packages/ui source for utility class detection */
-@source "../../../../packages/ui/src";
+@import "../shared/styles/tokens.css";
 
 @layer base {
-    * {
-        box-sizing: border-box;
-    }
+  * {
+    box-sizing: border-box;
+  }
 
-    body {
-        background-color: var(--color-bg);
-        color: var(--color-text-primary);
-        font-family:
-            "Pretendard Variable",
-            Pretendard,
-            -apple-system,
-            BlinkMacSystemFont,
-            system-ui,
-            sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family:
+      "Pretendard Variable",
+      Pretendard,
+      -apple-system,
+      BlinkMacSystemFont,
+      system-ui,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 }

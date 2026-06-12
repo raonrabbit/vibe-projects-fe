@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { ProjectThumbnail } from "@/shared";
 
 interface ImageGalleryProps {
@@ -15,6 +16,7 @@ export function ImageGallery({ images, alt }: ImageGalleryProps) {
     <div>
       {/* Main image — height 기준으로 채우고 옆 overflow 허용 */}
       <div className="relative h-64 overflow-hidden rounded-2xl sm:h-96">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           key={selectedIndex}
           src={images[selectedIndex]}

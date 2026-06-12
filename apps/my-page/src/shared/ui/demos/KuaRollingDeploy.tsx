@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type DeployStep = "idle" | "push" | "build" | "reload-1" | "reload-2" | "done";
 

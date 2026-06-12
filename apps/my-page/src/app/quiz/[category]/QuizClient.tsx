@@ -1,20 +1,21 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
+import Link from "next/link";
 import {
+  type MutableRefObject,
   useCallback,
   useEffect,
   useRef,
   useState,
-  type MutableRefObject,
 } from "react";
-import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/shared/lib/cn";
+
 import {
   CATEGORY_LABELS,
   type QuizCategory,
   type QuizQuestion,
 } from "@/shared/data/quiz-questions";
+import { cn } from "@/shared/lib/cn";
 import { useQuizProgress } from "@/shared/lib/useQuizProgress";
 import { MarkdownBlock } from "@/shared/ui/MarkdownBlock";
 
@@ -56,16 +57,13 @@ export default function QuizClient({ questions, category }: Props) {
   const [note, setNote] = useState("");
   const [historyStack, setHistoryStack] = useState<number[]>([]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setSorted(sortQuestions(questions, progress));
     setIndex(0);
     setReveal(false);
     setDone(false);
     setHistoryStack([]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [questions]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const current = sorted[index];
   const stats = getStats(questions.map((q) => q.id));
@@ -125,7 +123,7 @@ export default function QuizClient({ questions, category }: Props) {
       if (diff < 0) handleUnknown();
       else handleKnown();
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     [revealed, index, sorted],
   );
 
@@ -146,7 +144,6 @@ export default function QuizClient({ questions, category }: Props) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealed, index, sorted, goBack]);
 
   const handleReset = () => {

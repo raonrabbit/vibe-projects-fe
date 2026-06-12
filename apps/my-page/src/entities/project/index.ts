@@ -1,7 +1,7 @@
-export { PROJECTS } from "./model/projects";
 export type {
-  Project,
-  ProjectHighlight,
   CodeDemoItem,
   CodePanel,
+  Project,
+  ProjectHighlight,
 } from "./model/projects";
+export { PROJECTS } from "./model/projects";

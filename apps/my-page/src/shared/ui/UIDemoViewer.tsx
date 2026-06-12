@@ -1,12 +1,12 @@
 "use client";
 
-import { HangbokdogVaccinationSearchDemo } from "./demos/HangbokdogVaccinationSearch";
-import { HangbokdogOcrDemo } from "./demos/HangbokdogOcr";
-import { DonghangSeniorUIDemo } from "./demos/DonghangSeniorUI";
 import { DonghangDualWindowDemo } from "./demos/DonghangDualWindow";
-import { EzipNewsCardDemo } from "./demos/EzipNewsCard";
+import { DonghangSeniorUIDemo } from "./demos/DonghangSeniorUI";
 import { EzipChatbotDemo } from "./demos/EzipChatbot";
 import { EzipDarkModeDemo } from "./demos/EzipDarkMode";
+import { EzipNewsCardDemo } from "./demos/EzipNewsCard";
+import { HangbokdogOcrDemo } from "./demos/HangbokdogOcr";
+import { HangbokdogVaccinationSearchDemo } from "./demos/HangbokdogVaccinationSearch";
 import { KuaRollingDeployDemo } from "./demos/KuaRollingDeploy";
 
 const DEMO_REGISTRY: Record<string, React.ComponentType> = {

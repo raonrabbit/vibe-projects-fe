@@ -8,9 +8,14 @@ meta:
   default_owner: "@raonrabbit"
 
 packages:
-  - path: packages/ui
-    name: "@vibe/ui"
-    scope: ui
+  - path: packages/tsconfig
+    name: "@vibe/tsconfig"
+    scope: tsconfig
+    owner: "@raonrabbit"
+
+  - path: packages/eslint-config
+    name: "@vibe/eslint-config"
+    scope: eslint-config
     owner: "@raonrabbit"
 
   - path: packages/figma-plugin
@@ -32,4 +37,9 @@ apps:
   - path: apps/my-page
     name: "@vibe/my-page"
     scope: my-page
+    owner: "@raonrabbit"
+
+  - path: apps/flightrail
+    name: "@vibe/flightrail"
+    scope: flightrail
     owner: "@raonrabbit"

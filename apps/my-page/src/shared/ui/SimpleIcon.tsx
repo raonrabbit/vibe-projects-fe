@@ -14,6 +14,7 @@ export function SimpleIcon({
   className,
 }: SimpleIconProps) {
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={`/icons/skills/${slug}.svg`}
       alt={alt}

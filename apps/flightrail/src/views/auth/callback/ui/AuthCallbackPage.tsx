@@ -6,33 +6,31 @@ import { Suspense, useEffect } from "react";
 import { supabase } from "@/shared/lib/supabase";
 
 function Callback() {
-    const router = useRouter();
-    const params = useSearchParams();
+  const router = useRouter();
+  const params = useSearchParams();
 
-    useEffect(() => {
-        const code = params.get("code");
-        if (code) {
-            supabase.auth.exchangeCodeForSession(code).then(() => {
-                router.push("/auth");
-            });
-        } else {
-            router.push("/auth");
-        }
-    }, [params, router]);
+  useEffect(() => {
+    const code = params.get("code");
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(() => {
+        router.push("/auth");
+      });
+    } else {
+      router.push("/auth");
+    }
+  }, [params, router]);
 
-    return (
-        <div className="min-h-screen bg-[#0a0806] flex items-center justify-center">
-            <p className="text-white/40 text-[13px] tracking-wide">
-                인증 처리 중...
-            </p>
-        </div>
-    );
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#0a0806]">
+      <p className="text-[13px] tracking-wide text-white/40">인증 처리 중...</p>
+    </div>
+  );
 }
 
 export default function AuthCallbackPage() {
-    return (
-        <Suspense>
-            <Callback />
-        </Suspense>
-    );
+  return (
+    <Suspense>
+      <Callback />
+    </Suspense>
+  );
 }

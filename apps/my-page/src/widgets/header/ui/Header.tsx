@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/shared/lib/cn";
-import { ThemeToggle } from "@/features/theme";
-import { RabbitNest } from "@/features/rabbit";
+import { useState } from "react";
+
 import { useActiveSection } from "@/features/active-section";
+import { RabbitNest } from "@/features/rabbit";
+import { ThemeToggle } from "@/features/theme";
+import { cn } from "@/shared/lib/cn";
 
 const SECTION_LINKS = [
   { id: "hero", label: "About" },

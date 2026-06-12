@@ -2,6 +2,7 @@
 
 import { cn } from "@/shared/lib/cn";
 import { MoonIcon, SunIcon } from "@/shared/ui/ThemeIcons";
+
 import { useTheme } from "../model/useTheme";
 
 export function ThemeToggle({ className }: { className?: string }) {

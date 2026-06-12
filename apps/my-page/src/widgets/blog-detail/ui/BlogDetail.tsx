@@ -1,9 +1,11 @@
 import Link from "next/link";
+
 import type { Post, PostMeta } from "@/entities/post";
+
+import { BlogNavigation } from "./BlogNavigation";
+import { MdxContent } from "./MdxContent";
 import type { TocHeading } from "./TOC";
 import { TOC } from "./TOC";
-import { MdxContent } from "./MdxContent";
-import { BlogNavigation } from "./BlogNavigation";
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("ko-KR", {

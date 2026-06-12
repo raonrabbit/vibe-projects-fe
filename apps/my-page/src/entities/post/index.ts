@@ -1,1 +1,1 @@
-export type { PostMeta, Post } from "./model/post";
+export type { Post, PostMeta } from "./model/post";

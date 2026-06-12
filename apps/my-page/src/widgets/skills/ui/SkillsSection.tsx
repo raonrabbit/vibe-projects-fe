@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   AnimatePresence,
   motion,
   useMotionValue,
   useSpring,
 } from "framer-motion";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+
 import { SKILL_CATEGORIES } from "@/entities/skill";
 
 const allSkillItems = SKILL_CATEGORIES.flatMap((sc) =>
@@ -38,7 +39,7 @@ function AnimateHeight({ children }: { children: React.ReactNode }) {
     rawHeight.set(h);
     springHeight.set(h);
     initialized.current = true;
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // 이후 컨텐츠 변화는 ResizeObserver로 감지 → spring이 따라감
   useEffect(() => {

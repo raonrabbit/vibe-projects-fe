@@ -72,7 +72,11 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 Structure:
 
 - `apps/dev-news/` — Frontend/AI 뉴스 큐레이션 앱 (Next.js)
-- `packages/ui/` — 공유 디자인 시스템 (모든 앱이 참조)
+- `apps/my-page/` — 개인 포트폴리오 앱 (Next.js)
+- `apps/mercari-kor/` — 메르카리 한국 UX 앱 (Next.js + Supabase)
+- `apps/flightrail/` — 공부 시간 비행 시각화 앱 (Next.js + R3F)
+- `packages/tsconfig/` — 공유 TypeScript 설정 (`@vibe/tsconfig`)
+- `packages/eslint-config/` — 공유 ESLint + Prettier 설정 (`@vibe/eslint-config`)
 - `packages/figma-plugin/` — Figma 플러그인
 
 Rules:
@@ -80,8 +84,9 @@ Rules:
 - Package manager: `pnpm` only. Never use `npm` or `yarn`.
 - Run tasks via `turbo` at root, or `pnpm` inside a specific package.
 - When adding a dependency: specify the workspace target (`pnpm add <pkg> --filter <workspace>`).
-- `packages/ui` components must be framework-agnostic where possible.
-- App-specific logic never goes into `packages/ui`.
+- Common dependency versions are managed in `pnpm-workspace.yaml` `catalog:` block.
+- Each app owns its own UI components in `src/shared/ui/` — no shared component library.
+- App-specific logic never goes into `packages/`.
 
 References:
 
@@ -95,4 +100,4 @@ Run once after cloning to install pre-commit enforcement:
 powershell -File .claude/hooks/install-hooks.ps1
 ```
 
-What it installs: a pre-commit hook that warns when `packages/ui` is staged without a changeset file (`.changeset/*.md`) staged alongside. Set `$env:CHANGESET_BLOCK = '1'` to make it blocking.
+What it installs: a pre-commit hook that warns when `packages/tsconfig` or `packages/eslint-config` is staged without a changeset file (`.changeset/*.md`) staged alongside. Set `$env:CHANGESET_BLOCK = '1'` to make it blocking.

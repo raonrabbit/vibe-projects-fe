@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+
 import { PROJECTS } from "@/entities/project";
 import { getAllPosts } from "@/shared/lib/posts";
 

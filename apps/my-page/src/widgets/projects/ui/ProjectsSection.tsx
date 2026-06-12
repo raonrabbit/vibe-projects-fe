@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback } from "react";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { PROJECTS, type Project } from "@/entities/project";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
+
+import { type Project, PROJECTS } from "@/entities/project";
 
 function ProjectCard({
   project,

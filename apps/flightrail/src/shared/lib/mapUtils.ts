@@ -9,33 +9,33 @@ const WORLD_MAP_TEX_MAX_W = 4096;
 
 /** scaleXZ로 메시를 키울 때 텍스처도 같이 키워 픽셀 깨짐 방지 */
 export function worldMapTextureSize(scaleXZ = 1): {
-    width: number;
-    height: number;
+  width: number;
+  height: number;
 } {
-    const pxPerUnit = 88;
-    const width = Math.min(
-        WORLD_MAP_TEX_MAX_W,
-        Math.max(2048, Math.round(MAP_W * scaleXZ * pxPerUnit)),
-    );
-    return { width, height: Math.round(width / 2) };
+  const pxPerUnit = 88;
+  const width = Math.min(
+    WORLD_MAP_TEX_MAX_W,
+    Math.max(2048, Math.round(MAP_W * scaleXZ * pxPerUnit)),
+  );
+  return { width, height: Math.round(width / 2) };
 }
 
 type WorldTopology = Topology<{
-    land: GeometryCollection;
-    countries: GeometryCollection;
+  land: GeometryCollection;
+  countries: GeometryCollection;
 }>;
 
 export function latLngTo3D(
-    lat: number,
-    lng: number,
-    z = 0.15,
-    scale = 1,
+  lat: number,
+  lng: number,
+  z = 0.15,
+  scale = 1,
 ): [number, number, number] {
-    return [
-        (lng / 180) * (MAP_W / 2) * scale,
-        (lat / 90) * (MAP_H / 2) * scale,
-        z,
-    ];
+  return [
+    (lng / 180) * (MAP_W / 2) * scale,
+    (lat / 90) * (MAP_H / 2) * scale,
+    z,
+  ];
 }
 
 /**
@@ -63,118 +63,118 @@ const AIRCRAFT_LENGTH_KM = 0.073;
  * mapScale이 커져도 PLANE_VIS_MAP_SCALE 기준 크기 유지.
  */
 export function planeWorldScaleForRoute(
-    routeKm: number,
-    routeMapUnits: number,
-    mapScale: number = WORLD_MAP_SCALE,
+  routeKm: number,
+  routeMapUnits: number,
+  mapScale: number = WORLD_MAP_SCALE,
 ): number {
-    const refUnits = routeMapUnits * (PLANE_VIS_MAP_SCALE / mapScale);
-    if (routeKm <= 0 || refUnits <= 0) return 0.08 * PLANE_VIS_MAP_SCALE;
-    const geographic = (AIRCRAFT_LENGTH_KM / routeKm) * refUnits;
-    const min = refUnits * 0.012;
-    const max = refUnits * 0.035;
-    return Math.min(Math.max(geographic, min), max);
+  const refUnits = routeMapUnits * (PLANE_VIS_MAP_SCALE / mapScale);
+  if (routeKm <= 0 || refUnits <= 0) return 0.08 * PLANE_VIS_MAP_SCALE;
+  const geographic = (AIRCRAFT_LENGTH_KM / routeKm) * refUnits;
+  const min = refUnits * 0.012;
+  const max = refUnits * 0.035;
+  return Math.min(Math.max(geographic, min), max);
 }
 
 /** Maps lat/lng to a horizontal (floor) XZ plane. Y is height above the floor. */
 export function latLngToFloor(
-    lat: number,
-    lng: number,
-    y = 0,
-    scale = 1,
+  lat: number,
+  lng: number,
+  y = 0,
+  scale = 1,
 ): [number, number, number] {
-    return [
-        (lng / 180) * (MAP_W / 2) * scale,
-        y,
-        -(lat / 90) * (MAP_H / 2) * scale,
-    ];
+  return [
+    (lng / 180) * (MAP_W / 2) * scale,
+    y,
+    -(lat / 90) * (MAP_H / 2) * scale,
+  ];
 }
 
 export function haversineKm(
-    lat1: number,
-    lng1: number,
-    lat2: number,
-    lng2: number,
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
 ): number {
-    const R = 6371;
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLng = ((lng2 - lng1) * Math.PI) / 180;
-    const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos((lat1 * Math.PI) / 180) *
-            Math.cos((lat2 * Math.PI) / 180) *
-            Math.sin(dLng / 2) ** 2;
-    return R * 2 * Math.asin(Math.sqrt(a));
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.asin(Math.sqrt(a));
 }
 
 export function createWorldMapProjection(
-    width: number,
-    height: number,
+  width: number,
+  height: number,
 ): d3.GeoProjection {
-    return d3.geoEquirectangular().fitSize([width, height], {
-        type: "Sphere",
-    } as d3.GeoPermissibleObjects);
+  return d3.geoEquirectangular().fitSize([width, height], {
+    type: "Sphere",
+  } as d3.GeoPermissibleObjects);
 }
 
 /** 투명 배경 위에 국경선만 그림 (Blue Marble 텍스처와 분리해 업스케일 방지) */
 export async function drawWorldBorders(
-    canvas: HTMLCanvasElement,
+  canvas: HTMLCanvasElement,
 ): Promise<void> {
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
 
-    const { width, height } = canvas;
-    const projection = createWorldMapProjection(width, height);
-    const path = d3.geoPath(projection, ctx);
+  const { width, height } = canvas;
+  const projection = createWorldMapProjection(width, height);
+  const path = d3.geoPath(projection, ctx);
 
-    const world = await d3.json<WorldTopology>("/countries-110m.json");
-    if (!world) return;
+  const world = await d3.json<WorldTopology>("/countries-110m.json");
+  if (!world) return;
 
-    const borders = topojson.mesh(
-        world,
-        world.objects.countries,
-        (a, b) => a !== b,
-    );
+  const borders = topojson.mesh(
+    world,
+    world.objects.countries,
+    (a, b) => a !== b,
+  );
 
-    ctx.clearRect(0, 0, width, height);
-    const lineScale = width / 2048;
-    ctx.beginPath();
-    path(borders);
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
-    ctx.lineWidth = 0.9 * lineScale;
-    ctx.stroke();
+  ctx.clearRect(0, 0, width, height);
+  const lineScale = width / 2048;
+  ctx.beginPath();
+  path(borders);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+  ctx.lineWidth = 0.9 * lineScale;
+  ctx.stroke();
 }
 
 /** @deprecated drawWorldBorders + useTexture("/blue-marble.jpg") 조합으로 대체 */
 export async function drawWorldMap(canvas: HTMLCanvasElement): Promise<void> {
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
 
-    const { width, height } = canvas;
-    const projection = createWorldMapProjection(width, height);
-    const path = d3.geoPath(projection, ctx);
+  const { width, height } = canvas;
+  const projection = createWorldMapProjection(width, height);
+  const path = d3.geoPath(projection, ctx);
 
-    const world = await d3.json<WorldTopology>("/countries-110m.json");
-    if (!world) return;
+  const world = await d3.json<WorldTopology>("/countries-110m.json");
+  if (!world) return;
 
-    const land = topojson.feature(world, world.objects.land);
-    const borders = topojson.mesh(
-        world,
-        world.objects.countries,
-        (a, b) => a !== b,
-    );
+  const land = topojson.feature(world, world.objects.land);
+  const borders = topojson.mesh(
+    world,
+    world.objects.countries,
+    (a, b) => a !== b,
+  );
 
-    ctx.fillStyle = "#0c1a2e";
-    ctx.fillRect(0, 0, width, height);
+  ctx.fillStyle = "#0c1a2e";
+  ctx.fillRect(0, 0, width, height);
 
-    ctx.beginPath();
-    path(land);
-    ctx.fillStyle = "#2a4a6e";
-    ctx.fill();
+  ctx.beginPath();
+  path(land);
+  ctx.fillStyle = "#2a4a6e";
+  ctx.fill();
 
-    const lineScale = width / 2048;
-    ctx.beginPath();
-    path(borders);
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
-    ctx.lineWidth = 0.8 * lineScale;
-    ctx.stroke();
+  const lineScale = width / 2048;
+  ctx.beginPath();
+  path(borders);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+  ctx.lineWidth = 0.8 * lineScale;
+  ctx.stroke();
 }

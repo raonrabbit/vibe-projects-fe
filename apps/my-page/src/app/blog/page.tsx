@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+
 import { getAllPosts } from "@/shared/lib/posts";
 import { BlogList } from "@/widgets/blog-list";
 

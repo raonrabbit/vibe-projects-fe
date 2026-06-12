@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, useMotionValue, animate } from "framer-motion";
 import type { AnimationPlaybackControlsWithThen } from "framer-motion";
+import { animate, motion, useMotionValue } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
+
 import { RabbitSprite } from "./RabbitSprite";
 
 const RABBIT_H = 33;
@@ -258,7 +259,6 @@ export function RabbitCharacter() {
     mPageY.set(nest.y + window.scrollY);
     phaseRef.current = "nest";
     dispatchPhase("nest");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

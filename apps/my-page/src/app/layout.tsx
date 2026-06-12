@@ -1,9 +1,11 @@
+import "./globals.css";
+
 import type { Metadata } from "next";
 import Script from "next/script";
+
 import { ActiveSectionProvider } from "@/features/active-section";
 import { RabbitCharacter } from "@/features/rabbit";
 import { Header } from "@/widgets/header";
-import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.raonrabbit.dev"),
