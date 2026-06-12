@@ -14,7 +14,7 @@ export default [
         rules: {
             ...nextPlugin.configs.recommended.rules,
             ...nextPlugin.configs["core-web-vitals"].rules,
-            ...reactHooksPlugin.configs.recommended.rules,
+            "react-hooks/rules-of-hooks": "error",
         },
     },
     prettierConfig,

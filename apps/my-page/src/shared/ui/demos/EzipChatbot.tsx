@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const PRESET_RESPONSES: Record<string, string> = {
   LTV: "LTV(주택담보대출비율)는 주택 가격 대비 대출 가능 금액의 비율입니다. 예를 들어 LTV 70%라면 5억짜리 주택에 최대 3.5억까지 대출이 가능합니다.",

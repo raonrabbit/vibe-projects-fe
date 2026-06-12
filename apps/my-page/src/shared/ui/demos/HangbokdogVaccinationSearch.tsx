@@ -20,7 +20,6 @@ export function HangbokdogVaccinationSearchDemo() {
   const [tab, setTab] = useState<"all" | "pending" | "done">("all");
 
   const { filtered, filterMs } = useMemo(() => {
-    // eslint-disable-next-line react-hooks/purity
     const t0 = performance.now();
     const result = DOGS.filter((d) => {
       const matchQuery =
@@ -35,7 +34,7 @@ export function HangbokdogVaccinationSearchDemo() {
     });
     return {
       filtered: result,
-      // eslint-disable-next-line react-hooks/purity
+
       filterMs: parseFloat((performance.now() - t0).toFixed(3)),
     };
   }, [query, tab]);

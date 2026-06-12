@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+
 import type { ProjectHighlight } from "@/entities/project";
 import { CodeDemoViewer } from "@/shared/ui/CodeDemoViewer";
 import { UIDemoViewer } from "@/shared/ui/UIDemoViewer";

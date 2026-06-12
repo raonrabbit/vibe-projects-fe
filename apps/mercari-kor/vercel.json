@@ -1,4 +1,4 @@
 {
-    "buildCommand": "cd ../.. && pnpm turbo build --filter @vibe/mercari-kor",
-    "installCommand": "cd ../.. && pnpm install --frozen-lockfile"
+  "buildCommand": "cd ../.. && pnpm turbo build --filter @vibe/mercari-kor",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile"
 }

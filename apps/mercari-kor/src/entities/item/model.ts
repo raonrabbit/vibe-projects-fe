@@ -1,7 +1,7 @@
 export type {
-    MercariItem,
-    MercariItemDetail,
-    BrandSuggestion,
-    SizeOption,
-    SearchResult,
+  BrandSuggestion,
+  MercariItem,
+  MercariItemDetail,
+  SearchResult,
+  SizeOption,
 } from "@/shared/lib/mercari";

@@ -1,8 +1,8 @@
-import { PageSlider } from "@/widgets/page-slider";
-import { HeroSection } from "@/widgets/hero";
-import { SkillsSection } from "@/widgets/skills";
 import { AwardsSection } from "@/widgets/awards";
+import { HeroSection } from "@/widgets/hero";
+import { PageSlider } from "@/widgets/page-slider";
 import { ProjectsSection } from "@/widgets/projects";
+import { SkillsSection } from "@/widgets/skills";
 
 const SECTIONS = [
   { id: "hero", label: "소개", component: <HeroSection /> },

@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import { cn } from "@/shared/lib/cn";
+import { useCallback, useState } from "react";
+
 import { PROFILE } from "@/shared/config/profile";
+import { cn } from "@/shared/lib/cn";
+
 import { GrowingTree } from "./GrowingTree";
 import { HeroBio } from "./HeroBio";
 

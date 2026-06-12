@@ -1,10 +1,12 @@
-import { notFound } from "next/navigation";
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
+
 import {
   CATEGORY_LABELS,
   QUIZ_QUESTIONS,
   type QuizCategory,
 } from "@/shared/data/quiz-questions";
+
 import QuizClient from "./QuizClient";
 import QuizListClient from "./QuizListClient";
 

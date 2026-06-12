@@ -1,9 +1,10 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+
 import {
+  extractHeadings,
   getAllPosts,
   getPostBySlug,
-  extractHeadings,
 } from "@/shared/lib/posts";
 import { BlogDetail } from "@/widgets/blog-detail";
 

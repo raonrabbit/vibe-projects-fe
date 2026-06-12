@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+
 import { useActiveSection } from "@/features/active-section";
 
 export interface SliderSection {

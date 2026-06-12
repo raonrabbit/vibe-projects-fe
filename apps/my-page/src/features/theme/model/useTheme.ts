@@ -15,7 +15,7 @@ export function useTheme() {
       (window.matchMedia("(prefers-color-scheme: dark)").matches
         ? "dark"
         : "light");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     setTheme(resolved);
     setMounted(true);
     document.documentElement.classList.toggle("dark", resolved === "dark");

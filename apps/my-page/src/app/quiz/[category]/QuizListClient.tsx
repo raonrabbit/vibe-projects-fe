@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/shared/lib/cn";
+import { useState } from "react";
+
 import {
   CATEGORY_LABELS,
   type QuizCategory,
   type QuizQuestion,
 } from "@/shared/data/quiz-questions";
+import { cn } from "@/shared/lib/cn";
 import { useQuizProgress } from "@/shared/lib/useQuizProgress";
-import { MarkdownBlock, getQuestionTitle } from "@/shared/ui/MarkdownBlock";
+import { getQuestionTitle, MarkdownBlock } from "@/shared/ui/MarkdownBlock";
 
 interface Props {
   staticQuestions: QuizQuestion[];

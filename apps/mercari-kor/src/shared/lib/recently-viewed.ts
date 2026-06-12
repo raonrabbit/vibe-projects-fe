@@ -8,24 +8,24 @@ let _cachedRaw: string | null = null;
 let _cachedResult: MercariItem[] = [];
 
 export function getRecentlyViewed(): MercariItem[] {
-    if (typeof window === "undefined") return [];
-    try {
-        const raw = localStorage.getItem(KEY) ?? "[]";
-        if (raw !== _cachedRaw) {
-            _cachedRaw = raw;
-            _cachedResult = JSON.parse(raw);
-        }
-        return _cachedResult;
-    } catch {
-        return [];
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(KEY) ?? "[]";
+    if (raw !== _cachedRaw) {
+      _cachedRaw = raw;
+      _cachedResult = JSON.parse(raw);
     }
+    return _cachedResult;
+  } catch {
+    return [];
+  }
 }
 
 export function addRecentlyViewed(item: MercariItem): void {
-    const items = getRecentlyViewed().filter((i) => i.id !== item.id);
-    items.unshift(item);
-    const next = JSON.stringify(items.slice(0, MAX));
-    localStorage.setItem(KEY, next);
-    _cachedRaw = next;
-    _cachedResult = JSON.parse(next);
+  const items = getRecentlyViewed().filter((i) => i.id !== item.id);
+  items.unshift(item);
+  const next = JSON.stringify(items.slice(0, MAX));
+  localStorage.setItem(KEY, next);
+  _cachedRaw = next;
+  _cachedResult = JSON.parse(next);
 }
