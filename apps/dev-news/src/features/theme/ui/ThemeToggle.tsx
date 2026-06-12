@@ -1,36 +1,35 @@
 "use client";
 
-import { IconButton, MoonIcon, SunIcon } from "@vibe/ui";
 import { useEffect, useState } from "react";
 
+import { IconButton, MoonIcon, SunIcon } from "@/shared/ui";
+
 export function ThemeToggle() {
-    const [theme, setTheme] = useState<"light" | "dark">("light");
-    const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark" | null>(null);
 
-    useEffect(() => {
-        setMounted(true);
-        const saved = localStorage.getItem("theme") as "light" | "dark" | null;
-        const preferred = window.matchMedia("(prefers-color-scheme: dark)")
-            .matches
-            ? "dark"
-            : "light";
-        const initial = saved ?? preferred;
-        setTheme(initial);
-        document.documentElement.classList.toggle("dark", initial === "dark");
-    }, []);
+  useEffect(() => {
+    const saved = localStorage.getItem("theme") as "light" | "dark" | null;
+    const preferred = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+    const initial = saved ?? preferred;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setTheme(initial);
+    document.documentElement.classList.toggle("dark", initial === "dark");
+  }, []);
 
-    const toggle = () => {
-        const next = theme === "light" ? "dark" : "light";
-        setTheme(next);
-        document.documentElement.classList.toggle("dark", next === "dark");
-        localStorage.setItem("theme", next);
-    };
+  const toggle = () => {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    document.documentElement.classList.toggle("dark", next === "dark");
+    localStorage.setItem("theme", next);
+  };
 
-    if (!mounted) return <div className="h-9 w-9" />;
+  if (theme === null) return <div className="h-9 w-9" />;
 
-    return (
-        <IconButton aria-label="테마 전환" onClick={toggle}>
-            {theme === "light" ? <MoonIcon size={16} /> : <SunIcon size={16} />}
-        </IconButton>
-    );
+  return (
+    <IconButton aria-label="테마 전환" onClick={toggle}>
+      {theme === "light" ? <MoonIcon size={16} /> : <SunIcon size={16} />}
+    </IconButton>
+  );
 }
