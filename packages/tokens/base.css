@@ -1,0 +1,239 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Palette ─────────────────────────────────────────────────────────────────
+ * Raw color primitives. Apps extend by adding app-specific palette entries
+ * in their own tokens.css before the semantic token declarations.
+ * ─────────────────────────────────────────────────────────────────────────── */
+:root {
+    --palette-gray-0: #ffffff;
+    --palette-gray-50: #f9fafb;
+    --palette-gray-100: #f3f4f6;
+    --palette-gray-200: #e5e7eb;
+    --palette-gray-300: #d1d5db;
+    --palette-gray-400: #9ca3af;
+    --palette-gray-500: #6b7280;
+    --palette-gray-600: #4b5563;
+    --palette-gray-700: #374151;
+    --palette-gray-800: #1f2937;
+    --palette-gray-900: #111827;
+    --palette-gray-950: #030712;
+
+    --palette-emerald-50: #ecfdf5;
+    --palette-emerald-100: #d1fae5;
+    --palette-emerald-300: #6ee7b7;
+    --palette-emerald-400: #34d399;
+    --palette-emerald-500: #10b981;
+    --palette-emerald-600: #059669;
+    --palette-emerald-700: #047857;
+    --palette-emerald-800: #065f46;
+    --palette-emerald-900: #064e3b;
+
+    --palette-red-50: #fef2f2;
+    --palette-red-500: #ef4444;
+
+    --palette-yellow-50: #fffbeb;
+    --palette-yellow-500: #f59e0b;
+    --palette-yellow-600: #d97706;
+}
+
+/* ── Semantic tokens ─────────────────────────────────────────────────────────
+ * Role-based aliases. Apps override individual tokens to apply their branding.
+ * ─────────────────────────────────────────────────────────────────────────── */
+@theme {
+    --font-sans:
+        "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+        system-ui, Roboto, "Helvetica Neue", Arial, "Noto Sans KR", sans-serif;
+
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --radius-2xl: 1.25rem;
+    --radius-3xl: 1.5rem;
+    --radius-full: 9999px;
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+    --shadow-md:
+        0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg:
+        0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+    --shadow-xl:
+        0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+
+    --animate-fade-in: fadeIn 0.15s ease-in-out;
+    --animate-slide-up: slideUp 0.2s ease-out;
+
+    --color-bg: var(--palette-gray-0);
+    --color-bg-subtle: var(--palette-gray-50);
+    --color-surface: var(--palette-gray-0);
+    --color-surface-raised: var(--palette-gray-50);
+    --color-surface-overlay: var(--palette-gray-100);
+    --color-border: var(--palette-gray-200);
+    --color-border-strong: var(--palette-gray-300);
+    --color-text-primary: var(--palette-gray-900);
+    --color-text-secondary: var(--palette-gray-500);
+    --color-text-disabled: var(--palette-gray-300);
+    --color-text-inverse: var(--palette-gray-0);
+    --color-accent: var(--palette-emerald-600);
+    --color-accent-hover: var(--palette-emerald-700);
+    --color-accent-subtle: var(--palette-emerald-50);
+    --color-accent-foreground: var(--palette-gray-0);
+    --color-success: var(--palette-emerald-600);
+    --color-success-subtle: var(--palette-emerald-50);
+    --color-success-foreground: var(--palette-gray-0);
+    --color-warning: var(--palette-yellow-600);
+    --color-warning-subtle: var(--palette-yellow-50);
+    --color-warning-foreground: var(--palette-gray-900);
+    --color-error: var(--palette-red-500);
+    --color-error-subtle: var(--palette-red-50);
+    --color-error-foreground: var(--palette-gray-0);
+}
+
+.dark {
+    --color-bg: var(--palette-gray-950);
+    --color-bg-subtle: var(--palette-gray-900);
+    --color-surface: var(--palette-gray-900);
+    --color-surface-raised: var(--palette-gray-800);
+    --color-surface-overlay: var(--palette-gray-700);
+    --color-border: var(--palette-gray-800);
+    --color-border-strong: var(--palette-gray-700);
+    --color-text-primary: var(--palette-gray-50);
+    --color-text-secondary: var(--palette-gray-400);
+    --color-text-disabled: var(--palette-gray-600);
+    --color-text-inverse: var(--palette-gray-900);
+    --color-accent: var(--palette-emerald-500);
+    --color-accent-hover: var(--palette-emerald-400);
+    --color-accent-subtle: var(--palette-emerald-900);
+    --color-accent-foreground: var(--palette-gray-950);
+    --color-success: var(--palette-emerald-500);
+    --color-success-subtle: rgb(16 185 129 / 0.12);
+    --color-success-foreground: var(--palette-gray-950);
+    --color-warning: var(--palette-yellow-500);
+    --color-warning-subtle: rgb(245 158 11 / 0.12);
+    --color-warning-foreground: var(--palette-gray-900);
+    --color-error: var(--palette-red-500);
+    --color-error-subtle: rgb(239 68 68 / 0.12);
+    --color-error-foreground: var(--palette-gray-0);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(8px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* ── Typography scale ─────────────────────────────────────────────────────── */
+
+@utility type-display-1 {
+    font-size: 3rem;
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+}
+@utility type-display-2 {
+    font-size: 2.5rem;
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+@utility type-display-3 {
+    font-size: 2.25rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.022em;
+}
+@utility type-title-1 {
+    font-size: 1.875rem;
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.021em;
+}
+@utility type-title-2 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+    font-weight: 600;
+    letter-spacing: -0.019em;
+}
+@utility type-title-3 {
+    font-size: 1.25rem;
+    line-height: 1.35;
+    font-weight: 600;
+    letter-spacing: -0.017em;
+}
+@utility type-heading-1 {
+    font-size: 1.125rem;
+    line-height: 1.4;
+    font-weight: 600;
+    letter-spacing: -0.014em;
+}
+@utility type-heading-2 {
+    font-size: 1rem;
+    line-height: 1.45;
+    font-weight: 600;
+    letter-spacing: -0.011em;
+}
+@utility type-headline-1 {
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 500;
+    letter-spacing: -0.011em;
+}
+@utility type-headline-2 {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+@utility type-body-1 {
+    font-size: 1rem;
+    line-height: 1.625;
+    font-weight: 400;
+    letter-spacing: -0.011em;
+}
+@utility type-body-2 {
+    font-size: 0.875rem;
+    line-height: 1.625;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+}
+@utility type-label-1 {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+@utility type-label-2 {
+    font-size: 0.75rem;
+    line-height: 1.35;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+}
+@utility type-caption-1 {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+}
+@utility type-caption-2 {
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    font-weight: 400;
+    letter-spacing: 0;
+}

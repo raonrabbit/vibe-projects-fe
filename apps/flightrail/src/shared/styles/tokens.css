@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+/* ── FlightRail Design System ────────────────────────────────────────────────
+ * Token naming: fr-* prefix scopes all tokens to this app.
+ * Visual concept: "Study as Flight" — dark cockpit aesthetic, sky-blue primary,
+ * amber secondary, vintage boarding-pass details.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+@theme {
+  /* ── Backgrounds ──────────────────────────────────────────────────────── */
+  --color-fr-base: #060c18;
+  --color-fr-surface: #091524;
+  --color-fr-elevated: #0d1826;
+  --color-fr-overlay: #0c1521;
+  --color-fr-deep: #040810;
+
+  /* ── Accent — Sky blue (primary CTA, active state) ────────────────────── */
+  --color-fr-sky: #38bdf8;
+  --color-fr-sky-hi: #7dd3fc;
+  --color-fr-sky-deep: #0a3a47;
+
+  /* ── Accent — Amber (destinations, secondary) ─────────────────────────── */
+  --color-fr-amber: #fbbf24;
+
+  /* ── Passport — cover ─────────────────────────────────────────────────── */
+  --color-fr-passport-cover: #091828;
+  --color-fr-passport-spine: #060f1e;
+  --color-fr-passport-border: #162840;
+
+  /* ── Passport — data page ─────────────────────────────────────────────── */
+  --color-fr-gold: #c8a040;
+  --color-fr-parchment: #f8f3ec;
+  --color-fr-parchment-mid: #f4f0e8;
+  --color-fr-parchment-dim: #e4ddd0;
+  --color-fr-parchment-muted: #e8e0d0;
+  --color-fr-parchment-border: #cdc5b5;
+  --color-fr-ink: #1e1810;
+  --color-fr-ink-mid: #4a4030;
+  --color-fr-ink-dim: #9a9080;
+
+  /* ── Status ───────────────────────────────────────────────────────────── */
+  --color-fr-success: #10b981;
+  --color-fr-warning: #f59e0b;
+  --color-fr-danger: #ef4444;
+
+  /* ── Typography scale ─────────────────────────────────────────────────── */
+  --font-size-fr-display: 2.25rem;
+  --font-size-fr-heading: 1.5rem;
+  --font-size-fr-body: 0.875rem;
+  --font-size-fr-body-sm: 0.8125rem;
+  --font-size-fr-caption: 0.75rem;
+  --font-size-fr-label: 0.6875rem;
+  --font-size-fr-micro: 0.5625rem;
+
+  /* ── Border radius ────────────────────────────────────────────────────── */
+  --radius-fr-card: 1.5rem;
+  --radius-fr-panel: 1rem;
+  --radius-fr-button: 0.75rem;
+  --radius-fr-pill: 9999px;
+
+  /* ── Animations ───────────────────────────────────────────────────────── */
+  --animate-fr-drift: fr-drift 5s ease-in-out infinite;
+  --animate-fr-blink: fr-blink 1.4s step-end infinite;
+  --animate-fr-pulse-slow: fr-pulse-slow 2.5s ease-in-out infinite;
+}
+
+@keyframes fr-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(5px, -3px) rotate(0.8deg);
+  }
+  66% {
+    transform: translate(-3px, 4px) rotate(-0.5deg);
+  }
+}
+
+@keyframes fr-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes fr-pulse-slow {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes fr-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fr-slide-down {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}

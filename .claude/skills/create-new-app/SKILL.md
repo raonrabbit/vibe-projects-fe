@@ -191,7 +191,7 @@ export default function Home() {
 
 #### `apps/<APP_NAME>/src/shared/styles/tokens.css`
 
-`apps/dev-news/src/shared/styles/tokens.css` 파일을 그대로 복사한다 (Read 후 Write).
+`packages/tokens/base.css` 파일을 그대로 복사한다 (Read 후 Write).
 
 ---
 
