@@ -18,6 +18,8 @@ const VALID_CATEGORIES = [
   "network",
   "javascript",
   "react",
+  "nextjs",
+  "state-management",
   "coding",
 ] as const;
 
