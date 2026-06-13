@@ -56,6 +56,7 @@ export default function QuizClient({ questions, category }: Props) {
   const [done, setDone] = useState(false);
   const [note, setNote] = useState("");
   const [historyStack, setHistoryStack] = useState<number[]>([]);
+  const [notes, setNotes] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setSorted(sortQuestions(questions, progress));
@@ -63,6 +64,7 @@ export default function QuizClient({ questions, category }: Props) {
     setReveal(false);
     setDone(false);
     setHistoryStack([]);
+    setNotes({});
   }, [questions]);
 
   const current = sorted[index];
@@ -74,6 +76,11 @@ export default function QuizClient({ questions, category }: Props) {
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
   };
+
+  // ── save note for current question ────────────────────────────────────────
+  const saveNote = useCallback((questionId: string, noteText: string) => {
+    setNotes((prev) => ({ ...prev, [questionId]: noteText }));
+  }, []);
 
   // ── actions ────────────────────────────────────────────────────────────────
   const advance = useCallback(
@@ -93,6 +100,7 @@ export default function QuizClient({ questions, category }: Props) {
 
   const goBack = useCallback(() => {
     if (historyStack.length === 0) return;
+    if (current) saveNote(current.id, note);
     const prev = historyStack[historyStack.length - 1];
     setHistoryStack((h) => h.slice(0, -1));
     directionRef.current = -1;
@@ -100,19 +108,21 @@ export default function QuizClient({ questions, category }: Props) {
     setIndex(prev);
     setReveal(false);
     setNote("");
-  }, [historyStack]);
+  }, [historyStack, current, note, saveNote]);
 
   const handleKnown = useCallback(() => {
     if (!current) return;
+    saveNote(current.id, note);
     mark(current.id, "known");
     advance(1);
-  }, [current, mark, advance]);
+  }, [current, mark, advance, saveNote, note]);
 
   const handleUnknown = useCallback(() => {
     if (!current) return;
+    saveNote(current.id, note);
     mark(current.id, "unknown");
     advance(-1);
-  }, [current, mark, advance]);
+  }, [current, mark, advance, saveNote, note]);
 
   const handleTouchEnd = useCallback(
     (e: React.TouchEvent) => {
@@ -123,8 +133,7 @@ export default function QuizClient({ questions, category }: Props) {
       if (diff < 0) handleUnknown();
       else handleKnown();
     },
-
-    [revealed, index, sorted],
+    [revealed, handleKnown, handleUnknown],
   );
 
   // ── keyboard ───────────────────────────────────────────────────────────────
@@ -144,7 +153,7 @@ export default function QuizClient({ questions, category }: Props) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [revealed, index, sorted, goBack]);
+  }, [revealed, goBack, handleKnown, handleUnknown]);
 
   const handleReset = () => {
     resetCategory(category);
@@ -153,6 +162,7 @@ export default function QuizClient({ questions, category }: Props) {
     setReveal(false);
     setDone(false);
     setHistoryStack([]);
+    setNotes({});
   };
 
   const restart = () => {
@@ -162,6 +172,51 @@ export default function QuizClient({ questions, category }: Props) {
     setDone(false);
     setHistoryStack([]);
   };
+
+  // ── download as md ────────────────────────────────────────────────────────
+  const downloadMd = useCallback(() => {
+    const answered = sorted.filter((q) => notes[q.id]?.trim());
+    if (answered.length === 0) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const categoryLabel =
+      category === "all" ? "전체" : CATEGORY_LABELS[category as QuizCategory];
+
+    const lines: string[] = [
+      `# ${categoryLabel} 퀴즈 답안`,
+      `_${today}_`,
+      "",
+      "---",
+      "",
+    ];
+
+    answered.forEach((q, i) => {
+      lines.push(`## Q${i + 1}. ${q.question}`);
+      lines.push("");
+      lines.push("**내 답안**");
+      lines.push("");
+      lines.push(notes[q.id]);
+      lines.push("");
+      lines.push("**모범 답안**");
+      lines.push("");
+      lines.push(q.answer);
+      lines.push("");
+      lines.push("---");
+      lines.push("");
+    });
+
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `quiz-${category}-${today}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [sorted, notes, category]);
+
+  const hasNotes = Object.values(notes).some((n) => n?.trim());
 
   // ── done screen ────────────────────────────────────────────────────────────
   if (done) {
@@ -197,6 +252,14 @@ export default function QuizClient({ questions, category }: Props) {
             >
               기록 초기화
             </button>
+            {hasNotes && (
+              <button
+                onClick={downloadMd}
+                className="rounded-lg border border-text-primary/20 px-5 py-2.5 text-sm transition-colors hover:border-text-primary/50"
+              >
+                답안 다운로드 (.md)
+              </button>
+            )}
             <Link
               href="/quiz"
               className="rounded-lg border border-text-primary/20 px-5 py-2.5 text-sm transition-colors hover:border-text-primary/50"
@@ -227,6 +290,14 @@ export default function QuizClient({ questions, category }: Props) {
         <div className="flex items-center gap-4 text-xs text-text-primary/40">
           <span>알았다 {stats.known}</span>
           <span>몰랐다 {stats.unknown}</span>
+          {hasNotes && (
+            <button
+              onClick={downloadMd}
+              className="transition-colors hover:text-text-primary/70"
+            >
+              답안 저장
+            </button>
+          )}
           <button
             onClick={handleReset}
             className="transition-colors hover:text-text-primary/70"
