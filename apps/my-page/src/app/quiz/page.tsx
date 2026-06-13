@@ -19,6 +19,8 @@ const CATEGORIES: QuizCategory[] = [
   "network",
   "javascript",
   "react",
+  "nextjs",
+  "state-management",
   "coding",
 ];
 

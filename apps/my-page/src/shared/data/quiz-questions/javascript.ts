@@ -1,319 +1,189 @@
 import type { QuizQuestion } from "./types";
 
 export const JAVASCRIPT_QUESTIONS: QuizQuestion[] = [
-  // ── 실행 컨텍스트 & 스코프 ──────────────────────────────────────────────
+  // ─── 실행 컨텍스트 & 스코프 ────────────────────────────────────────────────
   {
     id: "js-01",
     category: "javascript",
-    question: "실행 컨텍스트(Execution Context)란 무엇인가요?",
+    question: "실행 컨텍스트(Execution Context)가 뭔가요?",
     answer:
-      "자바스크립트 코드가 실행될 때 필요한 환경 정보를 담은 객체입니다. let/const를 저장하는 LexicalEnvironment, var를 저장하는 VariableEnvironment, 그리고 this 바인딩 정보로 구성됩니다. 실행 시에는 두 단계로 나뉩니다. Creation Phase에서 선언을 모두 등록하는데, 이때 var는 undefined로 초기화되고 let/const는 TDZ에 진입합니다. 이후 Execution Phase에서 코드를 한 줄씩 실행하며 실제 값을 할당합니다.",
+      "JavaScript 코드가 실행될 때 필요한 환경 정보를 담은 객체입니다. 전역 실행 컨텍스트(Global EC)와 함수 실행 컨텍스트(Function EC)가 있으며, 함수 호출마다 새로운 실행 컨텍스트가 생성되어 콜 스택에 쌓입니다.\n\n**부가설명:** 실행 컨텍스트는 두 단계로 동작합니다. Creation Phase(생성 단계): 변수·함수 선언을 등록하고, var는 undefined로, let/const는 TDZ 상태로 초기화합니다. Execution Phase(실행 단계): 코드를 한 줄씩 실행하며 값을 할당합니다.",
   },
   {
     id: "js-02",
     category: "javascript",
-    question: "렉시컬 스코프(Lexical Scope)란?",
+    question: "실행 컨텍스트의 구성 요소를 나열하고 각각에 대해 설명해주세요.",
     answer:
-      "함수가 호출된 위치가 아닌, 정의된 위치를 기준으로 상위 스코프가 결정되는 방식입니다. 자바스크립트는 렉시컬 스코프를 따르기 때문에 함수를 어디서 호출하든 스코프 체인은 항상 함수가 작성된 곳을 기준으로 동작합니다. 함수가 생성될 때 현재 환경을 [[Environment]] 슬롯에 저장하고, 변수를 탐색할 때 이 참조를 따라 상위 스코프로 거슬러 올라갑니다. 클로저도 이 메커니즘을 기반으로 합니다.",
+      "① LexicalEnvironment: let·const·함수 선언을 저장하며, 외부 환경(outer)에 대한 참조를 포함합니다. 클로저와 스코프 체인의 기반입니다. ② VariableEnvironment: var로 선언된 변수를 저장합니다. ③ ThisBinding: 현재 컨텍스트에서 this가 가리키는 값입니다.\n\n**부가설명:** ES6 이후에는 LexicalEnvironment와 VariableEnvironment가 분리되어 var와 let/const의 스코프 규칙이 달라졌습니다.",
   },
   {
     id: "js-03",
     category: "javascript",
-    question:
-      "`var`와 `let`의 스코프 차이를 실행 컨텍스트 관점에서 설명하세요.",
+    question: "실행 컨텍스트 생성 단계에 대해 설명해주세요.",
     answer:
-      "var는 함수 스코프이고 let/const는 블록 스코프입니다. 내부적으로는 var가 VariableEnvironment에, let/const가 LexicalEnvironment에 등록되는 차이입니다. 또한 var는 Creation Phase에서 undefined로 초기화되어 선언 전에 접근해도 오류가 없지만, let/const는 TDZ 상태에 있어 선언 전 접근 시 ReferenceError가 발생합니다. 실무적으로 for 루프에서 var를 쓰면 루프 종료 후 하나의 변수만 남아 클로저 버그를 만들 수 있는데, let은 매 반복마다 새 바인딩이 생성되어 이 문제가 없습니다.",
-    isAdvanced: true,
+      "① Creation Phase(생성 단계): 코드를 실행하기 전 선언을 스캔하여 메모리를 확보합니다. var는 undefined로 초기화, let/const는 TDZ 상태로 등록, 함수 선언은 함수 객체 전체를 등록합니다. ② Execution Phase(실행 단계): 코드를 위에서 아래로 한 줄씩 실행하며 변수에 실제 값을 할당합니다.\n\n**부가설명:** Creation Phase에서 선언이 메모리에 등록되는 것이 '호이스팅'의 실체입니다. 실제로 코드가 위로 이동하는 것이 아니라 실행 전에 먼저 등록되는 것입니다.",
   },
-
-  // ── 클로저 ──────────────────────────────────────────────────────────────
   {
     id: "js-04",
     category: "javascript",
-    question: "클로저(Closure)란 무엇인가요?",
+    question: "스코프 체인(Scope Chain)에 대해 설명해주세요.",
     answer:
-      "함수가 자신이 선언된 렉시컬 환경을 기억해서, 외부 함수의 실행이 끝난 후에도 외부 변수에 접근할 수 있는 함수입니다. 외부 함수의 실행 컨텍스트가 콜 스택에서 제거되어도, 내부 함수의 [[Environment]]가 그 환경을 참조하고 있으면 GC 대상에서 제외됩니다. private 변수를 만들거나, 함수에 일부 인자를 미리 고정하는 부분 적용, React의 useState처럼 상태값을 보존하는 데 활용됩니다.",
+      "변수를 탐색할 때 현재 스코프에 없으면 외부(상위) 스코프로 올라가며 찾고, 없으면 계속 올라가 전역 스코프까지 탐색하는 메커니즘입니다. JavaScript는 렉시컬 스코프(함수가 정의된 위치 기준)를 사용하므로, 함수가 생성될 때 [[Environment]] 슬롯에 외부 환경 참조를 저장합니다.\n\n**부가설명:** 스코프 체인은 실행 시점이 아닌 코드 작성 시점(정의 위치)에 결정됩니다. 이것이 렉시컬 스코프이며, 클로저의 동작 원리이기도 합니다.",
   },
+
+  // ─── 클로저 ────────────────────────────────────────────────────────────────
   {
     id: "js-05",
     category: "javascript",
-    question: "클로저로 인한 메모리 누수는 어떻게 발생하고 방지하나요?",
+    question: "클로저(Closure)가 뭔가요?",
     answer:
-      "클로저가 더 이상 필요 없는데도 큰 스코프를 계속 참조하면 GC가 해당 메모리를 수거하지 못합니다. 이벤트 리스너에서 자주 발생하는데, DOM 노드가 제거되어도 리스너가 살아있으면 참조하는 스코프 전체가 메모리에 남습니다. removeEventListener로 리스너를 명시적으로 제거하거나, React useEffect의 클린업 함수에서 정리해줘야 합니다. setInterval도 clearInterval 없이 방치하면 콜백과 참조 객체가 계속 유지됩니다.",
-    isAdvanced: true,
+      "함수가 자신이 선언된 렉시컬 환경을 기억하여, 외부 함수의 실행이 끝난 후에도 외부 변수에 접근할 수 있는 함수입니다. 외부 함수가 콜 스택에서 제거되어도 내부 함수의 [[Environment]]가 외부 환경을 참조하고 있으면 GC 대상에서 제외됩니다.\n\n**부가설명:** 클로저의 활용: private 변수 구현, 부분 적용(커링), React의 useState 내부 구현. 클로저가 필요 이상으로 큰 스코프를 계속 참조하면 메모리 누수가 발생할 수 있습니다.",
   },
-
-  // ── 호이스팅 ────────────────────────────────────────────────────────────
   {
     id: "js-06",
     category: "javascript",
-    question: "호이스팅(Hoisting)이란?",
+    question: "클로저의 동작 원리가 뭔가요?",
     answer:
-      "JS 엔진이 코드 실행 전에 변수와 함수 선언을 먼저 메모리에 등록하는 동작입니다. var는 undefined로 초기화되어 선언 전에 접근해도 오류 없이 undefined를 반환하고, let/const는 TDZ 상태에 있어 선언 전 접근 시 ReferenceError가 발생합니다. 함수 선언문은 함수 객체 전체가 등록되어 선언 전 호출이 가능하지만, 함수 표현식(var로 선언)은 undefined로 초기화되어 선언 전 호출 시 TypeError가 납니다.",
+      "함수가 생성될 때 현재 LexicalEnvironment에 대한 참조를 [[Environment]] 내부 슬롯에 저장합니다. 함수가 실행될 때 이 [[Environment]]를 outer 참조로 사용하여 스코프 체인을 구성합니다. 외부 함수가 반환된 후에도 내부 함수의 [[Environment]]가 외부 환경을 강한 참조로 유지하므로 GC가 수거하지 않습니다.\n\n**부가설명:** 클로저가 메모리를 점유하는 이유가 바로 이 [[Environment]] 참조 때문입니다. 더 이상 필요 없는 클로저는 null을 할당하여 참조를 끊어야 합니다.",
   },
+
+  // ─── 호이스팅 ──────────────────────────────────────────────────────────────
   {
     id: "js-07",
     category: "javascript",
-    question: "TDZ(Temporal Dead Zone)가 존재하는 이유는?",
+    question: "호이스팅(Hoisting)이 뭔가요?",
     answer:
-      "var의 호이스팅은 선언 전에 접근해도 오류 없이 undefined를 반환해서 예측하기 어려운 버그를 만들 수 있습니다. TDZ는 이를 막기 위해 let/const의 선언 전 접근을 런타임 에러로 잡아내어 코드의 예측 가능성을 높입니다. 블록이 시작되는 시점부터 선언문이 실행되기 직전까지가 TDZ 구간이며, 선언은 호이스팅되어 엔진이 인식하지만 초기화는 선언문 실행 시점까지 미뤄집니다.",
-    isAdvanced: true,
+      "실행 컨텍스트 생성 단계(Creation Phase)에서 변수와 함수 선언이 먼저 메모리에 등록되는 현상입니다. var는 undefined로 초기화되어 선언 전 접근해도 오류 없이 undefined를 반환합니다. 함수 선언문은 함수 객체 전체가 등록되어 선언 전 호출이 가능합니다. let/const는 TDZ에 있어 선언 전 접근 시 ReferenceError가 발생합니다.\n\n**부가설명:** 실제로 코드 줄이 위로 이동하는 것이 아니라, 실행 전 생성 단계에서 선언이 먼저 처리되는 것입니다.",
   },
-
-  // ── 이벤트 루프 ─────────────────────────────────────────────────────────
   {
     id: "js-08",
     category: "javascript",
-    question: "자바스크립트가 싱글 스레드임에도 비동기 처리가 가능한 이유는?",
+    question: "TDZ(Temporal Dead Zone)가 뭔가요?",
     answer:
-      "JS 엔진 자체는 싱글 스레드이지만, 브라우저나 Node.js 런타임이 별도의 스레드 풀을 통해 비동기 작업을 대신 처리합니다. 작업이 완료되면 콜백이 Task Queue나 Microtask Queue에 추가됩니다. 이벤트 루프가 콜 스택이 비어있을 때 큐에서 콜백을 꺼내 실행합니다. 실행 순서는 콜 스택 → Microtask Queue 전부 처리 → Task Queue에서 하나 처리 → 렌더링 순입니다.",
+      "let/const 변수의 블록 시작부터 선언문이 실행되기 직전까지의 구간입니다. 이 구간에서 변수에 접근하면 ReferenceError가 발생합니다. 선언이 호이스팅되어 엔진이 변수를 인식하지만, 초기화는 선언문 실행 시점까지 미뤄집니다.\n\n**부가설명:** TDZ는 var의 호이스팅으로 인한 예상치 못한 undefined 버그를 방지하기 위해 도입됐습니다. '있는 것은 알지만 아직 사용할 수 없는 상태'입니다.",
   },
+
+  // ─── 이벤트 루프 ───────────────────────────────────────────────────────────
   {
     id: "js-09",
     category: "javascript",
-    question: "Microtask와 Macrotask의 차이는?",
+    question: "이벤트 루프 과정에 대해 설명해주세요.",
     answer:
-      "Microtask(Promise.then, queueMicrotask, MutationObserver)는 현재 작업이 끝난 직후 렌더링 전에 큐에 있는 것을 모두 처리합니다. Macrotask(setTimeout, setInterval, I/O, UI 이벤트)는 Microtask Queue가 완전히 비워진 후 하나씩 처리됩니다. 따라서 Microtask가 항상 Macrotask보다 먼저 실행됩니다. setTimeout(fn, 0)과 Promise.then(fn)이 함께 있으면 Promise 콜백이 먼저 실행됩니다.",
+      "① 코드 실행: 콜 스택이 비어있을 때까지 동기 코드를 실행합니다. ② Microtask 처리: 콜 스택이 비면 Microtask Queue(Promise.then, queueMicrotask)의 작업을 모두 처리합니다. ③ 렌더링: 브라우저가 필요에 따라 화면을 다시 그립니다. ④ Task 처리: Macrotask Queue(setTimeout, setInterval, I/O)에서 하나만 꺼내 실행합니다. 이 과정을 반복합니다.\n\n**부가설명:** Microtask가 항상 Macrotask보다 먼저 처리됩니다. setTimeout(fn, 0)과 Promise.then(fn)이 함께 있으면 Promise 콜백이 먼저 실행됩니다.",
   },
   {
     id: "js-10",
     category: "javascript",
-    question: "`setTimeout(fn, 0)`이 즉시 실행되지 않는 이유는?",
+    question: "JS가 싱글스레드임에도 비동기 처리가 가능한 이유는?",
     answer:
-      "지연 시간이 0이라도 현재 콜 스택이 비워지고 Microtask Queue까지 처리된 후에야 Task Queue에서 꺼내 실행됩니다. 타이머 지연 시간은 '최소 지연'을 보장할 뿐이고, 실제 실행 시점은 이벤트 루프의 상태에 달려있습니다. 브라우저 스펙상 중첩 setTimeout에는 최소 4ms의 딜레이가 강제되기도 합니다.",
-    isAdvanced: true,
+      "JS 엔진 자체는 싱글 스레드이지만, 브라우저나 Node.js 런타임이 별도의 스레드 풀(Web APIs, libuv)을 통해 비동기 작업을 대신 처리합니다. 타이머·네트워크 요청·파일 I/O 같은 작업이 백그라운드에서 완료되면 콜백이 Task Queue에 추가됩니다. 이벤트 루프가 콜 스택이 비어있을 때 큐에서 콜백을 꺼내 실행합니다.\n\n**부가설명:** JS 엔진(V8 등)은 코드 실행만 담당하고, 비동기 작업 자체는 브라우저·Node.js 런타임이 처리합니다. JS가 비동기를 '직접' 처리하는 것이 아니라 런타임에 위임하는 구조입니다.",
   },
 
-  // ── Promise & async/await ─────────────────────────────────────────────
+  // ─── Promise & async/await ─────────────────────────────────────────────────
   {
     id: "js-11",
     category: "javascript",
-    question: "async/await와 Promise의 차이는?",
+    question: "동기가 뭐고 비동기가 뭔가요?",
     answer:
-      "async/await은 Promise 기반의 문법적 설탕으로, Promise 체이닝을 동기 코드처럼 읽히게 해주어 가독성이 좋고 try/catch로 에러 처리가 가능합니다. async 함수는 항상 Promise를 반환하고, await은 Promise가 settled될 때까지 해당 함수의 실행을 일시 중단하고 이후 코드를 Microtask Queue에 등록합니다. 이는 Generator의 yield 동작과 본질적으로 동일합니다.",
+      "동기(Synchronous)는 이전 작업이 완료된 후에만 다음 작업을 실행합니다. 코드가 순서대로 실행되어 예측이 쉽지만 오래 걸리는 작업이 있으면 전체가 멈춥니다. 비동기(Asynchronous)는 작업 완료를 기다리지 않고 다음 코드를 실행합니다. 완료되면 콜백이나 Promise로 결과를 받습니다.\n\n**부가설명:** 블로킹/논블로킹은 제어권 반환 여부입니다. 자바스크립트는 싱글 스레드이므로 동기적으로 실행되는 긴 작업(CPU 집약적 연산)은 모든 작업을 차단합니다. 이것이 비동기 모델이 중요한 이유입니다.",
   },
   {
     id: "js-12",
     category: "javascript",
-    question: "Promise와 콜백의 차이는? Promise가 해결하는 문제는?",
+    question: "Promise가 뭔가요?",
     answer:
-      "콜백은 중첩이 깊어질수록 콜백 지옥이 생기고 에러 처리가 각 콜백마다 분산됩니다. Promise는 체이닝으로 비동기 흐름을 선형으로 표현하고 catch 하나로 에러를 처리할 수 있습니다. Promise는 pending(대기), fulfilled(성공), rejected(실패) 세 가지 상태를 가지며, 한 번 settled되면 상태가 변하지 않아 신뢰성이 높습니다.",
-    isAdvanced: true,
+      "비동기 작업의 최종 완료 또는 실패를 나타내는 객체입니다. 콜백 지옥을 해결하고 then() 체이닝으로 비동기 흐름을 선형으로 작성할 수 있습니다. catch()로 에러를 일괄 처리하고, finally()로 항상 실행할 코드를 지정할 수 있습니다.\n\n**부가설명:** Promise는 한 번 settled되면 상태가 변하지 않아 신뢰성이 높습니다. Promise.all(병렬 실행), Promise.allSettled(모두 완료 대기), Promise.race(가장 빠른 결과), Promise.any(가장 빠른 성공)를 상황에 맞게 사용합니다.",
   },
   {
     id: "js-13",
     category: "javascript",
-    question: "`await Promise.all([...])`과 순차 `await`의 성능 차이는?",
+    question: "Promise의 3가지 상태에 대해 말해주세요.",
     answer:
-      "순차 await은 각 작업이 완료된 후 다음 작업을 시작해 총 시간이 각 작업 시간의 합이 됩니다. Promise.all은 모든 작업을 동시에 시작해 총 시간이 가장 오래 걸리는 작업 하나의 시간입니다. 서로 독립적인 비동기 작업은 항상 Promise.all로 병렬 처리해야 합니다. 단, 하나라도 reject되면 즉시 전체가 reject되므로, 일부 실패를 허용해야 한다면 Promise.allSettled를 사용합니다.",
-    isAdvanced: true,
+      "① Pending(대기): 비동기 작업이 아직 완료되지 않은 초기 상태입니다. ② Fulfilled(이행): 비동기 작업이 성공적으로 완료되어 결과값이 있는 상태입니다. then() 콜백이 실행됩니다. ③ Rejected(거부): 비동기 작업이 실패한 상태입니다. catch() 콜백이 실행됩니다.\n\n**부가설명:** Fulfilled와 Rejected를 합쳐 Settled(완료된) 상태라고 합니다. 한 번 Settled되면 다시 Pending이나 다른 상태로 변경할 수 없습니다.",
   },
   {
     id: "js-14",
     category: "javascript",
-    question:
-      "Promise.all, Promise.allSettled, Promise.race, Promise.any의 차이는?",
+    question: "async/await이 뭔가요?",
     answer:
-      "Promise.all은 모두 fulfilled되면 resolve되고, 하나라도 reject되면 즉시 reject됩니다. Promise.allSettled는 성공·실패 무관하게 모두 완료될 때까지 기다려 각 결과를 {status, value/reason} 배열로 반환합니다. Promise.race는 가장 먼저 settled(성공·실패 무관)되는 결과를 반환하며 타임아웃 구현에 씁니다. Promise.any는 가장 먼저 fulfilled된 결과를 반환하고, 모두 실패하면 AggregateError를 던집니다.",
+      "Promise를 동기 코드처럼 읽히게 해주는 문법적 설탕(Syntactic Sugar)입니다. async 함수는 항상 Promise를 반환하고, await는 Promise가 settled될 때까지 해당 함수의 실행을 일시 중단합니다. try/catch로 에러 처리가 가능하여 가독성이 좋습니다.\n\n**부가설명:** await는 해당 async 함수의 실행만 일시 중단하고, 이벤트 루프는 계속 다른 작업을 처리합니다. 독립적인 비동기 작업은 await Promise.all([a(), b()])로 병렬 처리해야 합니다.",
   },
-
-  // ── 프로토타입 체인 ───────────────────────────────────────────────────
   {
     id: "js-15",
     category: "javascript",
-    question: "프로토타입 체인이란?",
+    question: "Promise와 async/await의 차이가 뭔가요?",
     answer:
-      "객체에서 프로퍼티를 찾을 때 현재 객체에 없으면 [[Prototype]] 링크를 따라 상위 프로토타입에서 탐색하고, 없으면 계속 올라가 Object.prototype까지 탐색하는 메커니즘입니다. new 연산자는 생성자 함수의 prototype을 참조하는 빈 객체를 만들고, 생성자 함수를 그 객체에 바인딩해 실행한 뒤, 생성자가 객체를 반환하면 그걸, 아니면 만들어진 빈 객체를 반환합니다.",
+      "async/await은 Promise 기반이므로 기능적 차이는 없습니다. 가독성과 에러 처리 방식에서 차이가 있습니다. Promise는 then/catch 체이닝으로 작성하고, async/await은 동기 코드처럼 선형으로 작성합니다. async/await은 try/catch로 에러를 처리할 수 있어 동기 코드와 일관성 있게 처리됩니다.\n\n**부가설명:** 복잡한 분기가 필요한 경우 async/await이 더 읽기 쉽습니다. 여러 Promise를 병렬로 처리해야 할 때는 Promise.all을 async/await과 함께 사용합니다.",
   },
+
+  // ─── this ──────────────────────────────────────────────────────────────────
   {
     id: "js-16",
     category: "javascript",
-    question: "ES6 클래스(class)는 프로토타입과 어떤 관계인가요?",
+    question: "this가 어떻게 결정되는지 설명해주세요.",
     answer:
-      "ES6 클래스는 프로토타입 기반 상속의 문법적 설탕입니다. 내부적으로 클래스 메서드는 prototype에 추가되고, extends는 자식 클래스의 prototype.__proto__를 부모 클래스 prototype으로 연결합니다. typeof로 확인해도 'function'이 나옵니다. 다만 일반 함수와 달리 반드시 new로만 호출해야 하고, TDZ의 영향을 받으며 암묵적으로 strict mode로 동작합니다.",
+      "this는 함수 호출 방식에 따라 동적으로 결정됩니다(우선순위 순): ① new로 호출: 새로 생성된 객체, ② call/apply/bind로 명시: 지정한 객체, ③ 메서드로 호출(obj.method()): 점 앞의 객체(obj), ④ 일반 호출: 전역 객체(strict mode에서는 undefined).\n\n**부가설명:** 메서드를 변수에 담아 호출하면(const fn = obj.method; fn();) 암시적 바인딩이 사라져 일반 함수 호출이 됩니다. 이벤트 핸들러에서 this를 잃어버리는 것도 같은 이유입니다.",
   },
   {
     id: "js-17",
     category: "javascript",
-    question: "`Object.create(null)`로 만든 객체의 특징은?",
+    question: "화살표 함수의 this는 뭔가요?",
     answer:
-      "프로토타입이 null인 순수한 객체를 만듭니다. Object.prototype의 메서드(toString, hasOwnProperty 등)가 없어서 키-값 저장소로 쓸 때 의도치 않은 프로퍼티 충돌이 없습니다. 또한 __proto__나 constructor 같은 키를 통해 Object.prototype을 오염시키는 프로토타입 오염 공격에 면역입니다.",
-    isAdvanced: true,
+      "화살표 함수는 자체 this 바인딩이 없고, 선언된 위치의 외부 스코프 this를 렉시컬하게 캡처합니다. call/apply/bind로 this를 변경할 수 없습니다. 외부 컨텍스트의 this를 그대로 사용해야 하는 setTimeout·Promise 체이닝 콜백·이벤트 핸들러에서 유용합니다.\n\n**부가설명:** 화살표 함수를 객체의 메서드로 사용하면 this가 해당 객체가 아닌 외부(전역)를 가리키므로 주의가 필요합니다. 클래스의 메서드에서는 일반 함수를 사용하고, 내부 콜백에서 화살표 함수를 사용하는 패턴이 일반적입니다.",
   },
 
-  // ── this 바인딩 ─────────────────────────────────────────────────────
+  // ─── GC ────────────────────────────────────────────────────────────────────
   {
     id: "js-18",
     category: "javascript",
-    question: "this 바인딩의 4가지 규칙을 설명하세요.",
+    question: "GC(Garbage Collection)가 뭔가요?",
     answer:
-      "this는 함수 호출 방식에 따라 동적으로 결정됩니다. 우선순위 순으로, new로 호출하면 새로 생성된 객체, call/apply/bind로 명시하면 지정한 객체, 메서드로 호출하면 점(.) 앞의 객체, 그 외 일반 호출에서는 전역 객체(strict mode에서는 undefined)가 this가 됩니다. 메서드를 변수에 담아 호출하면 암시적 바인딩이 사라져 기본 바인딩이 적용되는 점을 주의해야 합니다.",
+      "더 이상 사용하지 않는 메모리를 자동으로 해제하는 메커니즘입니다. V8은 Mark & Sweep 방식을 사용합니다. GC 루트(전역 변수·콜 스택)에서 시작해 도달 가능한 객체에 마킹하고, 마킹되지 않은 객체를 메모리에서 해제합니다.\n\n**부가설명:** V8은 세대별 GC(Generational GC)를 사용합니다. 새로 생성된 객체는 Young Generation에서 빈번하게 수거하고, 살아남은 객체는 Old Generation으로 승격합니다. '대부분의 객체는 짧게 산다'는 세대 가설을 활용합니다.",
   },
   {
     id: "js-19",
     category: "javascript",
-    question: "화살표 함수와 일반 함수의 `this` 차이는?",
+    question: "메모리 누수를 어떻게 감지하고 해결하나요?",
     answer:
-      "일반 함수는 호출 방식에 따라 this가 동적으로 결정되지만, 화살표 함수는 자체 this 바인딩이 없고 선언된 위치의 외부 스코프 this를 렉시컬하게 캡처합니다. 따라서 call/apply/bind로 this를 바꿀 수 없습니다. setTimeout·Promise 체이닝 콜백, React 클래스 컴포넌트의 이벤트 핸들러 등에서 외부 컨텍스트의 this를 안전하게 사용할 때 화살표 함수를 씁니다.",
+      "Chrome DevTools의 Memory 탭에서 힙 스냅샷 촬영이나 Allocation Timeline으로 메모리 증가를 추적합니다. 주요 원인: ① removeEventListener 없이 이벤트 리스너 방치, ② clearInterval 없이 setInterval 사용, ③ 클로저가 불필요하게 큰 스코프를 참조, ④ 의도치 않은 전역 변수 생성. 해결: 리스너 명시적 제거, React useEffect 클린업 함수 활용, WeakMap/WeakRef 사용.\n\n**부가설명:** WeakMap은 키 객체가 다른 곳에서 참조되지 않으면 자동으로 GC됩니다. DOM 요소에 부가 데이터를 연결할 때 WeakMap을 사용하면 DOM 제거 시 연결된 데이터도 자동으로 수거됩니다.",
   },
 
-  // ── 가비지 컬렉션 ───────────────────────────────────────────────────
+  // ─── Stack 메모리 / Heap 메모리 ────────────────────────────────────────────
   {
     id: "js-20",
     category: "javascript",
-    question: "Mark & Sweep 가비지 컬렉션 알고리즘을 설명하세요.",
+    question: "Stack 메모리가 뭔가요?",
     answer:
-      "GC 루트(전역 변수, 콜 스택의 변수)에서 시작해 참조를 따라가며 도달 가능한 객체에 마킹하고, 마킹되지 않은 객체를 메모리에서 해제합니다. 참조 카운팅 방식과 달리, a가 b를, b가 a를 참조하는 순환 참조가 있어도 외부에서 도달 불가능하면 정상적으로 수거됩니다.",
+      "함수 호출 시 자동으로 할당되고 반환 시 자동으로 해제되는 LIFO 구조의 메모리입니다. 함수의 실행 컨텍스트(지역 변수, 매개변수, 반환 주소)와 원시값(number, boolean, string 등)이 저장됩니다. 크기가 고정되어 있고 할당·해제가 빠릅니다.\n\n**부가설명:** 재귀 함수가 끝없이 호출되면 스택 프레임이 계속 쌓여 Stack Overflow가 발생합니다. 꼬리 재귀 최적화(TCO)나 반복문으로 변환하여 해결합니다.",
   },
   {
     id: "js-21",
     category: "javascript",
-    question: "V8의 세대별 GC(Generational GC)를 설명하세요.",
+    question: "Heap 메모리가 뭔가요?",
     answer:
-      "'대부분의 객체는 짧게 산다'는 세대 가설을 활용합니다. 새로 생성된 객체는 Young Generation에서 빈번하게 수거하고, 여러 번 살아남은 객체만 Old Generation으로 승격시켜 드물게 수거합니다. 짧게 사는 객체가 많기 때문에 Young Generation을 자주 빠르게 처리하고 Old Generation은 덜 처리하는 방식으로 전체 GC 비용을 줄입니다.",
-    isAdvanced: true,
+      "GC가 관리하는 동적 메모리 공간입니다. 객체·배열·함수처럼 크기가 가변적인 참조 타입이 저장됩니다. 변수에는 실제 데이터가 있는 힙 주소(참조값)가 저장됩니다. 스택보다 크기가 훨씬 크지만, GC로 관리되어 할당·해제 비용이 있습니다.\n\n**부가설명:** 참조 타입을 복사하면 같은 힙 주소를 가리키므로 한쪽 변경이 다른 쪽에도 영향을 줍니다. React가 참조 비교(===)로 상태 변경을 감지하기 때문에 객체의 내부 값만 변경하면 리렌더링이 발생하지 않습니다.",
   },
+
+  // ─── 엔진 ──────────────────────────────────────────────────────────────────
   {
     id: "js-22",
     category: "javascript",
-    question: "자바스크립트 메모리 누수를 어떻게 감지하고 해결하나요?",
+    question: "V8이 뭔가요?",
     answer:
-      "Chrome DevTools의 Memory 탭에서 힙 스냅샷을 찍거나 Allocation Timeline으로 메모리 증가를 추적합니다. 주요 원인 네 가지는 이벤트 리스너를 removeEventListener 없이 방치하는 것, clearInterval 없이 setInterval을 사용하는 것, 클로저가 필요 이상으로 큰 스코프를 참조하는 것, 의도치 않게 전역 변수에 할당하는 것입니다. WeakMap이나 WeakRef를 사용하면 GC가 자동으로 처리할 수 있습니다.",
-    isAdvanced: true,
+      "Google이 개발한 JavaScript 엔진으로 Chrome 브라우저와 Node.js에서 사용됩니다. JavaScript 코드를 파싱하여 바이트코드로 변환하고(Ignition 인터프리터), 자주 실행되는 코드(Hot Path)를 기계어로 컴파일합니다(Turbofan JIT 컴파일러). 메모리 관리(GC), 숨겨진 클래스(Hidden Class) 최적화 등도 담당합니다.\n\n**부가설명:** V8 외에도 SpiderMonkey(Firefox), JavaScriptCore(Safari), Chakra(구 Edge) 등의 JavaScript 엔진이 있습니다.",
   },
-
-  // ── 모듈 시스템 ─────────────────────────────────────────────────────
   {
     id: "js-23",
     category: "javascript",
-    question: "CommonJS(CJS)와 ES Modules(ESM)의 차이는?",
+    question: "JS는 인터프리터 언어인가요 컴파일 언어인가요?",
     answer:
-      "CJS는 Node.js에서 사용하는 방식으로 런타임에 동적으로 모듈을 로드합니다(require()). ESM은 브라우저 표준으로 파싱 단계에서 정적으로 분석됩니다(import/export). ESM은 정적 분석이 가능하기 때문에 번들러가 실제로 사용되지 않는 export를 최종 번들에서 제거하는 트리 쉐이킹이 가능합니다. CJS는 런타임에 동적으로 로딩하기 때문에 어떤 코드가 사용될지 사전에 알 수 없어 트리 쉐이킹이 어렵습니다. 또한 ESM은 Live Binding을 지원해 export된 값이 변경되면 import한 쪽에도 반영됩니다.",
+      "전통적으로 인터프리터 언어로 분류되지만, 현대 V8 같은 엔진은 JIT 컴파일을 사용하여 두 방식의 특성을 모두 가집니다. 처음에는 Ignition 인터프리터가 바이트코드로 빠르게 실행하고, 자주 실행되는 코드는 Turbofan이 기계어로 컴파일하여 최적화합니다.\n\n**부가설명:** 컴파일 언어(C, Java)와 달리 실행 전에 전체 컴파일을 하지 않고 런타임에 부분적으로 컴파일합니다. 이를 JIT(Just-In-Time) 컴파일이라 합니다.",
   },
-
-  // ── 타입 변환 ────────────────────────────────────────────────────────
   {
     id: "js-24",
     category: "javascript",
-    question: "`==`와 `===`의 차이는?",
+    question: "JIT 컴파일이 뭔가요?",
     answer:
-      "==는 타입이 다를 때 암묵적으로 타입을 변환한 후 비교하고, ===는 타입 변환 없이 값과 타입이 모두 같아야 true를 반환합니다. ==는 0 == false가 true, null == undefined가 true 같은 예측하기 어려운 결과가 있어서 항상 ===를 권장합니다. NaN은 자기 자신과도 같지 않아 NaN === NaN이 false인 점도 주의해야 합니다.",
-  },
-
-  // ── WeakMap / WeakSet ────────────────────────────────────────────────
-  {
-    id: "js-25",
-    category: "javascript",
-    question: "Map과 WeakMap의 차이는?",
-    answer:
-      "Map은 키를 강한 참조로 유지해서 명시적으로 삭제하지 않으면 GC되지 않습니다. WeakMap은 키 객체를 약한 참조로 유지해서 다른 참조가 없으면 자동으로 GC됩니다. WeakMap은 이터러블이 아니고 키는 반드시 객체여야 합니다. DOM 요소에 부가 데이터를 연결할 때 WeakMap을 사용하면, 해당 DOM 요소가 제거됐을 때 연결된 데이터도 자동으로 수거됩니다.",
-  },
-
-  // ── Generator & Iterator ─────────────────────────────────────────────
-  {
-    id: "js-26",
-    category: "javascript",
-    question: "Generator 함수란 무엇이고 어떻게 동작하나요?",
-    answer:
-      "function* 키워드로 선언하며, yield로 실행을 일시 중단하고 값을 내보낼 수 있는 함수입니다. 호출 시 즉시 실행되지 않고 Iterator 객체를 반환하며, next()를 호출할 때마다 다음 yield까지 실행합니다. next()는 { value, done } 형태를 반환합니다. 무한 시퀀스를 만들거나 필요한 시점에만 값을 계산하는 지연 평가에 유용하고, Babel이 async/await을 트랜스파일하면 Generator로 변환됩니다.",
-  },
-  {
-    id: "js-27",
-    category: "javascript",
-    question: "Generator가 async/await의 기반이 되는 이유는?",
-    answer:
-      "Generator는 yield로 실행을 중단하고 외부에서 값을 주입받아 재개할 수 있습니다. 비동기 작업이 완료될 때까지 기다리다가 결과를 받아 재개하는 async/await의 동작과 본질적으로 같습니다. await somePromise가 내부적으로 yield somePromise와 같고, 외부 실행기가 Promise 완료 시 gen.next(result)를 호출해 재개하는 구조입니다.",
-    isAdvanced: true,
-  },
-
-  // ── Proxy & Reflect ─────────────────────────────────────────────────
-  {
-    id: "js-28",
-    category: "javascript",
-    question: "Proxy란 무엇이고 어떤 상황에서 사용하나요?",
-    answer:
-      "객체에 대한 읽기, 쓰기, 삭제 같은 기본 동작을 가로채서 커스텀 동작을 정의할 수 있는 래퍼 객체입니다. set 트랩에서 타입이나 범위를 검사하는 유효성 검사, Vue 3의 reactive()처럼 프로퍼티 변경을 감지해 반응성을 구현하거나, get 트랩으로 접근을 추적하는 로깅에 사용합니다.",
-  },
-  {
-    id: "js-29",
-    category: "javascript",
-    question: "Proxy와 Object.defineProperty의 차이는?",
-    answer:
-      "Object.defineProperty는 특정 프로퍼티 하나에만 getter/setter를 정의할 수 있어, 동적으로 추가된 프로퍼티나 배열 인덱스 변경을 감지하지 못합니다. Proxy는 객체 전체를 가로채는 방식이라 모든 프로퍼티 접근을 감지하고 더 다양한 동작을 커스터마이징할 수 있습니다. Vue 3가 Proxy 기반으로 마이그레이션한 이유가 이 차이인데, Vue 2에서는 배열 인덱스 직접 수정이나 동적 프로퍼티 추가를 감지하지 못하는 한계가 있었습니다.",
-    isAdvanced: true,
-  },
-
-  // ── 프로세스 vs 스레드 ──────────────────────────────────────────────
-  {
-    id: "js-30",
-    category: "javascript",
-    question: "프로세스와 스레드의 차이는?",
-    answer:
-      "프로세스는 OS로부터 독립적인 메모리 공간을 할당받은 실행 단위이고, 스레드는 프로세스 내의 실행 흐름으로 같은 프로세스의 메모리를 공유하고 스택만 독립적입니다. 스레드는 메모리를 공유하기 때문에 통신이 빠르지만 Race Condition이나 Deadlock 같은 동기화 문제가 생깁니다. Chrome은 탭마다 별도 프로세스를 사용해서 한 탭이 죽어도 다른 탭에 영향을 주지 않습니다.",
-  },
-  {
-    id: "js-31",
-    category: "javascript",
-    question: "JavaScript는 싱글 스레드인데 멀티코어 CPU를 어떻게 활용하나요?",
-    answer:
-      "메인 스레드는 단일 스레드이지만 Web Workers API로 별도 스레드에서 CPU 집약적 작업을 실행할 수 있습니다. Node.js에서는 Worker Threads와 Cluster 모듈을 사용합니다. Web Worker는 메인 스레드와 postMessage로 통신하며 DOM에 직접 접근할 수 없고, 이미지 처리나 대용량 데이터 계산처럼 메인 스레드를 오래 블로킹하는 작업에 씁니다.",
-    isAdvanced: true,
-  },
-
-  // ── 메모리 구조 ─────────────────────────────────────────────────────
-  {
-    id: "js-32",
-    category: "javascript",
-    question: "스택(Stack)과 힙(Heap) 메모리의 차이는?",
-    answer:
-      "스택은 함수 호출 시 자동으로 할당·해제되는 LIFO 구조로 원시값과 함수 실행 정보가 저장됩니다. 힙은 GC가 관리하는 동적 메모리로 객체·배열 같은 참조 타입이 저장됩니다. 재귀 함수가 끝없이 호출되면 스택 프레임이 쌓여 스택 크기 제한을 초과하는 Stack Overflow가 발생하며, 꼬리 호출 최적화나 반복문으로 대체해 방지할 수 있습니다.",
-  },
-  {
-    id: "js-33",
-    category: "javascript",
-    question: "JavaScript에서 원시값과 참조값의 차이는?",
-    answer:
-      "원시값(number, string, boolean 등)은 스택에 값 자체가 저장되어 복사 시 독립적인 복사본이 생깁니다. 참조값(object, array, function)은 힙에 실제 데이터가 저장되고 스택에는 주소만 저장됩니다. 복사하면 같은 힙 주소를 가리켜 한쪽 변경이 다른 쪽에도 영향을 줍니다. React가 참조 비교(===)로 상태 변경을 감지하기 때문에 객체 내부 값만 바꾸면 감지가 안 되고, 새 객체를 만들어 할당하는 불변 업데이트가 필요한 이유입니다.",
-  },
-  {
-    id: "js-34",
-    category: "javascript",
-    question: "V8의 Hidden Class란 무엇인가요?",
-    answer:
-      "V8은 같은 구조(프로퍼티 이름과 순서가 동일)의 객체들을 같은 Hidden Class로 묶어 프로퍼티에 오프셋 기반으로 빠르게 접근합니다. 동적으로 프로퍼티를 추가하거나 순서를 달리하면 Hidden Class가 달라져 이 최적화가 무효화됩니다. 객체를 { x: 1, y: 2 }처럼 한 번에 초기화하는 것이 성능에 좋은 이유입니다.",
-    isAdvanced: true,
-  },
-
-  // ── 동기 vs 비동기 / 블로킹 vs 논블로킹 ─────────────────────────────
-  {
-    id: "js-35",
-    category: "javascript",
-    question: "동기와 비동기, 블로킹과 논블로킹의 차이는?",
-    answer:
-      "동기/비동기는 작업 완료를 기다리는지 여부입니다. 동기는 작업이 끝날 때까지 기다리고, 비동기는 완료 여부와 상관없이 다음 코드를 실행합니다. 블로킹/논블로킹은 제어권을 넘기는지 여부입니다. 블로킹은 완료될 때까지 제어권을 넘겨 스레드를 정지시키고, 논블로킹은 즉시 제어권을 반환합니다. 자바스크립트는 싱글 스레드이기 때문에 블로킹을 피하고 비동기 + 논블로킹 모델을 사용합니다.",
-  },
-
-  // ── V8 엔진과 JIT 컴파일 ─────────────────────────────────────────────
-  {
-    id: "js-36",
-    category: "javascript",
-    question: "JavaScript는 컴파일 언어인가요, 인터프리터 언어인가요?",
-    answer:
-      "전통적으로 인터프리터 언어로 분류되지만, V8 같은 현대 JS 엔진은 JIT 컴파일을 사용합니다. 처음에는 Ignition 인터프리터가 바이트코드로 실행하고, 자주 실행되는 코드를 Turbofan이 기계어로 컴파일해 최적화합니다. 타입이 변경되면 최적화를 취소하고 다시 인터프리터로 실행하기 때문에, 일관된 타입을 유지하는 게 성능에 중요합니다.",
-  },
-  {
-    id: "js-37",
-    category: "javascript",
-    question: "V8의 Deoptimization이란 무엇이고 어떻게 방지하나요?",
-    answer:
-      "Turbofan은 타입이 일정하다고 가정하고 최적화된 기계어를 생성합니다. 런타임에 그 가정이 깨지면, 예를 들어 number 변수에 string이 들어오면 최적화를 취소하고 Ignition 바이트코드로 롤백합니다. 방지하려면 함수에 항상 같은 타입의 인수를 전달하고, 객체 프로퍼티 타입을 일관되게 유지하며, 동적 프로퍼티 추가를 피해야 합니다. TypeScript를 사용하면 컴파일 타임에 이를 강제할 수 있습니다.",
-    isAdvanced: true,
-  },
-  {
-    id: "js-38",
-    category: "javascript",
-    question: "Set은 언제 사용하나요?",
-    answer:
-      "중복 없는 값의 집합을 관리할 때 사용합니다. 배열에서 중복을 제거할 때 [...new Set(arr)]처럼 쓰거나, 특정 값이 존재하는지 확인할 때 배열의 includes(O(n)) 대신 Set의 has(O(1))를 써서 성능을 높일 수 있습니다. 방문한 노드를 추적하는 BFS/DFS, 이미 처리한 ID 목록 관리처럼 '이 값이 있었나?'를 빠르게 확인해야 하는 상황에 적합합니다.",
+      "Just-In-Time 컴파일의 약자로, 런타임에 코드를 분석하여 자주 실행되는 코드를 기계어로 컴파일하는 방식입니다. V8에서는 Ignition 인터프리터가 프로파일링하여 자주 실행되는 함수를 감지하면, Turbofan이 해당 코드를 최적화된 기계어로 컴파일합니다.\n\n**부가설명:** 최적화 가정(타입이 일정하다 등)이 런타임에 깨지면 Deoptimization이 발생하여 다시 인터프리터 모드로 돌아갑니다. 일관된 타입을 유지하면 JIT 최적화 효과를 유지할 수 있습니다.",
   },
 ];

@@ -5,6 +5,8 @@ export type QuizCategory =
   | "network"
   | "javascript"
   | "react"
+  | "nextjs"
+  | "state-management"
   | "coding";
 
 export interface QuizQuestion {
@@ -22,5 +24,7 @@ export const CATEGORY_LABELS: Record<QuizCategory, string> = {
   network: "네트워크",
   javascript: "JavaScript",
   react: "React",
+  nextjs: "Next.js",
+  "state-management": "상태관리",
   coding: "코딩",
 };
