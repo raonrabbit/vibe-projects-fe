@@ -1,21 +1,4 @@
-@import "tailwindcss";
-
-@custom-variant dark (&:where(.dark, .dark *));
-
-@theme {
-  --font-sans:
-    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
-    system-ui, sans-serif;
-  --font-mono: monospace;
-
-  --color-bg: #faf9f6;
-  --color-text-primary: #141510;
-}
-
-.dark {
-  --color-bg: #0d0f0c;
-  --color-text-primary: #f0ede6;
-}
+@import "../shared/styles/tokens.css";
 
 body {
   background: var(--color-bg);
